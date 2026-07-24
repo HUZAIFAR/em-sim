@@ -39,3 +39,6 @@ env/
 #   C:\opt\mesa     (Mesa software-OpenGL DLLs)
 #   environment variables, the Python venv, Tailscale.
 # Set those up once per machine (see openEMS/WINDOWS_SETUP.md); they never sync.
+
+# Claude Code per-machine local settings (differ per machine)
+.claude/settings.local.json
