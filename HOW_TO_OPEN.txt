@@ -1,0 +1,75 @@
+==========================================================================
+  HOW TO OPEN THE WAVEGUIDE SIMULATOR
+==========================================================================
+
+There are two ways to open it. Use Way 2 if you want the "Run on openEMS"
+button to work; Way 1 is fine for everything else.
+
+
+--------------------------------------------------------------------------
+WAY 1 - QUICK VIEW (no full-wave solver)
+--------------------------------------------------------------------------
+Just double-click this file in Finder:
+
+    waveguide_simulator.html
+
+It opens in your browser. The Simulator, Visual, Materials, Physics and
+Instructions tabs all work. The only thing that will NOT work this way is
+the "Run on openEMS" button on the Full-wave tab (that needs Way 2).
+
+(Needs an internet connection for fonts, charts and equations to load.)
+
+
+--------------------------------------------------------------------------
+WAY 2 - FULL (so the "Run on openEMS" button works)
+--------------------------------------------------------------------------
+You start a small local "server" once, then open a web address.
+
+STEP 1.  Open the Terminal app (press Cmd+Space, type "Terminal", Enter).
+
+STEP 2.  Copy-paste this ONE line into Terminal and press Enter:
+
+    /opt/anaconda3/bin/python "/Users/huzaifataha/Desktop/Huzaifa/School/Khalifa University/Wave Guide Simulator/openEMS/openems_server.py"
+
+    You should see a message like:
+        openEMS bridge running.  Open  http://localhost:8731  in your browser.
+
+    Leave this Terminal window OPEN the whole time you use the simulator.
+
+STEP 3.  Open your web browser (Chrome/Safari) and go to this address:
+
+    http://localhost:8731
+
+STEP 4.  Use the simulator. To run a full-wave simulation, go to the
+         "Full-wave (openEMS)" tab, pick your settings, and click
+         "Run on openEMS" (each run takes ~2-4 minutes).
+
+TO STOP:  Go back to the Terminal window and press  Ctrl + C.
+          (Closing the Terminal also stops it.)
+
+
+--------------------------------------------------------------------------
+IF SOMETHING DOESN'T WORK
+--------------------------------------------------------------------------
+* Browser says "can't connect" at localhost:8731
+      -> The server isn't running. Redo STEP 2 and keep that Terminal open.
+
+* Terminal says "No module named flask" (or similar)
+      -> One-time install. Paste this, then redo STEP 2:
+         /opt/anaconda3/bin/pip install flask pyvista imageio imageio-ffmpeg numpy
+
+* "Run on openEMS" gives an error about openEMS or Octave
+      -> openEMS / Octave aren't installed yet. See the full first-time
+         setup in:   openEMS/SETUP.md
+
+* "Address already in use" when starting the server
+      -> It's already running in another Terminal window. Just open
+         http://localhost:8731  in the browser.
+
+
+--------------------------------------------------------------------------
+TIP
+--------------------------------------------------------------------------
+For normal use, Way 2 is best: start the server (STEP 2), open
+http://localhost:8731, and everything works including the full-wave runs.
+==========================================================================

@@ -1,0 +1,38 @@
+cff-version: 1.2.0
+message: "If you use this software or its results, please cite it as below."
+title: "EM Waveguide & RCS Simulator: lightweight thin-film-coated materials for satellite waveguides, horns and radar cross section"
+abstract: >-
+  A single-file web application plus a local full-wave openEMS FDTD bridge that
+  evaluates lightweight, thin-film-coated materials (flagship: MXene-coated
+  basswood) as replacements for heavy solid-metal satellite waveguides, horn
+  antennas and radar-cross-section (RCS) targets. It predicts a material's RF
+  loss, weight and launch-to-orbit cost instantly with a validated analytical
+  engine, and validates chosen designs with a real 3-D FDTD solve (openEMS).
+type: software
+version: "3.7"
+date-released: "2026-07-22"
+authors:
+  - family-names: "Rangwala"
+    given-names: "Huzaifa Taha"
+    email: "huzaifataha54@berkeley.edu"
+    affiliation: "Khalifa University, Abu Dhabi (Visiting Researcher / SWE); University of California, Berkeley (Mathematics & Computer Science)"
+keywords:
+  - "electromagnetics"
+  - "waveguide"
+  - "horn antenna"
+  - "radar cross section"
+  - "RCS"
+  - "FDTD"
+  - "openEMS"
+  - "MXene"
+  - "radar-absorbing material"
+  - "satellite"
+  - "aerospace"
+license: "LicenseRef-Proprietary-KU-affiliation-pending"
+references:
+  - type: software
+    title: "openEMS — a free and open-source electromagnetic field solver (EC-FDTD)"
+    authors:
+      - family-names: "Liebig"
+        given-names: "Thorsten"
+    doi: "10.1002/jnm.1875"

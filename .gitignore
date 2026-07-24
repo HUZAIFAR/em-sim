@@ -1,0 +1,41 @@
+# ============================================================
+#  .gitignore — EM Waveguide Simulator
+#  Tracks SOURCE only. Everything below is machine-specific or
+#  regenerated per run, so it must never travel between machines.
+# ============================================================
+
+# ── Generated openEMS full-wave OUTPUT (rendered per run, per machine) ──
+/fullwave_figures/
+/openEMS/results/
+/openEMS/cad/horn_results/
+/openEMS/uploads/
+/openEMS/*.log
+/openEMS/run_history.csv
+
+# ── Per-run parameter / geometry files the bridge WRITES before each solve ──
+/openEMS/wg_params.m
+/openEMS/rcs_params.m
+/openEMS/cad/horn_params.m
+/openEMS/render_geo.txt
+/openEMS/rcs_geo.txt
+
+# ── Raw field dumps / scratch (normally in C:\openems_scratch, outside the repo) ──
+*.vtr
+*.h5
+
+# ── Python / OS cruft ──
+__pycache__/
+*.pyc
+.DS_Store
+
+# ── Machine-local Python environments (should live OUTSIDE the repo; ignored just in case) ──
+venv/
+.venv/
+/openems_py314/
+env/
+
+# NOTE: the Windows runtime lives OUTSIDE this folder and is NOT in git on purpose —
+#   C:\opt\openEMS  (openEMS + the Octave-11 rebuilt h5readatt_octave.oct)
+#   C:\opt\mesa     (Mesa software-OpenGL DLLs)
+#   environment variables, the Python venv, Tailscale.
+# Set those up once per machine (see openEMS/WINDOWS_SETUP.md); they never sync.

@@ -1,0 +1,80 @@
+WAVEGUIDE SIMULATOR — MATERIAL PROPERTY REFERENCE
+=================================================
+These are the exact default values used in waveguide_simulator.html (Materials
+and Compare tabs). Full source citations for every value are in the tool's
+References tab. Prices are approximate market figures and move over time;
+embodied-carbon (CO2e) figures are cradle-to-gate ballpark.
+
+Units:  sigma = electrical conductivity [S/m]
+        density [kg/m^3]
+        price  [USD per kg, approximate]
+        eps_r' / eps_r'' = real / imaginary relative permittivity
+        mu_r'  / mu_r''  = real / imaginary relative permeability
+        CO2e   [kg CO2e per kg, cradle-to-gate, ballpark]
+
+
+------------------------------------------------------------------------------
+CONDUCTORS   (use as a solid wall, or as the conductive COATING on a substrate)
+------------------------------------------------------------------------------
+Material                 sigma (S/m)  density  price     CO2e   notes
+Silver                   6.3e7        10490    1000       150   best conductor; heavy & costly
+Copper                   5.8e7        8960     10         3.5   standard waveguide metal
+Gold                     4.1e7        19300    85000    35000   corrosion-proof plating; very heavy
+Aluminum                 3.5e7        2700     3.4          9   light, common in aerospace
+Brass                    1.5e7        8500     8            4   machinable
+Nickel                   1.43e7       8900     18           9   magnetic; used for plating
+MXene (Ti3C2Tx)          1.0e6        3700     25000       15   best-film sigma (published ~1e4-2.4e6); flagship coating
+Graphene film            1.0e7        2200     50000       30   high-quality film (range ~1e6-1e8 S/m)
+Graphite / carbon        2.0e5        2100     5            5   in-plane conductivity
+Silver conductive paint  5.0e5        3000     2000       100   sprayable coating
+Magnetite (Fe3O4)        5            5170     5            2   absorber: eps_r'=10 eps_r''=1.0  mu_r'=1.3 mu_r''=0.4
+Carbonyl iron (Fe)       2            4000     60           6   absorber: eps_r'=15 eps_r''=1.5  mu_r'=3.0 mu_r''=1.5
+
+
+------------------------------------------------------------------------------
+SUBSTRATES / DIELECTRIC CORES   (the light core that sits under a coating)
+sigma ~ 0 (insulators) — characterised by eps_r' instead
+------------------------------------------------------------------------------
+Material                 eps_r'   density  price   CO2e   notes
+Basswood                 1.9      415      3       0.45   flagship substrate (eps_r''~0.05)
+PLA (3D-print)           2.7      1240     20      2.0
+PEEK (3D-print)          3.2      1320     90      12
+ABS                      2.9      1050     3       3.5
+PTFE (Teflon)            2.1      2200     20      7      low-loss RF dielectric
+Polycarbonate            2.9      1200     4       6
+Polyurethane             3.0      1150     5       4.5    (eps_r''~0.05)
+FR4 laminate             4.4      1850     6       5
+Carbon fiber (CFRP)      5.0      1600     40      30     anisotropic; representative eps_r'
+Invar (plated)           1.0      8100     30      8      plated metal core; eps_r'=1 in model
+Aluminum (plated)        1.0      2700     3.4     9      plated metal core; eps_r'=1 in model
+
+
+------------------------------------------------------------------------------
+PRESET CANDIDATES (Compare tab)
+------------------------------------------------------------------------------
+Silver-plated aluminum, Silver-plated Invar, Copper-plated carbon fiber,
+Silver-plated PEEK, Silver-plated PLA, Copper-plated PLA, MXene-coated PEEK,
+Silver-plated polyurethane, MXene-coated polyurethane,
+Solid copper, Solid aluminum, Solid silver.
+Default test material: MXene-coated basswood.
+
+
+------------------------------------------------------------------------------
+BANDS
+------------------------------------------------------------------------------
+X  = WR-90  22.86 x 10.16 mm   8-12 GHz
+Ku = WR-62  15.80 x 7.90  mm   12-18 GHz
+K  = WR-42  10.67 x 4.32  mm   18-27 GHz
+Default launch cost: ~$7,000/kg.
+
+
+------------------------------------------------------------------------------
+HOW TO USE IN THE SIMULATOR
+------------------------------------------------------------------------------
+Materials tab -> Test material -> "Coating on substrate":
+    Coating   : take sigma, density, price, CO2e from the CONDUCTORS table
+    Substrate : take eps_r', density, price, CO2e from the SUBSTRATES table
+Materials tab -> Test material -> "Solid block":
+    take sigma, density, price from the CONDUCTORS table (e.g. solid silver)
+A "Quick pick" dropdown loads any preset candidate above.
+Every value here is cited in the tool's References tab.
