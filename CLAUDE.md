@@ -30,7 +30,8 @@ Author: **Huzaifa Taha Rangwala** — UC Berkeley (Math + CS); Visiting Research
 
 Development happens on the **Mac** (Homebrew openEMS); a Windows PC runs the always-on bridge for a
 remote tester. **Sync is via git** (a private repo), not file-copy tools — file sync can't merge and
-silently loses one side's edits. Commit on the Mac → push → `git pull` on Windows. Runtime output and
+silently loses one side's edits. Commit on the Mac → push → `git pull` on Windows. **Full workflow,
+rules, and env-var reference: `GIT_WORKFLOW.md` (repo root).** Runtime output and
 machine-local installs are git-ignored (see `.gitignore`); the Windows runtime (`C:\opt\openEMS` incl.
 the Octave-11-rebuilt `h5readatt_octave.oct`, `C:\opt\mesa`, env vars, the venv, Tailscale) lives
 **outside the repo** and is set up once per machine — see `openEMS/WINDOWS_SETUP.md`.
