@@ -166,7 +166,13 @@ def progress():
         return jsonify({"ok": False, "stage": None, "percent": None})
     # last "===== <tag> =====" header is the current stage
     stages = _re.findall(r"=====\s*(.+?)\s*(?:\(streaming\)|\(returncode)", tail)
-    prog = _parse_progress(tail, target)
+    # Scope the marker search to the CURRENT stage only. One /run performs several octave solves
+    # into the same log, so parsing the whole tail made a solve that had started but not yet printed
+    # a timestep inherit the PREVIOUS solve's near-complete energy decay — the bar sat at 99% while
+    # the new solve was still meshing.
+    _hdr = list(_re.finditer(r"=====\s*.+?\s*\(streaming\)\s*=====", tail))
+    cur = tail[_hdr[-1].end():] if _hdr else tail
+    prog = _parse_progress(cur, target)
     return jsonify({"ok": True, "kind": kind, "stage": (stages[-1] if stages else None),
                     "percent": (prog or {}).get("percent"), "line": (prog or {}).get("line"),
                     "energy_db": (prog or {}).get("energy_db")})
@@ -317,8 +323,8 @@ def run():
                    "sparams_waveguide.csv", "sparams_reflector.csv", "farfield_wg.csv", "port_sep.txt"):
         try: os.remove(os.path.join(RESULTS, _stale))
         except OSError: pass
-    for _stale in ("field_guide.gif", "field_guide_still.png", "field_guide_loss.png",
-                   "field_reflector.gif", "field_reflector_still.png"):
+    for _stale in ("field_guide.gif", "field_guide.mp4", "field_guide_still.png", "field_guide_loss.png",
+                   "field_reflector.gif", "field_reflector.mp4", "field_reflector_still.png"):
         try: os.remove(os.path.join(FIGS, _stale))
         except OSError: pass
 
@@ -327,24 +333,32 @@ def run():
         e = solve(shape)
         if e: errors["guided"] = e
         else:
-            ic = f"insertion_loss_{stamp}.csv"; cp(RESULTS, "insertion_loss.csv", ic); il_url = f"/results/{ic}"
+            # NB every URL below is emitted ONLY if the copy really happened. Emitting a URL for a
+            # file that is not there 404s, and a browser that fails to load a new <img> src keeps
+            # showing the PREVIOUS one - a stale figure presented as the new result.
+            ic = f"insertion_loss_{stamp}.csv"; il_url = f"/results/{ic}" if cp(RESULTS, "insertion_loss.csv", ic) else None
             sp = f"sparams_{stamp}.csv"; has_sp = cp(RESULTS, f"sparams_{shape}.csv", sp)
-            gs_url = gg_url = None
+            gs_url = gg_url = gm_url = None
             if ("guided" in sims) or ("fieldmap" in sims):
                 if field_mode == "freq":
                     # frequency-domain: single steady |E| still (no animation)
                     er = render_freq("field_guide", f"{label} {band}-band  -  steady |E| at f0 (frequency-domain)")
                     if er: errors["guided_render"] = er
                     else:
-                        gs = f"field_guide_{stamp}_still.png"; cp(FIGS, "field_guide_still.png", gs); gs_url = f"/fullwave_figures/{gs}"
+                        gs = f"field_guide_{stamp}_still.png"
+                        if cp(FIGS, "field_guide_still.png", gs): gs_url = f"/fullwave_figures/{gs}"
                 else:
                     er = render("field_guide", f"{label} {band}-band  -  guided wave")
                     if er: errors["guided_render"] = er
                     else:
-                        gg = f"field_guide_{stamp}.gif"; cp(FIGS, "field_guide.gif", gg); gg_url = f"/fullwave_figures/{gg}"
-                        gs = f"field_guide_{stamp}_still.png"; cp(FIGS, "field_guide_still.png", gs); gs_url = f"/fullwave_figures/{gs}"
+                        gg = f"field_guide_{stamp}.gif"
+                        if cp(FIGS, "field_guide.gif", gg): gg_url = f"/fullwave_figures/{gg}"
+                        gm = f"field_guide_{stamp}.mp4"
+                        if cp(FIGS, "field_guide.mp4", gm): gm_url = f"/fullwave_figures/{gm}"
+                        gs = f"field_guide_{stamp}_still.png"
+                        if cp(FIGS, "field_guide_still.png", gs): gs_url = f"/fullwave_figures/{gs}"
             if "guided" in sims:
-                results["guided"] = {"gif": gg_url, "still": gs_url, "il": il_url}
+                results["guided"] = {"gif": gg_url, "mp4": gm_url, "still": gs_url, "il": il_url}
             if "sparams" in sims:
                 results["sparams"] = {"csv": (f"/results/{sp}" if has_sp else None), "il": il_url}
             if "fieldmap" in sims:
@@ -360,14 +374,18 @@ def run():
         e = solve("reflector")
         if e: errors["reflection"] = e
         else:
-            rc = f"rta_reflector_{stamp}.csv"; cp(RESULTS, "rta_reflector.csv", rc)
-            rg_url = rs_url = None
+            rc = f"rta_reflector_{stamp}.csv"; rc_url = f"/results/{rc}" if cp(RESULTS, "rta_reflector.csv", rc) else None
+            rg_url = rs_url = rm_url = None
             er = render("field_reflector", f"{label} {band}-band  -  reflection")
             if er: errors["reflection_render"] = er
             else:
-                rg = f"field_reflector_{stamp}.gif"; cp(FIGS, "field_reflector.gif", rg); rg_url = f"/fullwave_figures/{rg}"
-                rs = f"field_reflector_{stamp}_still.png"; cp(FIGS, "field_reflector_still.png", rs); rs_url = f"/fullwave_figures/{rs}"
-            results["reflection"] = {"gif": rg_url, "still": rs_url, "rta": f"/results/{rc}"}
+                rg = f"field_reflector_{stamp}.gif"
+                if cp(FIGS, "field_reflector.gif", rg): rg_url = f"/fullwave_figures/{rg}"
+                rm = f"field_reflector_{stamp}.mp4"
+                if cp(FIGS, "field_reflector.mp4", rm): rm_url = f"/fullwave_figures/{rm}"
+                rs = f"field_reflector_{stamp}_still.png"
+                if cp(FIGS, "field_reflector_still.png", rs): rs_url = f"/fullwave_figures/{rs}"
+            results["reflection"] = {"gif": rg_url, "mp4": rm_url, "still": rs_url, "rta": rc_url}
 
     # ---- angle-of-incidence sweep (analytical oblique model) ----
     if "angle" in sims:
@@ -454,8 +472,8 @@ def run():
         "port_sep_mm": round(port_sep_mm, 3),   # true S21 measurement-plane separation for dB/m
         # backward-compatible fields used by the existing Full-wave UI
         "csv": il_url, "rta": r.get("rta"),
-        "guide_gif": g.get("gif"), "guide_still": g.get("still"),
-        "reflector_gif": r.get("gif"), "reflector_still": r.get("still"),
+        "guide_gif": g.get("gif"), "guide_mp4": g.get("mp4"), "guide_still": g.get("still"),
+        "reflector_gif": r.get("gif"), "reflector_mp4": r.get("mp4"), "reflector_still": r.get("still"),
     }
     if not ok:
         resp["stage"] = next(iter(errors.keys()), "run")
@@ -542,6 +560,21 @@ def run_horn():
               f"p_field_mode='{field_mode}';\n")
     open(os.path.join(CAD, "horn_params.m"), "w").write(params)
 
+    # Clear the fixed-name outputs from any previous run. render_horn.py writes horn_field.gif/.mp4
+    # ONLY in time-domain mode and never deletes them, and _img() decides "present" purely from
+    # os.path.exists and then stamps a FRESH ?t= — so a frequency-domain run used to replay the last
+    # time-domain animation, complete with the time-domain caption, under a green "Done".
+    # NOT purged: field3d.json (export_field3d.py self-clears) and horn_{gain,s11,pattern}_pec.csv
+    # (written by horn_run.m, whose returncode IS checked below).
+    for _stale in ("horn_field.gif", "horn_field.mp4", "horn_field.png",
+                   "horn_field_lin.png", "horn_field_db.png",
+                   "horn_metrics.csv", "horn_coating_loss.csv", "horn_results.xlsx"):
+        try: os.remove(os.path.join(CADRES, _stale))
+        except OSError: pass
+    try: os.remove(os.path.join(CAD, "horn_iso.png"))
+    except OSError: pass
+
+    post_errors = {}
     try:
         # 3) full-wave solve (streamed live into the log so /progress can track it)
         r = stream_run([OCTAVE, "--no-gui", os.path.join(CAD, "horn_run.m")], LOG, 1800, "horn_run.m")
@@ -552,10 +585,12 @@ def run_horn():
         r = subprocess.run([PYTHON, os.path.join(CAD, "render_horn.py"), field_mode],
                            capture_output=True, text=True, timeout=900)
         logstep("render_horn", r)
+        if r.returncode != 0: post_errors["field_render"] = (r.stderr or r.stdout or "")[-400:]
         # 4b) export the 3-D E-field volume -> compact JSON for the interactive field viewer (fail-soft)
         r = subprocess.run([PYTHON, os.path.join(CAD, "export_field3d.py")],
                            capture_output=True, text=True, timeout=300)
         logstep("export_field3d", r)
+        if r.returncode != 0: post_errors["field3d"] = (r.stderr or r.stdout or "")[-400:]
         # 5) geometry snapshot (nice-to-have)
         try:
             subprocess.run([PYTHON, os.path.join(CAD, "view_stl.py"), stl, "--shots", "--no-window"],
@@ -565,10 +600,15 @@ def run_horn():
         r = subprocess.run([PYTHON, os.path.join(CAD, "horn_wallloss.py")],
                            capture_output=True, text=True, timeout=600)
         logstep("horn_wallloss", r)
+        # This one matters most: horn_wallloss.py sys.exit()s on eight conditions, and its output IS
+        # the per-coating gain/efficiency table and the headline card. Unreported, the response used
+        # to carry the PREVIOUS run's material and band as ok:true.
+        if r.returncode != 0: post_errors["coating_loss"] = (r.stderr or r.stdout or "")[-400:]
         # 7) derived antenna metrics (HPBW, sidelobe, F/B, effs) + paper-style Excel
         r = subprocess.run([PYTHON, os.path.join(CAD, "horn_report.py"), "pec"],
                            capture_output=True, text=True, timeout=600)
         logstep("horn_report", r)
+        if r.returncode != 0: post_errors["metrics"] = (r.stderr or r.stdout or "")[-400:]
     finally:
         try: os.remove(os.path.join(CAD, "horn_params.m"))   # restore standalone defaults
         except Exception: pass
@@ -608,7 +648,10 @@ def run_horn():
         return f"/cad/horn_results/{name}?t={stamp}" if os.path.exists(os.path.join(base, name)) else None
     field_lin = _img("horn_field_lin.png"); field_db = _img("horn_field_db.png")
     field_img = field_lin or _img("horn_field.png")
-    field_anim = _img("horn_field.gif")   # present only when Field view = time-domain
+    # Gate on the REQUESTED mode, not on file presence: the client asked for this mode, so it must
+    # not infer it from whatever happens to be on disk.
+    field_anim     = _img("horn_field.gif") if field_mode == "time" else None
+    field_anim_mp4 = _img("horn_field.mp4") if field_mode == "time" else None   # ~20-30x smaller
     geom_img  = f"/cad/horn_iso.png?t={stamp}" if os.path.exists(os.path.join(CAD, "horn_iso.png")) else None
     excel_url = _img("horn_results.xlsx")
     field3d   = _img("field3d.json")   # interactive 3-D E-field point cloud (None if export failed)
@@ -619,7 +662,8 @@ def run_horn():
         "band": band, "coating": want,
         "dims": {"a": a, "b": b, **dims},
         "field_img": field_img, "field_img_lin": field_lin, "field_img_db": field_db,
-        "field_anim": field_anim,
+        "field_anim": field_anim, "field_anim_mp4": field_anim_mp4, "field_mode": field_mode,
+        "errors": post_errors,
         "geom_img": geom_img, "excel_url": excel_url, "field3d": field3d,
         "gain": ({"Dmax_dBi": float(grow["Dmax_dBi"]), "s11_db": float(grow["s11_db"])} if grow else None),
         "selected": ({"material": sel["material"], "rad_eff_pct": float(sel["rad_eff_pct"]),
@@ -895,6 +939,8 @@ def run_rcs():
                                  os.path.join(SCRATCH, f"rcs_sim_{tag}"), base, title], capture_output=True, text=True, timeout=600)
             if rr.returncode == 0:
                 curves["field_gif"]   = f"/fullwave_figures/{base}.gif?t={stamp}"
+                if os.path.exists(os.path.join(FIGS, base + ".mp4")):
+                    curves["field_mp4"] = f"/fullwave_figures/{base}.mp4?t={stamp}"
                 curves["field_still"] = f"/fullwave_figures/{base}_still.png?t={stamp}"
             else:
                 errors[f"field_render_{tag}"] = (rr.stderr or rr.stdout or "")[-500:]
@@ -904,6 +950,8 @@ def run_rcs():
                                  os.path.join(RESULTS, f"rcs_lobe_{tag}.csv"), base, title], capture_output=True, text=True, timeout=600)
             if rr.returncode == 0:
                 curves["lobe_gif"]   = f"/fullwave_figures/{base}_lobe.gif?t={stamp}"
+                if os.path.exists(os.path.join(FIGS, base + "_lobe.mp4")):
+                    curves["lobe_mp4"] = f"/fullwave_figures/{base}_lobe.mp4?t={stamp}"
                 curves["lobe_still"] = f"/fullwave_figures/{base}_lobe.png?t={stamp}"
             else:
                 errors[f"lobe_render_{tag}"] = (rr.stderr or rr.stdout or "")[-500:]

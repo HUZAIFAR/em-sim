@@ -21,7 +21,10 @@
          with no `sizes` attribute iOS may skip the link entirely and fall back to a letter,
        * `apple-touch-icon-precomposed` as well, for older iOS,
        * opaque PNGs with NO alpha and NO rounding (iOS masks them itself; transparency is a
-         documented way to end up with no icon),
+         documented way to end up with no icon) — and this applies to the MANIFEST icons too,
+         which is what actually caused the home screen to show a bare letter: from iOS 16.4 the
+         install comes from the manifest and its icons outrank these links, so transparent
+         rounded corners there meant "name read, every icon rejected, fall back to a letter",
        * NEW filenames rather than a ?v= query — iOS caches the home-screen icon per URL, so a
          fresh path is the only dependable way to retire a previously-installed icon.
      The root-path files (/apple-touch-icon.png, -precomposed) are served too: iOS probes
@@ -31,7 +34,7 @@
 <link rel="apple-touch-icon" sizes="167x167" href="/icons/apple-touch-icon-167.png" />
 <link rel="apple-touch-icon" sizes="152x152" href="/icons/apple-touch-icon-152.png" />
 <link rel="apple-touch-icon" sizes="120x120" href="/icons/apple-touch-icon-120.png" />
-<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192-sq.png" />
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -316,6 +319,12 @@
     background-repeat:no-repeat!important;background-position:right 11px center!important;padding-right:30px!important;width:100%!important;max-width:100%!important;text-overflow:ellipsis;}
   .oe-grid select:not(.segselect):focus,#oe-stack-rows select:focus{outline:none;border-color:var(--accent)!important;box-shadow:0 0 0 3px var(--accent-soft);}
 
+  /* Loading / failure line for a generated animation figure. The field animations are megabytes;
+     without this the user stares at the PREVIOUS run's frame and thinks nothing happened. */
+  .animfig-msg{display:none;font-family:var(--font-mono);font-size:11.5px;color:var(--muted);
+    background:var(--panel2);border:1px dashed var(--line);border-radius:8px;padding:14px 16px;
+    margin:0 0 6px;text-align:center;}
+
   /* --- friendly error / bridge banner --- */
   .errbanner{background:var(--amber-soft);border:1px solid #ecd7ad;border-left:3px solid var(--amber);border-radius:var(--r-sm);padding:12px 15px;margin:10px 0 0;font-family:var(--font-body);font-size:13px;color:var(--ink);line-height:1.55;box-shadow:var(--sh-1);}
   .errbanner .eb-h{font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:6px;}
@@ -462,7 +471,9 @@
 
     /* Viewers that rotate on a PASSIVE touchmove cannot preventDefault, so
        touch-action is the only way to stop the page scrolling underneath them. */
-    #prev-canvas-wrap,#hrn-geo3d,#hrn-field3d,#rcs-lobe3d,#cad-field3d{touch-action:none;}
+    /* #rcs-lobe3d is deliberately NOT here: its handlers set touch-action on the CANVAS itself,
+       so the container's border/padding still lets the page scroll past the viewer. */
+    #prev-canvas-wrap,#hrn-geo3d,#hrn-field3d,#cad-field3d{touch-action:none;}
     #prev-canvas-wrap,#hrn-geo3d{height:min(42vh,320px)!important;}
     #hrn-field3d{height:min(46vh,360px)!important;}
     #rcs-lobe3d,#cad-field3d{height:min(48vh,360px)!important;}
@@ -593,6 +604,59 @@
     .mlink.on svg{opacity:1;}
     .mlink .tick{flex:none;color:var(--accent);font-size:13px;opacity:0;}
     .mlink.on .tick{opacity:1;}
+
+    /* ---- overlays must live INSIDE the safe area -----------------------------
+       `.infomodal`/`.prevmodal` are position:fixed;inset:0 and, with
+       viewport-fit=cover, that is the WHOLE screen — under the status bar/notch at
+       the top and under the home indicator at the bottom. The panels sized
+       themselves in vh, which accounts for neither, so the info panel clipped at
+       both ends with no way to reach the clipped parts. Pad the backdrop into the
+       safe area and let the panel's own body be the scroller. */
+    .infomodal,.prevmodal{
+      padding:calc(8px + env(safe-area-inset-top)) 8px calc(8px + env(safe-area-inset-bottom));
+      overflow:hidden;}
+    .infobox{margin:0 auto!important;max-height:100%!important;border-radius:12px;
+      display:flex;flex-direction:column;overflow:hidden;}
+    .infobox .ibody{flex:1 1 auto;min-height:0;overflow-y:auto;
+      -webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+    .prevbox{position:relative!important;top:0!important;left:auto!important;
+      transform:none!important;width:100%!important;max-width:100%;max-height:100%!important;}
+  }
+
+  /* ==========================================================================
+     TOUCH-DEVICE FORM CONTROLS.  Scoped to pointer:coarse, so a mouse-driven
+     desktop is never touched. iOS paints a <select>'s closed value in the system
+     accent (bright blue) unless BOTH color and -webkit-text-fill-color are set,
+     which made every dropdown read as a mis-styled link. The custom chevron used
+     to be scoped to `.oe-grid select` only, so selects on every other tab kept the
+     cramped native arrow — now they all match.
+     Buttons are deliberately NOT in this list: .btn.primary is white-on-green and
+     the segmented toggles carry their own colours.
+     SCOPE: phone/tablet WIDTH *or* a coarse pointer. pointer:coarse alone is not
+     enough — an iPad with a Magic Keyboard or a Pencil reports pointer:fine, so a
+     coarse-only rule would miss the very device the owner uses. A desktop window
+     narrowed under 820px picks it up too, which is what every other rule here does.
+     ========================================================================== */
+  @media screen and (max-width:820px), screen and (pointer:coarse){
+    select:not(.segselect),input:not([type=range]):not([type=checkbox]):not([type=radio]),textarea{
+      color:var(--ink)!important;-webkit-text-fill-color:var(--ink)!important;
+      /* background-color is NOT !important: several controls carry an inline var(--panel),
+         and that inline value should keep winning. This is only a floor for the ones that
+         have none, because appearance:none on iOS otherwise leaves a system grey. */
+      background-color:var(--panel2);opacity:1;}
+    select:not(.segselect){
+      -webkit-appearance:none!important;appearance:none!important;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%235d645f' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")!important;
+      background-repeat:no-repeat!important;background-position:right 12px center!important;
+      padding-right:34px!important;font-family:var(--font-body)!important;font-weight:500;
+      border:1px solid var(--line);border-radius:8px;text-overflow:ellipsis;}
+    select:not(.segselect):disabled,input:disabled{
+      color:var(--faint)!important;-webkit-text-fill-color:var(--faint)!important;}
+    /* iOS also blues the file-picker button and the reset/step controls */
+    input[type=file]{color:var(--ink)!important;-webkit-text-fill-color:var(--ink)!important;}
+    input[type=file]::-webkit-file-upload-button{
+      font-family:var(--font-body);font-size:14px;color:var(--ink);-webkit-text-fill-color:var(--ink);
+      background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:9px 13px;margin-right:10px;}
   }
   /* the two bars are screen furniture — never print them */
   @media print{ #mbar,#mtabs,#mdrawer,#mscrim,#msheet,#msheet-scrim{display:none!important;} }
@@ -1486,6 +1550,7 @@
       <p class="chartsub">The target's scattering shown as a 3-D surface: it <strong>bulges outward in directions where the target scatters strongly</strong> and pinches in where it scatters little; colour is RCS in dBsm. The green arrow is the incoming radar direction — the bulge pointing away from it is forward-scatter, and the return back along it is the monostatic echo. Unlike the field animation, this is the <strong>pure scattered</strong> far field (the incident wave removed), so it is exactly what a radar network would measure. <strong>Drag to rotate, scroll to zoom</strong> the interactive view.</p>
       <div id="rcs-lobe3d" style="width:100%;max-width:620px;height:440px;border:1px solid var(--line);border-radius:8px;background:#0d1117;position:relative;cursor:grab;"></div>
       <img id="rcs-lobe-img" style="width:100%;max-width:620px;border:1px solid var(--line);border-radius:8px;display:none;" alt="3-D scattering lobe">
+      <p id="rcs-lobe-note" style="display:none;font-family:var(--font-mono);font-size:11.5px;color:var(--amber);background:var(--amber-soft);border:1px solid #ecd7ad;border-radius:8px;padding:9px 12px;margin:8px 0 0;"></p>
     </figure>
 
     <div id="rcs-freq-fig">
@@ -3120,19 +3185,29 @@ window.makeProgress=function(el){
   el.innerHTML='<div style="height:8px;background:var(--line);border-radius:5px;overflow:hidden;"><div class="pbar" style="height:100%;width:0;background:var(--accent);transition:width .5s ease;"></div></div><div class="ptxt" style="font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-top:6px;"></div>';
   const bar=el.querySelector('.pbar'), txt=el.querySelector('.ptxt');
   const fmt=s=>{s=Math.max(0,Math.round(s));const m=Math.floor(s/60);return m?m+'m '+(s%60)+'s':s+'s';};
-  let t0=0, est=60, timer=null, active=false, poll=null, live=null, pollKind=null, pollTarget=40;
+  let t0=0, est=60, timer=null, active=false, poll=null, live=null, pollKind=null, pollTarget=40, maxFrac=0;
   // when a kind is supplied, poll the bridge's /progress for the TRUE openEMS state (energy-decay % or
   // sweep %); otherwise fall back to the time estimate. Live data overrides the estimate when present.
   function fetchProg(){ if(!pollKind) return;
     fetch('/progress?kind='+encodeURIComponent(pollKind)+'&target_db='+pollTarget)
-      .then(r=>r.json()).then(d=>{ if(d&&d.ok&&d.percent!=null) live=d; }).catch(()=>{}); }
+      .then(r=>r.json()).then(d=>{
+        // Clear `live` when the bridge reports no percentage instead of keeping the last value.
+        // /progress tails the whole per-kind log, which is truncated once per POST but covers
+        // SEVERAL octave solves; keeping the old value made the bar read the PREVIOUS run's
+        // "99% (energy -50 dB)" the instant Run was pressed, before this solve had a timestep.
+        if(d&&d.ok) live=(d.percent!=null?d:null);
+      }).catch(()=>{}); }
   function tick(){ const e=(Date.now()-t0)/1000; let frac, extra;
     if(live&&live.percent!=null){ frac=Math.min(0.99, live.percent/100);
       extra='  ·  openEMS '+Math.round(live.percent)+'%'+(live.energy_db!=null?' (energy '+Math.round(live.energy_db)+' dB)':'')+(live.stage?'  ·  '+String(live.stage).slice(0,42):''); }
     else { frac=Math.min(0.97, e/est); extra='  ·  ~'+fmt(est-e)+' remaining (estimate)'; }
-    bar.style.width=(frac*100).toFixed(0)+'%'; txt.textContent='Elapsed '+fmt(e)+extra; }
+    // One /run performs several solves, each with its own energy decay, so the raw percentage
+    // legitimately collapses when the next solve starts. A progress bar that runs backwards reads
+    // as a fault, so hold the high-water mark (reset per run in start()).
+    maxFrac=Math.max(maxFrac,frac);
+    bar.style.width=(maxFrac*100).toFixed(0)+'%'; txt.textContent='Elapsed '+fmt(e)+extra; }
   return {
-    start(estSec,label,opts){ est=estSec||60; t0=Date.now(); active=true; live=null; el.style.display='block';
+    start(estSec,label,opts){ est=estSec||60; t0=Date.now(); active=true; live=null; maxFrac=0; el.style.display='block';
       bar.style.background='var(--accent)'; bar.style.width='2%';
       txt.textContent=(label?label+' — ':'')+'running… (~'+fmt(est)+' total)';
       pollKind=(opts&&opts.kind)||null; pollTarget=(opts&&opts.target_db)||40;
@@ -3346,6 +3421,112 @@ function build(){
     `Launch $${launch.toLocaleString()}/kg. Baseline walls solid, 1.5 mm. `+
     `Verified vs published WR-90 copper loss (~0.11 dB/m @ 10 GHz).`;
 }
+
+/* ============================================================================================
+ * ANIMATED FIELD FIGURES  (waveguide guided/reflection, horn interior field, RCS scattered field
+ * and 3-D lobe). One helper, because the same two bugs were reported from the phone:
+ *
+ *  1. STALE FRAME. The gifs are megabytes — a waveguide guided-wave gif is ~3.8 MB. Over the
+ *     Funnel link the new one takes many seconds, and until it lands the browser keeps painting
+ *     the PREVIOUS run's frame, so a finished second run looks like it never updated. Every
+ *     renderer now also writes an .mp4 of exactly the same frames (typically 20-30x smaller),
+ *     so that is what gets DISPLAYED; the .gif is still what the downloads and the ZIP hand over.
+ *  2. SILENT 404. If a render produced nothing, the old picture used to stay on screen labelled
+ *     as the new result. Now a figure is blanked the moment a run starts and only ever shows
+ *     media that actually loaded — and says so plainly if it could not be loaded.
+ *
+ * The <img> element keeps its id (everything else references it); a sibling <video> is created
+ * lazily and the helper keeps exactly one of the two "live". Desired visibility is remembered on
+ * the host figure so a toggle (e.g. the RCS lobe GIF <-> 3-D switch) still wins over a late load.
+ * ========================================================================================== */
+window.animFig=(function(){
+  function host(img){ return img.closest('figure')||img.parentNode; }
+  function want(img,v){ var h=host(img); if(v!==undefined) h.__animWant=!!v; return h.__animWant!==false; }
+  function msg(img,text){
+    var h=host(img), m=h.querySelector('.animfig-msg');
+    if(!m){ if(!text) return; m=document.createElement('div'); m.className='animfig-msg'; h.insertBefore(m,img); }
+    m.textContent=text||''; m.style.display=text?'block':'none';
+  }
+  function vid(img,make){
+    var v=host(img).querySelector('video.animfig');
+    if(!v&&make){
+      v=document.createElement('video');
+      v.className='animfig'; v.loop=true; v.muted=true; v.defaultMuted=true; v.autoplay=true;
+      v.setAttribute('muted',''); v.setAttribute('autoplay',''); v.setAttribute('loop','');
+      v.setAttribute('playsinline',''); v.setAttribute('webkit-playsinline','');   // iOS: inline, not fullscreen
+      v.style.cssText=img.style.cssText;      // identical framing to the <img> it stands in for
+      v.style.display='none';
+      img.parentNode.insertBefore(v,img.nextSibling);
+    }
+    return v;
+  }
+  function live(img){ var v=vid(img,false); return (v&&v.getAttribute('src'))?v:img; }
+  function tryPlay(v){
+    var p=v.play();
+    if(p&&p.catch) p.catch(function(){
+      // Autoplay refused — iOS Low Power Mode, a strict autoplay policy, or a backgrounded tab.
+      // Give the user real controls instead of a frozen first frame, and retry once the page
+      // is actually visible (which is when a phone returning from the app switcher lands here).
+      v.controls=true;
+      document.addEventListener('visibilitychange', function(){
+        if(document.visibilityState==='visible'){ var q=v.play(); if(q&&q.catch) q.catch(function(){}); }
+      }, {once:true});
+    });
+  }
+  function apply(img){
+    var el=live(img);
+    // never reveal a sourceless element — that is what produced an empty framed box when a
+    // toggle asked for a figure that has nothing loaded in it yet
+    el.style.display=(want(img)&&el.getAttribute('src'))?'block':'none';
+    var other=(el===img)?vid(img,false):img; if(other) other.style.display='none';
+  }
+  function clear(img){
+    if(!img) return;
+    var v=vid(img,false);
+    if(v){ try{v.pause();}catch(e){} v.onloadeddata=v.onerror=null; v.controls=false;
+           v.removeAttribute('src'); try{v.load();}catch(e){} v.style.display='none'; }
+    img.onload=img.onerror=null; img.removeAttribute('src'); img.style.display='none';
+    msg(img,'');
+  }
+  function set(img,urls,opts){
+    if(!img) return;
+    opts=opts||{}; urls=urls||{};
+    var label=opts.label||'animation';
+    var mp4=urls.mp4||null, gif=urls.gif||null, still=urls.still||null;
+    if(opts.visible!==undefined) want(img,opts.visible);
+    if(!mp4&&!gif&&!still){ clear(img); if(opts.onNone) opts.onNone(); return; }
+    // IN-PLACE SWAP between two stills of the SAME run (the horn linear/dB toggle, the RCS
+    // still toggle). Blanking first would be wrong here — the picture on screen is still valid —
+    // and it made the figure collapse and re-flow on every tap. Preload, then replace.
+    if(opts.swap && !mp4 && img.getAttribute('src')){
+      var swapUrl=gif||still, pre=new Image();
+      pre.onload=function(){ img.src=swapUrl; msg(img,''); apply(img); if(opts.onReady) opts.onReady(); };
+      pre.onerror=function(){ msg(img,'The '+label+' could not be loaded from the bridge.');
+                              if(opts.onFail) opts.onFail(); };
+      pre.src=swapUrl; return;
+    }
+    clear(img);
+    function done(){ msg(img,''); apply(img); if(opts.onReady) opts.onReady(); }
+    function useImg(url){
+      img.onload=done;
+      img.onerror=function(){ img.onload=img.onerror=null; img.removeAttribute('src'); img.style.display='none';
+                              msg(img,'The '+label+' could not be loaded from the bridge.');
+                              if(opts.onFail) opts.onFail(); };
+      msg(img,'Loading the '+label+' …'); img.src=url;
+    }
+    if(mp4){
+      var v=vid(img,true);
+      v.onloadeddata=function(){ tryPlay(v); done(); };
+      v.onerror=function(){ v.onloadeddata=v.onerror=null; v.removeAttribute('src'); v.style.display='none';
+                            if(gif||still) useImg(gif||still);
+                            else { msg(img,'The '+label+' could not be loaded from the bridge.'); if(opts.onFail) opts.onFail(); } };
+      msg(img,'Loading the '+label+' …'); v.src=mp4; try{ v.load(); }catch(e){}
+    } else useImg(gif||still);
+  }
+  // show/hide whichever element is currently live (used by the RCS lobe GIF <-> 3-D toggle)
+  function show(img,visible){ if(!img) return; want(img,visible); apply(img); }
+  return {set:set, clear:clear, show:show, live:live};
+})();
 
 // tab GROUPS: which pages light up which group button in the nav bar
 const TAB_GROUPS={ wg:['sim','cst','invdes','fit','space','compare'],
@@ -3750,9 +3931,9 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
     const r=new FileReader();r.onload=()=>{const pts=parseCSV(r.result);drawIL(pts);
       $('cst-il-msg').textContent='Loaded '+f.name+' — '+pts.length+' points vs model.';};r.readAsText(f);});
   ['cst-il-band','cst-il-len','cst-il-mat','cst-il-coats'].forEach(id=>$(id).addEventListener('input',()=>{ window.__ilOverride=null; drawIL(window.__cstIL); }));
-  window.cstLoadIL=function(text){window.__cstIL=parseCSV(text);drawIL(window.__cstIL);$('cst-il-msg').textContent='Loaded from openEMS run.';};
-  window.cstLoadRTA=function(text){window.__cstRTA=parseCSV(text);drawRTA(window.__cstRTA);};
-  window.cstLoadAngle=function(text){window.__cstAng=parseCSV(text);drawAngle(window.__cstAng);};
+  window.cstLoadIL=function(text){window.__cstIL=parseCSV(text);window.__cstILsrc='run';drawIL(window.__cstIL);$('cst-il-msg').textContent='Loaded from openEMS run.';};
+  window.cstLoadRTA=function(text){window.__cstRTA=parseCSV(text);window.__cstRTAsrc='run';drawRTA(window.__cstRTA);};
+  window.cstLoadAngle=function(text){window.__cstAng=parseCSV(text);window.__cstAngsrc='run';drawAngle(window.__cstAng);};
   // --- S-parameters (S11 & S21) chart ---
   function drawSpar(rows){
     const ds=[];
@@ -3785,9 +3966,9 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
     el.textContent=pw.toFixed(1)+'% through  (S21 = '+s21.toFixed(2)+' dB at '+best[0].toFixed(2)+' GHz)';
     el.style.color='var(--accent)';
   }
-  window.cstLoadSpar=function(text){window.__cstSP=parseCSV(text);drawSpar(window.__cstSP);};
+  window.cstLoadSpar=function(text){window.__cstSP=parseCSV(text);window.__cstSPsrc='run';drawSpar(window.__cstSP);};
   $('cst-sp-file').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;
-    const r=new FileReader();r.onload=()=>{window.__cstSP=parseCSV(r.result);drawSpar(window.__cstSP);
+    const r=new FileReader();r.onload=()=>{window.__cstSP=parseCSV(r.result);window.__cstSPsrc='user';drawSpar(window.__cstSP);
       $('cst-sp-msg').textContent='Loaded '+f.name+' — S11 & S21.';};r.readAsText(f);});
   { const pf=$('cst-pw-freq'); if(pf) pf.addEventListener('input',updatePower); }
 
@@ -3820,10 +4001,10 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
     else ffChart=new Chart($('cst-ff-chart'),{type:'line',data:{datasets:ds},options:lin('','θ (degrees)','Normalized pattern (dB)')});
   }
   // auto-load the openEMS NF2FF far-field produced by the "Far-field" simulation
-  window.cstLoadFF=function(text){window.__cstFF=parseCSV(text);drawFarfield(window.__cstFF);
+  window.cstLoadFF=function(text){window.__cstFF=parseCSV(text);window.__cstFFsrc='run';drawFarfield(window.__cstFF);
     if($('cst-ff-msg')) $('cst-ff-msg').textContent='Loaded openEMS NF2FF far-field (E/H-plane, normalized) — overlaid on the analytical pattern.';};
   if($('cst-ff-file')) $('cst-ff-file').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;
-    const r=new FileReader();r.onload=()=>{window.__cstFF=parseCSV(r.result);drawFarfield(window.__cstFF);$('cst-ff-msg').textContent='Loaded openEMS far-field: '+f.name+' (overlaid on the analytical pattern, normalized).';};r.readAsText(f);});
+    const r=new FileReader();r.onload=()=>{window.__cstFF=parseCSV(r.result);window.__cstFFsrc='user';drawFarfield(window.__cstFF);$('cst-ff-msg').textContent='Loaded openEMS far-field: '+f.name+' (overlaid on the analytical pattern, normalized).';};r.readAsText(f);});
   if($('oe-band')) $('oe-band').addEventListener('change',()=>drawFarfield());
   window.emBestAngle=function(coats){let best=0,bR=-1;for(let th=0;th<=85;th+=5){const r=rtaAngle(10,th,coats);if(r.R>bR){bR=r.R;best=th;}}return {angle:best,R:bR*100};};
 
@@ -3870,7 +4051,7 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
     $('cst-ang-msg').textContent = (cstRows&&cstRows.length) ? 'Solid = openEMS, dashed = model (TE, 10 GHz).' : 'Model shown (dashed): TE @ 10 GHz vs angle.';
   }
   $('cst-rta-file').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;
-    const r=new FileReader();r.onload=()=>{window.__cstRTA=parseCSV(r.result);drawRTA(window.__cstRTA);
+    const r=new FileReader();r.onload=()=>{window.__cstRTA=parseCSV(r.result);window.__cstRTAsrc='user';drawRTA(window.__cstRTA);
       $('cst-rta-msg').textContent='Loaded '+f.name+' — solid = openEMS, dashed = model.';};r.readAsText(f);});
   $('cst-rta-coats').addEventListener('input',()=>{drawRTA(window.__cstRTA);drawAngle(window.__cstAng);});
 
@@ -3913,7 +4094,10 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
       ? {mode:'coating', coatSigma:d.coatSigma, coatEps:1, coatEpsPP:0, coatMu:1, coatMuPP:0, subEps:d.subEps||1.9, display:d.display}
       : {mode:'solid', solidSigma:d.solidSigma, solidEps:1, solidEpsPP:0, solidMu:1, solidMuPP:0, display:d.display};
     window.__oeInjected={key:'__invdes', display:d.display, spec:spec};
-    const tab=[...document.querySelectorAll('.tab')].find(t=>t.dataset.page==='cst'); if(tab) tab.click();
+    // Since the v3.6 grouped nav there are no `.tab[data-page]` elements — the four .tab buttons
+    // carry data-group, so this used to find nothing and the whole hand-off ran against a hidden
+    // page (status written where nobody could see it, scrollIntoView a no-op).
+    if(window.activateTab) window.activateTab('cst');
     const so=$('oe-stack-on'); if(so) so.checked=false; if($('oe-stack-rows')) $('oe-stack-rows').style.display='none';
     if($('oe-band')){ $('oe-band').value=d.band; $('oe-band').dispatchEvent(new Event('change')); }
     if($('oe-coats')) $('oe-coats').value=d.coats||20;
@@ -3971,6 +4155,20 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
   updateWgMesh();
   const oeProg=window.makeProgress?window.makeProgress($('oe-progress')):{start(){},done(){},fail(){}};
   btn.addEventListener('click',async()=>{
+    // Drop the previous run's field figures NOW. Otherwise they sit there for the whole solve and
+    // then linger while the new (multi-megabyte) media downloads, which reads as "it didn't update".
+    animFig.clear($('oe-field-guide')); animFig.clear($('oe-field-reflector'));
+    // Tear down the rest of the previous run's visible surface, as the Horn and RCS tabs already do.
+    // #oe-summary and #oe-math live OUTSIDE #oe-result and were only ever written by their own click
+    // handlers, so an open Summary kept showing the previous material's numbers a few centimetres
+    // above the new results — and #oe-math doubles as the error log, so a failure's log survived the
+    // next successful run.
+    ['oe-result','oe-actions','oe-be'].forEach(function(id){ const e=$(id); if(e) e.style.display='none'; });
+    { const su=$('oe-summary'), ma=$('oe-math');
+      if(su){ su.style.display='none'; su.textContent=''; }
+      if(ma){ ma.style.display='none'; ma.textContent=''; }
+      const sbn=$('oe-summary-btn'); if(sbn) sbn.textContent='Summary';
+      const mbn=$('oe-math-btn');    if(mbn) mbn.textContent='Show math'; }
     const length=Math.max(40, parseFloat($('oe-length').value)||200);   // floor: the fixed Octave port z-indices need ~40mm of guide, else the run errors
     const sims=window.getSims?window.getSims():['guided','reflection'];
     const stackOn = $('oe-stack-on') && $('oe-stack-on').checked;
@@ -4024,9 +4222,18 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
       $('oe-result').style.display='block';
       // guided / reflection field figures — show only if produced
       const gfig=$('oe-field-guide').closest('figure'), rfig=$('oe-field-reflector').closest('figure');
-      const _gsrc=data.guide_gif||data.guide_still;   // freq-domain mode returns a still (no gif)
-      if(_gsrc){ gfig.style.display=''; $('oe-field-guide').src=_gsrc; } else gfig.style.display='none';
-      if(data.reflector_gif){ rfig.style.display=''; $('oe-field-reflector').src=data.reflector_gif; } else rfig.style.display='none';
+      // freq-domain mode returns a still (no animation). animFig prefers the small mp4, blanks the
+      // figure until the NEW media has actually loaded, and says so if it never does.
+      if(data.guide_mp4||data.guide_gif||data.guide_still){
+        gfig.style.display='';
+        animFig.set($('oe-field-guide'), {mp4:data.guide_mp4, gif:data.guide_gif, still:data.guide_still},
+                    {label:'guided-wave animation'});
+      } else { animFig.clear($('oe-field-guide')); gfig.style.display='none'; }
+      if(data.reflector_mp4||data.reflector_gif||data.reflector_still){
+        rfig.style.display='';
+        animFig.set($('oe-field-reflector'), {mp4:data.reflector_mp4, gif:data.reflector_gif, still:data.reflector_still},
+                    {label:'reflection animation'});
+      } else { animFig.clear($('oe-field-reflector')); rfig.style.display='none'; }
       window.__lastRun={label:data.label,band:cfg.band,material_key:cfg.material,coats:cfg.coats,length:cfg.length,ports:cfg.ports,
                         sigma:cfg.sigma,thick:cfg.thick,epsr:cfg.epsr,epspp:cfg.epspp,mur:cfg.mur,mupp:cfg.mupp,
                         port_sep_mm:(data.port_sep_mm||cfg.length),
@@ -4036,6 +4243,10 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
                         guide_gif:data.guide_gif,reflector_gif:data.reflector_gif,
                         csv:data.csv,rta:data.rta,results:results};
       $('oe-actions').style.display='flex';
+      // If the user had Summary / Show math open, re-render them for THIS run rather than leaving
+      // the previous run's text (both read only from __lastRun, so this is a pure re-render).
+      { const su=$('oe-summary'); if(su && su.style.display==='block') su.textContent=buildSummary();
+        const ma=$('oe-math');    if(ma && ma.style.display==='block') ma.textContent=showMathText(); }
       // sync + load insertion-loss / S-parameters, if a guided/sparams run produced them
       $('cst-il-band').value=cfg.band;
       $('cst-il-len').value=((data.port_sep_mm||cfg.length)/1000);   // openEMS S21 spans the port-plane separation, not p_len — match it so the dashed model overlays 1:1
@@ -4043,11 +4254,22 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
       // Draw the analytical "This model" curve for the EXACT material just simulated (not a 4-way dropdown guess).
       const _solid = runSpec && runSpec.mode==='solid';
       window.__ilOverride={ sigma:cfg.sigma, t:(_solid?null:Math.max(cfg.coats*1e-6,1e-6)), mur:cfg.mur||1, epsPP:cfg.epspp||0, muPP:cfg.mupp||0, label:data.label };
+      // A run publishes a new identity (__lastRun / __ilOverride) unconditionally, so any cached
+      // openEMS curve it did NOT refresh would be relabelled as THIS run's material. A 1-port run,
+      // an unticked sim, or a fail-soft sub-sim all legitimately return null here — so clear first.
+      // User-uploaded measured overlays are tagged 'user' and are never touched.
+      if(!data.csv && window.__cstILsrc!=='user'){ window.__cstIL=null;
+        $('cst-il-msg').textContent='This run produced no S21 (1-port, or no guided/sparams sim) — analytical model only.'; }
+      if(!data.rta && window.__cstRTAsrc!=='user') window.__cstRTA=null;
+      if(!(results.angle&&results.angle.csv) && window.__cstAngsrc!=='user') window.__cstAng=null;
+      if(!(results.sparams&&results.sparams.csv) && window.__cstSPsrc!=='user') window.__cstSP=null;
+      if(!(results.farfield&&results.farfield.csv) && window.__cstFFsrc!=='user') window.__cstFF=null;
       if(data.csv){ try{ const txt=await (await fetch(data.csv)).text(); if(window.cstLoadIL) window.cstLoadIL(txt);}catch(e){} }
       if(data.rta){ try{ const rt=await (await fetch(data.rta)).text(); if(window.cstLoadRTA) window.cstLoadRTA(rt);}catch(e){} }
       if(results.angle&&results.angle.csv){ try{ const at=await (await fetch(results.angle.csv)).text(); if(window.cstLoadAngle) window.cstLoadAngle(at);}catch(e){} }
       if(results.sparams&&results.sparams.csv){ try{ const st=await (await fetch(results.sparams.csv)).text(); if(window.cstLoadSpar) window.cstLoadSpar(st);}catch(e){} }
       if(results.farfield&&results.farfield.csv){ try{ const ft=await (await fetch(results.farfield.csv)).text(); if(window.cstLoadFF) window.cstLoadFF(ft);}catch(e){} }
+      if(window.cstShow) window.cstShow();   // repaint every chart, including the ones just cleared
       // ---- extra sim outputs (field/loss map, angle note) ----
       const ex=$('oe-extra'); if(ex){ ex.innerHTML='';
         if(results.fieldmap&&results.fieldmap.loss){
@@ -4260,11 +4482,16 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
       zip.file('summary.txt', buildSummary());
       zip.file('manifest.json', JSON.stringify(oeManifest(),null,2));
       // static field stills (PNG)
-      try{ zip.file('field_guide.png', await (await fetch(r.guide_still)).blob()); }catch(e){}
-      try{ zip.file('field_reflection.png', await (await fetch(r.reflector_still)).blob()); }catch(e){}
+      try{ if(r.guide_still) zip.file('field_guide.png', await (await fetch(r.guide_still)).blob()); }catch(e){}
+      try{ if(r.reflector_still) zip.file('field_reflection.png', await (await fetch(r.reflector_still)).blob()); }catch(e){}
       // animations (GIF)
-      try{ zip.file('field_guide.gif', await (await fetch(r.guide_gif)).blob()); }catch(e){}
-      try{ zip.file('field_reflection.gif', await (await fetch(r.reflector_gif)).blob()); }catch(e){}
+      // Both formats of each animation: the .gif is the portable archive copy, the .mp4 is the
+      // same frames ~19x smaller (and is what was on screen), which matters when the ZIP is being
+      // pulled to or shared from a phone. Each guarded — a URL is null when its render produced nothing.
+      try{ if(r.guide_gif) zip.file('field_guide.gif', await (await fetch(r.guide_gif)).blob()); }catch(e){}
+      try{ if(r.guide_mp4) zip.file('field_guide.mp4', await (await fetch(r.guide_mp4)).blob()); }catch(e){}
+      try{ if(r.reflector_gif) zip.file('field_reflection.gif', await (await fetch(r.reflector_gif)).blob()); }catch(e){}
+      try{ if(r.reflector_mp4) zip.file('field_reflection.mp4', await (await fetch(r.reflector_mp4)).blob()); }catch(e){}
       // the three section charts -> PNG (white background)
       const chartPNG=id=>new Promise(res=>{const c=document.getElementById(id); if(!c||!c.width){res(null);return;}
         const t=document.createElement('canvas');t.width=c.width;t.height=c.height;const x=t.getContext('2d');
@@ -4535,8 +4762,10 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
         try{ if(d.sparamsCsv) f.file('sparams.csv', await (await fetch(d.sparamsCsv)).text()); }catch(e){}
         try{ if(d.guide_still) f.file('field_guide.png', await (await fetch(d.guide_still)).blob()); }catch(e){}
         try{ if(d.guide_gif) f.file('field_guide.gif', await (await fetch(d.guide_gif)).blob()); }catch(e){}
+        try{ if(d.guide_mp4) f.file('field_guide.mp4', await (await fetch(d.guide_mp4)).blob()); }catch(e){}
         try{ if(d.reflector_still) f.file('field_reflection.png', await (await fetch(d.reflector_still)).blob()); }catch(e){}
         try{ if(d.reflector_gif) f.file('field_reflection.gif', await (await fetch(d.reflector_gif)).blob()); }catch(e){}
+        try{ if(d.reflector_mp4) f.file('field_reflection.mp4', await (await fetch(d.reflector_mp4)).blob()); }catch(e){}
         try{ if(d.fieldmap) f.file('field_loss_map.png', await (await fetch(d.fieldmap)).blob()); }catch(e){}
       }
       const blob=await zip.generateAsync({type:'blob'});
@@ -4602,8 +4831,9 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
 
   // ---- field linear/dB toggle ----
   function setField(mode){
-    const src=fieldSrc[mode]||fieldSrc.lin||fieldSrc.db; if(!src){ fieldImg.style.display='none'; return; }
-    fieldImg.src=src+'&_='+Date.now(); fieldImg.style.display='block';
+    const src=fieldSrc[mode]||fieldSrc.lin||fieldSrc.db;
+    if(!src){ animFig.clear(fieldImg); return; }
+    animFig.set(fieldImg, {still:src}, {label:'field map', swap:true});
     document.querySelectorAll('.hrn-fld-tog').forEach(b=>b.classList.toggle('primary', b.dataset.mode===mode));
     const cap=$('hrn-field-cap'); if(cap) cap.textContent = (mode==='db'
       ? 'Interior + radiated |E|, normalized dB (0 to −40 dB). The amplitude genuinely falls as the wave spreads through the flare and radiates (~1/√area, then ~1/r) — the dB scale keeps the guided mode and radiated lobes visible throughout.'
@@ -4756,6 +4986,9 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
       const c3=await chartPNG('hrn-pat-chart');  if(c3) zip.file('radiation_pattern.png',c3);
       if(fieldSrc.db){ const b=await fetchBlob(fieldSrc.db);  if(b) zip.file('field_dB.png',b); }
       if(fieldSrc.lin){ const b=await fetchBlob(fieldSrc.lin); if(b) zip.file('field_linear.png',b); }
+      // the time-domain field animation was never in this ZIP — only the two stills were
+      if(j.field_anim){ const b=await fetchBlob(j.field_anim); if(b) zip.file('field_animation.gif',b); }
+      if(j.field_anim_mp4){ const b=await fetchBlob(j.field_anim_mp4); if(b) zip.file('field_animation.mp4',b); }
       if(j.geom_img){ const b=await fetchBlob(j.geom_img);    if(b) zip.file('geometry.png',b); }
       zip.file('gain_vs_frequency.csv', csvOf(['freq_ghz','Dmax_dBi','s11_db','rad_eff_pct','aperture_eff_pct'],
         (j.gain_curve||[]).map(r=>[r.freq_ghz,r.Dmax_dBi,r.s11_db,r.rad_eff_pct,r.aperture_eff_pct])));
@@ -4786,6 +5019,8 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
       const c3=await chartPNG('hrn-pat-chart');  if(c3) zip.file('radiation_pattern.png',c3);
       if(fieldSrc.db){ const b=await fetchBlob(fieldSrc.db);  if(b) zip.file('field_dB.png',b); }
       if(fieldSrc.lin){ const b=await fetchBlob(fieldSrc.lin); if(b) zip.file('field_linear.png',b); }
+      if(j.field_anim){ const b=await fetchBlob(j.field_anim); if(b) zip.file('field_animation.gif',b); }
+      if(j.field_anim_mp4){ const b=await fetchBlob(j.field_anim_mp4); if(b) zip.file('field_animation.mp4',b); }
       if(j.geom_img){ const b=await fetchBlob(j.geom_img);     if(b) zip.file('geometry.png',b); }
       if(j.excel_url){ const b=await fetchBlob(j.excel_url);   if(b) zip.file('horn_results.xlsx',b); }
       const gc=j.gain_curve||[], sc=j.s11_curve||[], p=j.pattern||{}, th=p.theta||[];
@@ -4834,7 +5069,13 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
       const j=await res.json();
       if(!j.ok){ stopProg(false); status.textContent='Error at '+(j.stage||'run')+': '+String(j.log||'').split('\n').slice(-3).join(' ').slice(0,300); status.style.color='#c0392b'; runB.disabled=false; if(runAllB)runAllB.disabled=false; return; }
       stopProg(true);
-      status.textContent='Done in '+j.seconds+' s · '+j.coating+' coating · '+j.band+'-band'; status.style.color='var(--accent)';
+      // the four post-solve python steps used to have their return codes logged and ignored, so a
+      // failed wall-loss step republished the PREVIOUS run's coating table as ok:true
+      var _pe=j.errors&&Object.keys(j.errors).length?Object.keys(j.errors):null;
+      status.textContent='Done in '+j.seconds+' s · '+j.coating+' coating · '+j.band+'-band'
+                         +(_pe?('  ·  incomplete: '+_pe.join(', ')+' (see console)'):'');
+      status.style.color=_pe?'#9a6a16':'var(--accent)';
+      if(_pe) console.log('horn post-processing issues', j.errors);
       const d=j.dims||{}, g=j.gain||{}, s=j.selected||{}, m=j.metrics||{};
       gainD.innerHTML='<strong>Directivity:</strong> '+(g.Dmax_dBi!=null?g.Dmax_dBi.toFixed(2)+' dBi':'—')+
         '  ·  <strong>S11:</strong> '+(g.s11_db!=null?g.s11_db.toFixed(1)+' dB':'—')+
@@ -4862,15 +5103,16 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
 
       const bust=Date.now();
       fieldSrc={lin:j.field_img_lin||j.field_img||null, db:j.field_img_db||j.field_img||null};
-      if(j.field_anim){   // time-domain: show the animation, hide the dB/linear toggle
+      if(j.field_mode==='time' && (j.field_anim||j.field_anim_mp4)){   // time-domain: animation, no dB/linear toggle
         document.querySelectorAll('.hrn-fld-tog').forEach(b=>b.style.display='none');
-        fieldImg.src=j.field_anim+'&_='+bust; fieldImg.style.display='block';
+        animFig.set(fieldImg, {mp4:j.field_anim_mp4, gif:j.field_anim}, {label:'field animation'});
         const cap=$('hrn-field-cap'); if(cap) cap.textContent='Time-domain animation — the TE10 pulse enters the feed, expands through the flare, and radiates from the aperture (openEMS time-stepping).';
       } else {
         document.querySelectorAll('.hrn-fld-tog').forEach(b=>b.style.display='');
         setField(fieldSrc.db ? 'db' : 'lin');
       }
-      if(geomImg){ if(j.geom_img){ geomImg.src=j.geom_img+'&_='+bust; geomImg.style.display='block'; } else geomImg.style.display='none'; }
+      if(geomImg){ if(j.geom_img) animFig.set(geomImg, {still:j.geom_img+'&_='+bust}, {label:'geometry render'});
+                   else animFig.clear(geomImg); }
       if(window.hrnField3D) window.hrnField3D.load(j.field3d||null);   // real solved |E| volume (interactive)
       if(j.excel_url){ xlsxA.href=j.excel_url; xlsxA.style.display='inline-block'; } else xlsxA.style.display='none';
       const xlsx2=$('hrn-xlsx2'); if(xlsx2){ if(j.excel_url){ xlsx2.href=j.excel_url; xlsx2.style.display='inline-block'; } else xlsx2.style.display='none'; }
@@ -6097,19 +6339,26 @@ window.LabCal = (function(){
     return front;
   }
   let chart;
+  // The loss budget used to be read as `parseFloat(v)||1e9`, where 1e9 meant "unconstrained".
+  // Two problems: `||` is falsy-based, so typing 0 (a lossless design — the STRICTEST possible
+  // budget) silently became unconstrained; and the sentinel was interpolated into user-facing text
+  // and into the printed report as if it were a real threshold ("loss <= 1000000000 dB/m").
+  // null now means unconstrained, 0 means 0, and the label says so in words.
+  function lossTarget(){ const v=parseFloat($('invdes-loss').value); return (isFinite(v)&&v>=0)?v:null; }
+  function targetLbl(t){ return t===null ? 'no loss constraint' : ('loss ≤ '+t+' dB/m'); }
   function run(){
     if(!window.EM||!window.SIM){$('invdes-status').textContent='Engine not ready.';return;}
-    const bk=$('invdes-band').value, obj=$('invdes-obj').value, target=parseFloat($('invdes-loss').value)||1e9,
+    const bk=$('invdes-band').value, obj=$('invdes-obj').value, target=lossTarget(),
           launch=parseFloat($('invdes-launch').value)||7000, O=OBJ[obj];
     const yval=c=> obj==='mass'? c.mass*1000 : c[obj];
     const cal=(window.LabCal&&window.LabCal.useIt())?window.LabCal.learnedSigma():null;
     const all=evalAll(bk,launch), front=pareto(all,obj);
-    const feasible=all.filter(c=>c.loss<=target);
+    const feasible = (target===null) ? all.slice() : all.filter(c=>c.loss<=target);
     let rec, note='';
     if(feasible.length){ rec=feasible.reduce((a,b)=>b[obj]<a[obj]?b:a); }
     else { rec=all.reduce((a,b)=>a.loss<b.loss?a:b); note=' No design meets '+target+' dB/m; showing the lowest-loss design instead.'; }
     $('invdes-best').style.display='block';
-    $('invdes-best').innerHTML=(cal?'<div style="font-size:12px;color:var(--accent);margin-bottom:8px;font-weight:600;">◆ Using your lab-calibrated coating σ = '+cal.toExponential(2)+' S/m ('+window.LabCal.count()+' sample'+(window.LabCal.count()>1?'s':'')+')</div>':'')+'<div style="font-family:var(--font-mono);font-size:11px;color:var(--muted);letter-spacing:.08em;">RECOMMENDED — lowest '+O.lbl.toLowerCase()+(feasible.length?(' under '+target+' dB/m'):'')+'</div>'+
+    $('invdes-best').innerHTML=(cal?'<div style="font-size:12px;color:var(--accent);margin-bottom:8px;font-weight:600;">◆ Using your lab-calibrated coating σ = '+cal.toExponential(2)+' S/m ('+window.LabCal.count()+' sample'+(window.LabCal.count()>1?'s':'')+')</div>':'')+'<div style="font-family:var(--font-mono);font-size:11px;color:var(--muted);letter-spacing:.08em;">RECOMMENDED — lowest '+O.lbl.toLowerCase()+(feasible.length?(target===null?' (no loss constraint)':(' under '+target+' dB/m')):'')+'</div>'+
       '<div style="font-size:22px;font-weight:600;margin:4px 0 8px;">'+rec.desc+(rec.type==='coat'?' · '+rec.coats+' coats':'')+'</div>'+
       '<div style="display:flex;gap:22px;flex-wrap:wrap;font-family:var(--font-mono);font-size:13px;">'+
       '<span>Loss <strong style="color:var(--accent);">'+rec.loss.toFixed(3)+'</strong> dB/m</span>'+
@@ -6161,12 +6410,12 @@ window.LabCal = (function(){
   $('invdes-run').addEventListener('click',run);
   // ---- multi-band trade-space report ("produce a result") ----
   function tradeReport(){
-    const obj=$('invdes-obj').value, target=parseFloat($('invdes-loss').value)||1e9, launch=parseFloat($('invdes-launch').value)||7000, O=OBJ[obj];
+    const obj=$('invdes-obj').value, target=lossTarget(), launch=parseFloat($('invdes-launch').value)||7000, O=OBJ[obj];
     const bands=['X','Ku','K'], per={}, frontAll=[];
-    bands.forEach(bk=>{ const all=evalAll(bk,launch), front=pareto(all,obj), feas=all.filter(c=>c.loss<=target);
+    bands.forEach(bk=>{ const all=evalAll(bk,launch), front=pareto(all,obj), feas=(target===null?all.slice():all.filter(c=>c.loss<=target));
       per[bk]=feas.length?feas.reduce((a,b)=>b[obj]<a[obj]?b:a):all.reduce((a,b)=>a.loss<b.loss?a:b);
       front.forEach(c=>frontAll.push(Object.assign({band:bk},c))); });
-    let h='<div class="panel" style="padding:14px 16px;border-left:3px solid var(--accent);"><div style="font-family:var(--font-mono);font-size:11px;color:var(--muted);letter-spacing:.08em;">TRADE-SPACE — best design per band (min '+O.lbl.toLowerCase()+' under '+target+' dB/m, launch $'+launch+'/kg)</div>'+
+    let h='<div class="panel" style="padding:14px 16px;border-left:3px solid var(--accent);"><div style="font-family:var(--font-mono);font-size:11px;color:var(--muted);letter-spacing:.08em;">TRADE-SPACE — best design per band (min '+O.lbl.toLowerCase()+', '+targetLbl(target)+', launch $'+launch+'/kg)</div>'+
       '<table style="width:100%;border-collapse:collapse;font-size:13px;margin:8px 0;"><thead><tr>'+['Band','Best design','Coats','Loss (dB/m)','Mass (g/m)','Delivered $/m','CO₂ (kg/m)'].map(x=>'<th style="text-align:left;padding:5px 8px;border-bottom:1px solid var(--line);color:var(--muted);font-weight:600;">'+x+'</th>').join('')+'</tr></thead><tbody>';
     bands.forEach(bk=>{const c=per[bk]; h+='<tr style="border-bottom:1px solid var(--line);"><td style="padding:5px 8px;">'+bk+'</td><td style="padding:5px 8px;font-weight:600;">'+c.desc+'</td><td style="padding:5px 8px;">'+(c.type==='coat'?c.coats:'—')+'</td><td style="padding:5px 8px;">'+c.loss.toFixed(3)+'</td><td style="padding:5px 8px;">'+(c.mass*1000).toFixed(1)+'</td><td style="padding:5px 8px;">$'+c.deliv.toFixed(0)+'</td><td style="padding:5px 8px;">'+c.co2.toFixed(2)+'</td></tr>';});
     h+='</tbody></table><div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="btn" id="invdes-trade-csv">Download frontier CSV</button><button class="btn" id="invdes-trade-print">Save report as PDF</button></div>'+
@@ -6179,7 +6428,7 @@ window.LabCal = (function(){
     });
     $('invdes-trade-print').addEventListener('click',()=>{
       const w=window.open('','_blank'); if(!w){alert('Allow pop-ups to export the report.');return;}
-      let b='<h1>Lightweight waveguide — trade-space report</h1><p>Generated '+new Date().toLocaleString()+' · v3.8 · objective: minimize '+O.lbl+' subject to loss ≤ '+target+' dB/m · launch $'+launch+'/kg'+((window.LabCal&&window.LabCal.useIt())?' · coating σ from lab calibration':'')+'</p><table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;font-family:sans-serif;font-size:13px;"><tr><th>Band</th><th>Best design</th><th>Coats</th><th>Loss dB/m</th><th>Mass g/m</th><th>Delivered $/m</th><th>CO2 kg/m</th></tr>';
+      let b='<h1>Lightweight waveguide — trade-space report</h1><p>Generated '+new Date().toLocaleString()+' · v3.8 · objective: minimize '+O.lbl+' subject to '+targetLbl(target)+' · launch $'+launch+'/kg'+((window.LabCal&&window.LabCal.useIt())?' · coating σ from lab calibration':'')+'</p><table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;font-family:sans-serif;font-size:13px;"><tr><th>Band</th><th>Best design</th><th>Coats</th><th>Loss dB/m</th><th>Mass g/m</th><th>Delivered $/m</th><th>CO2 kg/m</th></tr>';
       bands.forEach(bk=>{const c=per[bk]; b+='<tr><td>'+bk+'</td><td>'+c.desc+'</td><td>'+(c.type==='coat'?c.coats:'-')+'</td><td>'+c.loss.toFixed(3)+'</td><td>'+(c.mass*1000).toFixed(1)+'</td><td>'+c.deliv.toFixed(0)+'</td><td>'+c.co2.toFixed(2)+'</td></tr>';});
       b+='</table><p style="font-family:sans-serif;font-size:12px;color:#555;margin-top:12px;">Analytical TE10 wall loss at band centre (Pozar, Microwave Engineering); mass, cost and CO2 from the cited material catalog. Screening result — confirm a chosen design with the full-wave openEMS solver.</p>';
       w.document.write('<html><head><title>Trade-space report</title></head><body style="font-family:sans-serif;padding:24px;">'+b+'</body></html>'); w.document.close(); w.focus(); setTimeout(()=>w.print(),300);
@@ -7023,7 +7272,11 @@ window.LabCal = (function(){
     if($('rcs-freq-fig')) $('rcs-freq-fig').style.display = has('monostatic') ? '' : 'none';
     if($('rcs-hplane-fig')) $('rcs-hplane-fig').style.display = has('bistatic-h') ? '' : 'none';
     if($('rcs-eplane-fig')) $('rcs-eplane-fig').style.display = has('bistatic-e') ? '' : 'none';
-    var fg = r&&r.bare&&r.bare.field_gif, lb = r&&r.bare&&r.bare.lobe_gif;
+    var fg = r&&r.bare&&r.bare.field_gif;
+    // The interactive Three.js lobe is driven by lobe_grid, which arrives independently of the
+    // pyvista GIF render. Gating the panel on lobe_gif alone hid a perfectly good interactive view
+    // whenever that render fail-softed (the common case on the headless Windows box).
+    var lb = r&&r.bare&&(r.bare.lobe_gif||r.bare.lobe_mp4||(r.bare.lobe_grid&&r.bare.lobe_grid.length));
     if($('rcs-field-fig')) $('rcs-field-fig').style.display = (has('field') && fg) ? '' : 'none';
     if($('rcs-lobe-fig'))  $('rcs-lobe-fig').style.display  = (has('lobe3d') && lb) ? '' : 'none';
     if($('rcs-aspect-fig')) $('rcs-aspect-fig').style.display = (has('aspect') && r && r.aspect && r.aspect.length) ? '' : 'none';
@@ -7045,8 +7298,11 @@ window.LabCal = (function(){
   var fieldMode='gif';
   function setFieldImg(){
     document.querySelectorAll('.rcs-fld-tog').forEach(function(b){ b.classList.toggle('primary', b.getAttribute('data-mode')===fieldMode); });
-    var r=window.__rcsRun; if(!r||!r.bare||!r.bare.field_gif||!$('rcs-field-img')) return;
-    $('rcs-field-img').src = (fieldMode==='still' && r.bare.field_still) ? r.bare.field_still : r.bare.field_gif;
+    var r=window.__rcsRun, im=$('rcs-field-img'); if(!im) return;
+    if(!r||!r.bare||!(r.bare.field_gif||r.bare.field_mp4||r.bare.field_still)){ animFig.clear(im); return; }
+    if(fieldMode==='still' && r.bare.field_still) animFig.set(im, {still:r.bare.field_still}, {label:'steady |E| still', swap:true});
+    else animFig.set(im, {mp4:r.bare.field_mp4, gif:r.bare.field_gif, still:r.bare.field_still},
+                     {label:'scattered-field animation'});
   }
 
   function headline(){
@@ -7154,10 +7410,24 @@ window.LabCal = (function(){
   var lobeMode='3d';
   function syncLobe(){
     var r=window.__rcsRun, has3d=r&&r.bare&&r.bare.lobe_grid&&r.bare.lobe_grid.length;
-    document.querySelectorAll('.rcs-lobe-tog').forEach(function(b){ b.classList.toggle('primary', b.getAttribute('data-mode')===lobeMode); });
-    var d3=$('rcs-lobe3d'), img=$('rcs-lobe-img');
+    var hasGif=r&&r.bare&&(r.bare.lobe_gif||r.bare.lobe_mp4);
+    // If the pyvista render fail-softed but the grid came back, the interactive view is the ONLY
+    // thing that can be shown — so force it, disable the dead "Rendered GIF" toggle, and say so
+    // rather than leaving a visible panel with an empty image.
+    if(has3d && !hasGif) lobeMode='3d';
+    document.querySelectorAll('.rcs-lobe-tog').forEach(function(b){
+      var m=b.getAttribute('data-mode');
+      b.classList.toggle('primary', m===lobeMode);
+      if(m==='gif'){ b.disabled=!hasGif; b.style.opacity=hasGif?'':'0.45';
+                     b.title=hasGif?'':'The server-rendered GIF was not produced for this run.'; }
+    });
+    var d3=$('rcs-lobe3d'), img=$('rcs-lobe-img'), nt=$('rcs-lobe-note');
     if(d3) d3.style.display=(lobeMode==='3d'&&has3d)?'block':'none';
-    if(img) img.style.display=(lobeMode==='3d'&&has3d)?'none':'';
+    if(img) animFig.show(img, !(lobeMode==='3d'&&has3d));
+    if(nt){ var why=(r&&r.errors&&(r.errors.lobe_render_bare||r.errors.lobe_render))||null;
+      if(has3d&&!hasGif){ nt.style.display='block';
+        nt.textContent='The server-rendered lobe animation was not produced for this run'+(why?(' ('+String(why).slice(0,90)+')'):'')+' — showing the interactive view, which uses the same solved data.'; }
+      else nt.style.display='none'; }
     if(lobeMode==='3d'&&has3d&&window.rcsLobe3D){ window.rcsLobe3D.load(r.bare.lobe_grid, sizes().inc); }
   }
 
@@ -7385,7 +7655,12 @@ window.LabCal = (function(){
         if(d.reduction_db!=null) msg+=' The material '+(d.reduction_db>=0?'reduces':'INCREASES')+' backscatter by '+Math.abs(d.reduction_db).toFixed(1)+' dB at '+d.f0_ghz+' GHz.';
         if(d.errors&&Object.keys(d.errors).length){ msg+='  (issue: '+Object.keys(d.errors).join(', ')+')'; console.log('RCS issues',d.errors); }
         $('rcs-status').textContent=msg; rcsProg.done('Done in '+d.seconds+' s');
-        if(d.bare&&d.bare.lobe_gif&&$('rcs-lobe-img')) $('rcs-lobe-img').src=d.bare.lobe_gif;
+        if($('rcs-lobe-img')){
+          if(d.bare&&(d.bare.lobe_gif||d.bare.lobe_mp4))
+            animFig.set($('rcs-lobe-img'), {mp4:d.bare.lobe_mp4, gif:d.bare.lobe_gif},
+                        {label:'rotating 3-D lobe', onReady:syncLobe, onFail:syncLobe});
+          else animFig.clear($('rcs-lobe-img'));
+        }
         fieldMode='gif'; setFieldImg();
         lobeMode = (d.bare&&d.bare.lobe_grid&&d.bare.lobe_grid.length)?'3d':'gif';   // prefer interactive when we have the grid
         buildFiles(d); buildSummary(d); buildRcsMath(d);
@@ -7443,8 +7718,11 @@ window.LabCal = (function(){
       for(var i=0;i<pairs.length;i++){ var png=await rcsChartPNG(pairs[i][0]); if(png) zip.file(pairs[i][1], png); }
       // GIFs / stills (server-rendered)
       if(d.bare&&d.bare.field_gif){ var b1=await rcsFetchBlob(d.bare.field_gif); if(b1) zip.file('scattered_field.gif', b1); }
+      // the mp4 is the same frames ~19x smaller, and is what was actually on screen
+      if(d.bare&&d.bare.field_mp4){ var b1m=await rcsFetchBlob(d.bare.field_mp4); if(b1m) zip.file('scattered_field.mp4', b1m); }
       if(d.bare&&d.bare.field_still){ var b2=await rcsFetchBlob(d.bare.field_still); if(b2) zip.file('scattered_field_still.png', b2); }
       if(d.bare&&d.bare.lobe_gif){ var b3=await rcsFetchBlob(d.bare.lobe_gif); if(b3) zip.file('scattering_lobe_3d.gif', b3); }
+      if(d.bare&&d.bare.lobe_mp4){ var b3m=await rcsFetchBlob(d.bare.lobe_mp4); if(b3m) zip.file('scattering_lobe_3d.mp4', b3m); }
       // raw CSV curves
       var files=window.__rcsFiles||[];
       for(var j=0;j<files.length;j++){ var cb=await rcsFetchBlob(files[j].url); if(cb) zip.file('data/'+files[j].name, cb); }
@@ -7828,8 +8106,10 @@ window.LabCal = (function(){
     var mp=rcsbMatProps(), size1=parseFloat($('rcsb-size1').value)||15, thick=parseFloat($('rcsb-thick').value)||2, inc=0;
     $('rcsb-run').disabled=true; $('rcsb-stop').style.display='';
     var prog=window.makeProgress?window.makeProgress($('rcsb-progress')):{start:function(){},done:function(){},fail:function(){}};
+    var fails=[], stopReason=null;      // the loop used to end with one unconditional "Done:" line,
+                                        // which overwrote the real error in the same synchronous block
     for(var i=0;i<vals.length;i++){
-      if(batchStop) break;
+      if(batchStop){ stopReason='stopped'; break; }
       var val=vals[i], cfg={shape:shape,size1:size1,size2:60,size3:60,band:band,inc_deg:inc,pol:'v',
         construct:construct,cells:cells,nfreq:41,endcrit:1e-4,sims:['monostatic'],
         sigma:mp.sigma,epsr:mp.epsr,epspp:mp.epspp,mur:mp.mur,mupp:mp.mupp,thick:thick/1000,label:mp.label};
@@ -7839,14 +8119,38 @@ window.LabCal = (function(){
       prog.start(60,null,{kind:'rcs',target_db:40});
       try{
         var d=await fetch('/run_rcs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg)}).then(function(r){return r.json();});
+        // prog.done() only AFTER the response is known good — it used to paint the bar 100% green
+        // even for a failed solve.
+        if(!d.ok){
+          var m1=String(d.log||d.stage||'').slice(0,160);
+          fails.push({val:val,msg:m1}); prog.fail('Solve failed at '+v+'='+val);
+          $('rcsb-status').textContent='Error at '+v+'='+val+': '+m1; continue;
+        }
         prog.done('');
-        if(!d.ok){ $('rcsb-status').textContent='Error at '+v+'='+val+': '+String(d.log||d.stage||'').slice(0,120); continue; }
         var src=(d.coated&&d.coated.freq&&d.coated.freq.length)?d.coated:d.bare, mid=src.freq[Math.floor(src.freq.length/2)];
         batchRows.push({val:val, dbsm:mid.dbsm, reduction:(d.reduction_db!=null?d.reduction_db:null), seconds:d.seconds});
         drawBatch();
-      }catch(e){ prog.fail(''); $('rcsb-status').textContent='Bridge error at '+v+'='+val+' — is openEMS/openems_server.py running?'; break; }
+      }catch(e){ prog.fail('');
+        stopReason='bridge'; fails.push({val:val,msg:String(e&&e.message||e)});
+        $('rcsb-status').textContent='Bridge error at '+v+'='+val+' — is openEMS/openems_server.py running?';
+        break; }
     }
-    $('rcsb-status').textContent='Done: '+batchRows.length+' of '+vals.length+' solves complete.';
+    // Three terminal states that used to collapse into one cheerful line.
+    var st=$('rcsb-status');
+    if(stopReason==='bridge'){
+      st.style.color='#c0392b';
+      st.textContent='Lost the bridge after '+batchRows.length+' of '+vals.length+' solves — '+
+                     ((fails[fails.length-1]||{}).msg||'is openEMS/openems_server.py running?');
+    } else if(stopReason==='stopped'){
+      st.style.color=''; st.textContent='Stopped by you after '+batchRows.length+' of '+vals.length+' solves.';
+    } else if(fails.length){
+      st.style.color='#c0392b';
+      st.textContent='Finished '+batchRows.length+' of '+vals.length+'; '+fails.length+' failed (last: '+
+                     ((fails[fails.length-1]||{}).msg||'see console')+')';
+      console.log('batch sweep failures', fails);
+    } else {
+      st.style.color=''; st.textContent='Done: '+batchRows.length+' of '+vals.length+' solves complete.';
+    }
     $('rcsb-run').disabled=false; $('rcsb-stop').style.display='none'; batchRunning=false;
   }
 
@@ -7858,6 +8162,30 @@ window.LabCal = (function(){
     function ensure(){ if(renderer) return true; try{
       renderer=new THREE.WebGLRenderer({antialias:true,alpha:true}); var s=sz(); renderer.setSize(s[0],s[1]); renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2)); C.appendChild(renderer.domElement);
       scene=new THREE.Scene(); camera=new THREE.PerspectiveCamera(45,s[0]/s[1],0.01,100); camera.position.set(0,0,baseDist); group=new THREE.Group(); scene.add(group);
+      // TOUCH: this was the only one of the five Three.js viewers with no touch handlers, while the
+      // pointer:coarse rule set touch-action:none on it — so on a phone it neither rotated NOR let the
+      // page scroll. Mirrors the CAD viewer: one finger rotates, two fingers pinch to zoom, and
+      // touch-action is set on the CANVAS only so the container's margins still scroll the page.
+      renderer.domElement.style.touchAction='none';
+      (function(){
+        var t1=null, pd=0;
+        renderer.domElement.addEventListener('touchstart',function(e){
+          if(e.touches.length===1){ t1={x:e.touches[0].clientX,y:e.touches[0].clientY}; pd=0; }
+          else if(e.touches.length===2){ t1=null;
+            pd=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY); }
+        },{passive:true});
+        renderer.domElement.addEventListener('touchmove',function(e){
+          if(e.touches.length===1&&t1){
+            rotY+=(e.touches[0].clientX-t1.x)*0.01; rotX+=(e.touches[0].clientY-t1.y)*0.01;
+            rotX=Math.max(-1.5,Math.min(1.5,rotX));
+            t1={x:e.touches[0].clientX,y:e.touches[0].clientY}; e.preventDefault();
+          } else if(e.touches.length===2&&pd>0){
+            var nd=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+            dist=Math.max(0.4,Math.min(3,dist*(pd/nd))); pd=nd; e.preventDefault();
+          }
+        },{passive:false});
+        renderer.domElement.addEventListener('touchend',function(){ t1=null; pd=0; },{passive:true});
+      })();
       C.addEventListener('mousedown',function(e){dragging=true;lx=e.clientX;ly=e.clientY;C.style.cursor='grabbing';});
       window.addEventListener('mouseup',function(){dragging=false;C.style.cursor='grab';});
       window.addEventListener('mousemove',function(e){ if(!dragging)return; rotY+=(e.clientX-lx)*0.01; rotX+=(e.clientY-ly)*0.01; lx=e.clientX;ly=e.clientY; });
@@ -8961,6 +9289,11 @@ window.LabCal = (function(){
         var mx=Math.max.apply(null,d0.map(function(p){return p.y;})); oe=d0.map(function(p){return {x:p.x,y:+(p.y-mx).toFixed(2)};}); } }catch(e){}
     drawPat(r,oe);
     buildMath();
+    // The mass trade is derived from THIS geometry (wall area), so it has to be recomputed here.
+    // It used to be called only from its own four listeners and the first-ever init, so after any
+    // aperture/flare edit the grams belonged to the previous horn while the ratio line — which is
+    // a pure density ratio and therefore geometry-independent — still looked right and hid it.
+    trade();
   }
   function baseOpt(xl,yl,xmin,xmax){ return {responsive:true,maintainAspectRatio:true,animation:{duration:250},interaction:{mode:'nearest',intersect:false},
     scales:{x:{type:'linear',title:{display:true,text:xl},min:xmin,max:xmax},y:{title:{display:true,text:yl}}},
@@ -9075,8 +9408,14 @@ window.LabCal = (function(){
     return 0.35*(Rs/RsMx);   // dB, first-order, anchored to the documented full-wave MXene figure
   }
   function trade(){
-    var f0=+$('hna-f').value||10, coat=MAT[$('hna-coat').value], solid=MAT[$('hna-solid').value], wall=+$('hna-wall').value/1000;
-    var area=wallArea_m2();
+    var f0=+$('hna-f').value||10, coat=MAT[$('hna-coat').value], solid=MAT[$('hna-solid').value];
+    // Refuse rather than print: a blank box is +'' === 0, which made both masses 0 and printed
+    // "0 g vs 0 g -> Mass saving NaN% (NaN x lighter)". Mirrors buildGamma on the CAD tab.
+    var wallMM=parseFloat($('hna-wall').value), wall=wallMM/1000, area=wallArea_m2();
+    if(!isFinite(wallMM)||wallMM<=0){
+      $('hna-trade-out').textContent='Enter a wall thickness in mm to see the mass trade.'; return; }
+    if(!isFinite(area)||area<=0){
+      $('hna-trade-out').textContent='Enter the horn dimensions (aperture and flare) to see the mass trade.'; return; }
     var mCoat=area*wall*MAT.basswood.rho, mSolid=area*wall*solid.rho;      // shells (coating film mass negligible)
     var penC=penaltyDB(coat.s,f0), penS=penaltyDB(solid.s,f0);
     var out='Coating: '+coat.n+' on basswood   vs   Solid: '+solid.n+'\n';
@@ -9121,7 +9460,7 @@ window.LabCal = (function(){
       ['hna-coat','hna-solid','hna-wall','hna-mc'].forEach(function(id){var e=$(id); if(e)e.addEventListener('change',trade);});
       applyType();
     }
-    if(!LAST){ design(); trade(); showCmp(); } else { showCmp(); }
+    if(!LAST){ design(); trade(); showCmp(); } else { showCmp(); trade(); }
     setTimeout(function(){ [gainChart,patChart,sweepChart,cmpChart].forEach(repaint); },30);   // resize charts on the now-visible sub-tab (cross-tab sizing)
   };
 })();

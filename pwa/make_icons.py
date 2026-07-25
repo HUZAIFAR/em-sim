@@ -165,11 +165,21 @@ def save(img, name, opaque=False):
 
 if __name__ == "__main__":
     print("writing icons to", OUT)
+    # EVERY icon is written OPAQUE (no alpha channel at all).
+    #
+    # This is the fix for "the home screen shows a letter instead of the icon" on iOS. From iOS 16.4
+    # a page with a web app manifest is installed from the MANIFEST, and its icons win over the
+    # <link rel="apple-touch-icon"> tags. iOS will not use a home-screen icon that carries an alpha
+    # channel, so transparent rounded corners here meant: manifest read (the label was right), every
+    # icon in it rejected, letter fallback. The rounding is the OS's job anyway - on iOS, on Android,
+    # and in every launcher - so shipping a square opaque plate is also simply more correct.
+    # The filenames carry a -sq suffix because iOS caches the home-screen icon PER URL, and a fresh
+    # path is the only dependable way to retire an already-installed one.
     for s in (192, 512):
-        save(draw_mark(s, 0.15, rounded=True), f"icon-{s}.png")
-    # maskable: square plate + big safe zone, launchers crop these
+        save(draw_mark(s, 0.15, rounded=False), f"icon-{s}-sq.png", opaque=True)
+    # maskable: square plate + a big safe zone, because launchers crop these to their own shape
     for s in (192, 512):
-        save(draw_mark(s, 0.26, rounded=False), f"icon-maskable-{s}.png")
+        save(draw_mark(s, 0.26, rounded=False), f"icon-maskable-{s}-sq.png", opaque=True)
     # iOS home screen: opaque squares, NO alpha and NO rounding — iOS applies its own mask,
     # and an apple-touch-icon with transparency is a documented way to get no icon at all.
     # One file per device size iOS actually asks for (iPhone 180, iPad Pro 167, iPad 152,

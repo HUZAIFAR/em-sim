@@ -15,17 +15,22 @@
  * ==========================================================================*/
 // Bump on ANY change to the icons, the manifest or this file — the shell cache holds
 // the icons and manifest, so without a bump an installed phone keeps the old artwork.
-const CACHE_VERSION = 'emsim-v3.8.3';
+const CACHE_VERSION = 'emsim-v3.8.5';
 const SHELL_CACHE   = CACHE_VERSION + '-shell';
 const LIB_CACHE     = CACHE_VERSION + '-lib';
 
 // Same-origin paths that must ALWAYS go to the network (live solver + generated output).
+// KEEP THIS IN STEP WITH THE FLASK ROUTES. The rule is: anything that is produced by a run, or
+// that FEEDS a physics calculation, is never cached — a cached copy would be shown as a fresh
+// result. /demo_cad/ belongs here even though the files look static: they are the shipped example
+// STEP models, they are regenerable by demo_cad/make_demo_cad.py, and a phone holding an old copy
+// would silently compute an RCS for the wrong geometry.
 const NEVER_CACHE = [
   '/run', '/run_horn', '/run_rcs', '/upload_rcs', '/upload_cad',
-  '/progress', '/results/', '/cad/', '/fullwave_figures/'
+  '/progress', '/results/', '/cad/', '/fullwave_figures/', '/demo_cad/'
 ];
 
-const SHELL = ['/', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png',
+const SHELL = ['/', '/manifest.webmanifest', '/icons/icon-192-sq.png', '/icons/icon-512-sq.png',
                '/icons/apple-touch-icon.png', '/icons/apple-touch-icon-180.png'];
 
 self.addEventListener('install', (e) => {

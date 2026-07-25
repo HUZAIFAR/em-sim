@@ -103,6 +103,22 @@ def _plane(grid):
     return x, y, ez, mg
 
 
+def _write_mp4(name, frames, fps=12):
+    """An mp4 of the same animation, alongside the gif.
+
+    Not a nicety: a field gif runs to several MB, and on a phone over the Funnel link the browser
+    keeps showing the PREVIOUS run's frame until the new gif has fully downloaded - which reads as
+    "the result did not update". The h264 version of the same frames is typically 20-30x smaller,
+    so the client prefers it and falls back to the gif. Fail-soft: no ffmpeg, no mp4, gif still works.
+    """
+    try:
+        import imageio.v2 as _iio
+        _iio.mimsave(os.path.join(OUT, name), frames, fps=fps, macro_block_size=1)
+        print("wrote", name)
+    except Exception as e:
+        print("mp4 skipped (" + name + "):", e)
+
+
 def render_field(sim_dir, base, title):
     import pyvista as pv
     files = sorted(glob.glob(os.path.join(sim_dir, "Et_*.vtr")))
@@ -158,6 +174,7 @@ def render_field(sim_dir, base, title):
         x, y, ez, mg = pl
         frames.append(_fig(x, y, ez, "RdBu_r", -A, A, "total field E_z (incident + scattered), wavefronts"))
     imageio.mimsave(os.path.join(OUT, base + ".gif"), frames, duration=0.08, loop=0)
+    _write_mp4(base + ".mp4", frames, fps=12)
 
     # steady still: time-max |E| envelope (shows the shadow behind + backscatter lobe)
     ec = max(float(envelope.max()) * 0.9, 1e-12)
@@ -205,6 +222,7 @@ def render_lobe(lobe_csv, base, title):
         p.screenshot(fp); p.close()
         frames.append(imageio.imread(fp))
     imageio.mimsave(os.path.join(OUT, base + "_lobe.gif"), frames, duration=0.1, loop=0)
+    _write_mp4(base + "_lobe.mp4", frames, fps=10)
     imageio.imwrite(os.path.join(OUT, base + "_lobe.png"), frames[len(frames) // 8])
     for fp in glob.glob(os.path.join(OUT, "_lobe_tmp.png")):
         os.remove(fp)

@@ -170,6 +170,13 @@ if FIELD_MODE == "time":
                 frames.append(imageio.imread(fp))
             if frames:
                 imageio.mimsave(os.path.join(OUT, "horn_field.gif"), frames, duration=0.07, loop=0)
+                # ... and an mp4 of the same frames: ~20-30x smaller, so a phone shows the NEW
+                # animation immediately instead of the previous run's frame. Fail-soft.
+                try:
+                    imageio.mimsave(os.path.join(OUT, "horn_field.mp4"), frames, fps=14, macro_block_size=1)
+                    print("wrote horn_field.mp4")
+                except Exception as _e:
+                    print("mp4 skipped:", _e)
                 try: os.remove(os.path.join(OUT, "_hf_frame.png"))
                 except Exception: pass
                 print("wrote horn_field.gif")
