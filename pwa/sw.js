@@ -13,7 +13,9 @@
  *     so they are cache-first — that is what makes a second launch fast on mobile data.
  *  5. Bump CACHE_VERSION to retire every old cache.
  * ==========================================================================*/
-const CACHE_VERSION = 'emsim-v3.8.1';
+// Bump on ANY change to the icons, the manifest or this file — the shell cache holds
+// the icons and manifest, so without a bump an installed phone keeps the old artwork.
+const CACHE_VERSION = 'emsim-v3.8.2';
 const SHELL_CACHE   = CACHE_VERSION + '-shell';
 const LIB_CACHE     = CACHE_VERSION + '-lib';
 

@@ -1,22 +1,50 @@
 {
-  "name": "EM Waveguide & RCS Simulator",
-  "short_name": "EM Simulator",
-  "description": "Lightweight thin-film-coated waveguides, horn antennas and radar cross section — instant analytical physics plus openEMS full-wave validation.",
+  "name": "Signal to Signature — EM & Radar Simulator",
+  "short_name": "Signature",
+  "description": "Lightweight RF materials, antennas and radar signature in one workbench: waveguide loss, mass and launch cost; horn antenna gain and patterns; reflection loss from measured permittivity and permeability; and the radar cross section of an uploaded 3-D CAD model, part by part — analytical and instant, with openEMS full-wave validation.",
   "id": "/?pwa=1",
   "start_url": "/?pwa=1",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui", "browser"],
+  "display_override": [
+    "standalone",
+    "minimal-ui",
+    "browser"
+  ],
   "orientation": "any",
   "background_color": "#f3f2ec",
   "theme_color": "#161a18",
-  "categories": ["education", "productivity", "utilities"],
+  "categories": [
+    "education",
+    "productivity",
+    "utilities"
+  ],
   "lang": "en",
   "dir": "ltr",
   "icons": [
-    { "src": "/icons/icon-192.png",          "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/icon-512.png",          "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
-    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }

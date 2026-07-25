@@ -667,6 +667,12 @@ def upload_rcs():
     info["ok"] = True; info["stl"] = norm; info["stl_scale"] = 1.0   # already mm + centred
     return jsonify(info), 200
 
+@app.route("/demo_cad/<path:fn>")
+def demo_cad(fn):
+    """The shipped multi-body STEP demo models, so the CAD-RCS tab can offer them as
+    one-click examples (they are tessellated through /upload_cad like any upload)."""
+    return send_from_directory(os.path.join(PROJ, "demo_cad"), fn)
+
 # ---------------- PWA sidecar files (installable on phone / iPad over the Funnel link) -------
 # The app itself stays a single self-contained HTML file; these are additive and only used when
 # it is SERVED. sw.js must be served from the ROOT path so its scope covers the whole app.

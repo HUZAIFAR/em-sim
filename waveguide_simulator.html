@@ -4,17 +4,17 @@
 <meta charset="utf-8" />
 <!-- viewport-fit=cover so the safe-area insets below work on notched iPhones -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Waveguide Material Simulator</title>
+<title>Signal to Signature — EM Waveguide, Horn &amp; RCS Simulator</title>
 <!-- ---- PWA: installable on phone / iPad from the Tailscale Funnel HTTPS link ----
      All of this is inert when the file is opened directly (file://) or served without the
      sidecar files, so the app remains a single self-contained HTML document. -->
 <meta name="theme-color" content="#161a18" />
 <meta name="color-scheme" content="light" />
-<meta name="application-name" content="EM Simulator" />
+<meta name="application-name" content="Signal to Signature" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="EM Simulator" />
+<meta name="apple-mobile-web-app-title" content="Signature" />
 <link rel="manifest" href="/manifest.webmanifest" />
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
@@ -503,17 +503,17 @@
 </script>
 <div class="topbar"><div class="in">
   <span>KHALIFA UNIVERSITY · <span dir="rtl" lang="ar">جامعة خليفة</span></span>
-  <span class="dim">EM WAVEGUIDE SIMULATOR — v3.8</span>
+  <span class="dim">SIGNAL TO SIGNATURE — v3.8</span>
 </div></div>
 
 <div class="wrap">
   <header class="masthead">
     <div class="hero">
       <div class="hero-copy">
-        <p class="kicker">Electromagnetic transmission model</p>
-        <h1>Waveguide material simulator</h1>
-        <p class="lede">Predicting how microwave signals travel through a waveguide for any wall material — built around MXene-coated basswood, benchmarked against copper and aluminum across the X, Ku and K satellite bands.</p>
-        <p class="specs">TE10 mode · 8–27 GHz · skin-depth corrected · weight &amp; launch-cost aware</p>
+        <p class="kicker">Lightweight RF materials · antennas · radar signature</p>
+        <h1>Signal to Signature</h1>
+        <p class="lede">One workbench for the whole radio-frequency story of a lightweight structure. Start from a <strong>material</strong> — the flagship is MXene-coated basswood — and get, instantly: the <strong>loss, mass and launch cost</strong> of a waveguide built from it; the <strong>gain, beamwidth and efficiency</strong> of a horn antenna; the <strong>reflection loss</strong> of a radar-absorbing coating straight from your measured ε/μ; and the <strong>radar cross section of a real 3-D CAD model</strong> you upload, part by part — including how much smaller a coating makes it look to a radar. Inverse design and parametric sweeps search the space for you, and every analytical answer can be checked against a genuine <strong>openEMS full-wave FDTD</strong> solve, always plotted together (dashed = model, solid = full-wave) so the agreement is visible rather than promised.</p>
+        <p class="specs">Analytical + openEMS FDTD · X · Ku · K waveguide bands, 0.5–110 GHz radar · STEP/STL import · measured ε/μ · weight &amp; launch-cost aware</p>
       </div>
       <svg class="hero-art" viewBox="0 0 280 150" role="img" aria-label="Travelling wave inside a waveguide">
         <defs><clipPath id="hgc"><rect x="20" y="45" width="240" height="60" rx="6"/></clipPath></defs>
@@ -531,13 +531,13 @@
           <path d="M8 75h10M14 71l4 4-4 4"/>
           <path d="M262 75h10M268 71l4 4-4 4" opacity=".5"/>
         </g>
-        <text x="20" y="122" font-family="'JetBrains Mono', monospace" font-size="9" fill="#979d96" letter-spacing="1">TE₁₀ · input port → aperture</text>
+        <text x="20" y="122" font-family="'JetBrains Mono', monospace" font-size="9" fill="#979d96" letter-spacing="1">guided wave → aperture → radiated field</text>
       </svg>
     </div>
     <p class="specs" style="margin-top:16px;">Created by Huzaifa Taha Rangwala (UC Berkeley) · Space Materials Lab, Khalifa University · To download or for more information, contact <a href="mailto:huzaifataha54@berkeley.edu" style="color:var(--accent);">huzaifataha54@berkeley.edu</a></p>
     <div class="statstrip">
-      <div class="stat"><div class="num">8–<span class="cu" data-to="27" data-dec="0">27</span><span class="u"> GHz</span></div><div class="cap">Frequency coverage</div></div>
-      <div class="stat"><div class="num"><span class="cu" data-to="3" data-dec="0">3</span></div><div class="cap">Satellite bands · X · Ku · K</div></div>
+      <div class="stat"><div class="num"><span class="cu" data-to="4" data-dec="0">4</span></div><div class="cap">Domains · waveguide · horn · RCS · materials</div></div>
+      <div class="stat"><div class="num">0.5–<span class="cu" data-to="110" data-dec="0">110</span><span class="u"> GHz</span></div><div class="cap">Analysis range · X · Ku · K guide bands</div></div>
       <div class="stat"><div class="num"><span class="cu" data-to="6" data-dec="0">6</span></div><div class="cap">openEMS full-wave analyses</div></div>
     </div>
   </header>
@@ -1771,8 +1771,14 @@ for t_mm in [0.5, 1, 2, 3, 4]:
       <div class="oe-head">1 · Model</div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
         <label class="btn primary" style="cursor:pointer;font-size:12px;">⬆ Upload model (STL / STEP)<input id="cad-file" type="file" accept=".stl,.step,.stp" style="display:none;"></label>
-        <button class="btn" id="cad-example" type="button" style="font-size:12px;">Load example (horn antenna)</button>
         <span id="cad-upstatus" style="font-family:var(--font-mono);font-size:11.5px;color:var(--muted);"></span>
+      </div>
+
+      <!-- one-click example shapes (the shipped demo_cad/ multi-body STEP models) -->
+      <div style="margin:10px 0 4px;padding:11px 13px;border:1px solid var(--line);border-radius:9px;background:var(--panel2);">
+        <div style="font-size:12px;color:var(--text);font-weight:600;margin-bottom:3px;">Or start from an example shape</div>
+        <div class="oe-lab" style="margin-bottom:9px;">Multi-body STEP models shipped with the tool — each arrives split into its named parts, so you can coat them individually straight away. Tessellated on the bridge, so the server must be running.</div>
+        <div id="cad-examples" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:8px;"></div>
       </div>
       <div class="oe-lab" style="line-height:1.55;"><strong>STL</strong> is read entirely in your browser (works offline). <strong>STEP</strong> is tessellated on the bridge (needs the openEMS server running) and arrives split into its solid <strong>parts</strong> — export your CAD as a <em>multi-body assembly</em> to get a per-part breakdown; a single fused solid arrives as one segment. Meshes are recentred and units auto-detected.</div>
       <div id="cad-loaded" style="display:none;margin-top:10px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);font-family:var(--font-mono);font-size:11.5px;line-height:1.6;color:var(--muted);"></div>
@@ -10258,11 +10264,44 @@ window.CADRCS = {
       }).catch(function(e){ $('cad-upstatus').textContent='STEP import failed: '+e.message+' — is the bridge running at localhost:8731?'; });
     } else { $('cad-upstatus').textContent='Upload a .stl, .step or .stp file.'; }
   }
-  function loadExample(){
-    $('cad-upstatus').textContent='fetching example…';
-    fetch('/cad/horn.stl').then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.arrayBuffer(); })
-      .then(function(ab){ var ms=parseSTL(ab); ingest(ms,'horn.stl (example)',ms.unit,null); $('cad-upstatus').textContent='example loaded (a metal horn antenna)'; })
-      .catch(function(e){ $('cad-upstatus').textContent='Could not fetch the example ('+e.message+') — open the page via the bridge (localhost:8731), or upload your own STL.'; });
+  // ---------- one-click example shapes (demo_cad/*.step, served by the bridge) ----------
+  var DEMOS=[
+    { f:'calib_sphere_100mm', n:'Calibration sphere', d:'Ø100 mm · 1 part · known answer ≈ −21 dBsm, flat vs angle' },
+    { f:'cone_tube',          n:'Tube + cone',        d:'100×100×420 mm · 2 parts · the simplest multi-part case' },
+    { f:'water_bottle',       n:'Water bottle',       d:'70×70×272 mm · 4 parts · everyday curved object' },
+    { f:'rocket',             n:'Rocket',             d:'320×320×980 mm · 7 parts · nose, body, nozzle, 4 fins' },
+    { f:'satellite',          n:'Satellite',          d:'2.8 m span · 5 parts · big flat panels, huge specular flash' },
+    { f:'drone_quad',         n:'Quadcopter drone',   d:'569×569×85 mm · 10 parts · body, 4 arms, 4 rotors, camera' }
+  ];
+  function buildExamples(){
+    var host=$('cad-examples'); if(!host || host.__built) return; host.__built=true;
+    host.innerHTML='';
+    DEMOS.forEach(function(m){
+      var b=document.createElement('button');
+      b.type='button'; b.className='btn';
+      b.style.cssText='display:block;text-align:left;padding:8px 10px;font-size:11.5px;line-height:1.45;height:auto;';
+      b.innerHTML='<strong style="font-size:12px;">'+m.n+'</strong><br><span style="color:var(--muted);font-size:10.5px;">'+m.d+'</span>';
+      b.addEventListener('click',function(){ loadDemo(m); });
+      host.appendChild(b);
+    });
+  }
+  function loadDemo(m){
+    var st=$('cad-upstatus');
+    st.textContent='loading '+m.n+' — tessellating on the bridge…';
+    fetch('/demo_cad/'+m.f+'.step')
+      .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.blob(); })
+      .then(function(blob){
+        // keep the File so the openEMS cross-check button can re-upload it later
+        var file=new File([blob], m.f+'.step', {type:'application/octet-stream'});
+        var fd=new FormData(); fd.append('file', file);
+        return fetch('/upload_cad',{method:'POST',body:fd}).then(function(r){return r.json();})
+          .then(function(d){
+            if(!d.ok) throw new Error(d.log||d.stage||'tessellation failed');
+            ingest(d, m.f+'.step (example)', d.unit_guess||'mm (STEP)', file);
+            st.textContent='';
+          });
+      })
+      .catch(function(e){ st.textContent='Could not load “'+m.n+'”: '+e.message+' — is the bridge running at localhost:8731?'; });
   }
 
   function applyToAll(){
@@ -10278,7 +10317,7 @@ window.CADRCS = {
   function wire(){
     var aa=$('cad-all-apply'); if(aa) aa.addEventListener('click',applyToAll);
     var fi=$('cad-file'); if(fi) fi.addEventListener('change',function(e){ onFile(e.target.files[0]); e.target.value=''; });
-    var ex=$('cad-example'); if(ex) ex.addEventListener('click',loadExample);
+    buildExamples();
     var run=$('cad-run'); if(run) run.addEventListener('click',compute);
     // both viewer toggles explain themselves RIGHT HERE (a message up by the Compute
     // button is invisible when you are looking at the 3-D view)
