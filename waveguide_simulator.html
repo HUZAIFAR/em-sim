@@ -2,8 +2,22 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<!-- viewport-fit=cover so the safe-area insets below work on notched iPhones -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Waveguide Material Simulator</title>
+<!-- ---- PWA: installable on phone / iPad from the Tailscale Funnel HTTPS link ----
+     All of this is inert when the file is opened directly (file://) or served without the
+     sidecar files, so the app remains a single self-contained HTML document. -->
+<meta name="theme-color" content="#161a18" />
+<meta name="color-scheme" content="light" />
+<meta name="application-name" content="EM Simulator" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="EM Simulator" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;450;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -309,6 +323,57 @@
     a.cref{color:#000;text-decoration:none;font-weight:600;}
     .eq{background:#f4f4f0;border-color:#bbb;}
     *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  }
+
+  /* ==========================================================================
+     MOBILE / TABLET + installed-PWA polish (v3.8).
+     Appended LAST so it overrides without touching any rule above. Everything is
+     inside a media query or @supports, so the desktop layout is byte-identical.
+     ========================================================================== */
+  /* NB every rule below is scoped to `screen`. A4 print width is ~794 CSS px, which is
+     under the 900px breakpoint, so without this the phone layout (and the safe-area
+     padding) would leak into the Print stylesheet defined earlier in this file. */
+  /* notched iPhones in standalone mode: keep content out of the rounded corners */
+  @media screen {
+    @supports (padding: env(safe-area-inset-left)) {
+      .wrap{ padding-left:calc(26px + env(safe-area-inset-left)); padding-right:calc(26px + env(safe-area-inset-right)); }
+      .topbar{ padding-top:env(safe-area-inset-top); }
+      body{ padding-bottom:env(safe-area-inset-bottom); }
+    }
+  }
+  @media screen and (max-width: 900px){
+    /* never let the page itself scroll sideways — wide content scrolls inside its panel */
+    html,body{ max-width:100%; overflow-x:hidden; }
+    .wrap{ padding-left:16px; padding-right:16px; padding-bottom:64px; }
+    @supports (padding: env(safe-area-inset-left)) {
+      .wrap{ padding-left:calc(16px + env(safe-area-inset-left)); padding-right:calc(16px + env(safe-area-inset-right)); }
+    }
+    .panel{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .panel table{ min-width:max-content; }          /* keep table semantics; the panel scrolls */
+    .tabs{ gap:8px 16px; }
+    h1{ font-size:22px !important; }
+    /* iOS zooms the whole page when a focused input is under 16px — stop that */
+    input, select, textarea{ font-size:16px !important; max-width:100%; }
+    /* comfortable tap targets */
+    .btn, .tab, .morelink, .moretab{ min-height:40px; }
+    .more-menu{ max-width:min(92vw, 340px); }
+    /* the 3-D viewers: shorter on a phone, and the canvas keeps its own gestures */
+    #cad-field3d{ height:320px !important; }
+    #hrn-field3d, #hrn-geo3d, #rcs-lobe3d{ height:300px !important; }
+    #cad-field3d canvas, #hrn-field3d canvas, #hrn-geo3d canvas, #rcs-lobe3d canvas{ touch-action:none; }
+  }
+  @media screen and (max-width: 560px){
+    .wrap{ padding-left:12px; padding-right:12px; }
+    @supports (padding: env(safe-area-inset-left)) {
+      .wrap{ padding-left:calc(12px + env(safe-area-inset-left)); padding-right:calc(12px + env(safe-area-inset-right)); }
+    }
+    .statstrip{ grid-template-columns:1fr; }         /* 3 stats stack instead of squeezing */
+    .oe-grid{ grid-template-columns:1fr; }           /* one control per row */
+    h1{ font-size:20px !important; }
+    .lede{ font-size:14px; }
+    /* the per-part coating rows wrap instead of overflowing */
+    .cad-seg, .rlc-mat{ align-items:flex-start; }
+    .cad-seg span[style*="min-width"]{ min-width:0 !important; }
   }
 </style>
 </head>
@@ -9849,6 +9914,26 @@ window.CADRCS = {
     window.addEventListener('mouseup',function(){drag=false;});
     window.addEventListener('mousemove',function(e){ if(!drag)return; V.rotY+=(e.clientX-px)*0.01; V.rotX+=(e.clientY-py)*0.01; px=e.clientX;py=e.clientY; });
     V.ren.domElement.addEventListener('wheel',function(e){ e.preventDefault(); V.dist*=(e.deltaY>0?1.1:0.9); V.dist=Math.max(0.3,Math.min(4,V.dist)); },{passive:false});
+    // touch: one finger rotates, two fingers pinch-zoom (matches the other 3-D viewers).
+    // touch-action:none on the canvas only, so the PAGE still scrolls everywhere else.
+    V.ren.domElement.style.touchAction='none';
+    var pinch=0;
+    V.ren.domElement.addEventListener('touchstart',function(e){
+      if(e.touches.length===1){ drag=true; px=e.touches[0].clientX; py=e.touches[0].clientY; }
+      else if(e.touches.length===2){ drag=false; pinch=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY); }
+    },{passive:true});
+    V.ren.domElement.addEventListener('touchmove',function(e){
+      if(drag && e.touches.length===1){
+        V.rotY+=(e.touches[0].clientX-px)*0.01; V.rotX+=(e.touches[0].clientY-py)*0.01;
+        V.rotX=Math.max(-1.5,Math.min(1.5,V.rotX));
+        px=e.touches[0].clientX; py=e.touches[0].clientY;
+      } else if(e.touches.length===2 && pinch>0){
+        var d2=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+        if(d2>0){ V.dist*=pinch/d2; V.dist=Math.max(0.3,Math.min(4,V.dist)); pinch=d2; }
+      }
+      if(e.cancelable) e.preventDefault();
+    },{passive:false});
+    V.ren.domElement.addEventListener('touchend',function(){ drag=false; pinch=0; },{passive:true});
     (function loop(){ V.raf=requestAnimationFrame(loop); if(V.grp){ V.grp.rotation.x=V.rotX; V.grp.rotation.y=V.rotY; } if(V.cam){ V.cam.position.set(0,0,V.base*V.dist); V.cam.lookAt(0,0,0); } if(V.ren&&V.scene&&V.cam) V.ren.render(V.scene,V.cam); })();
     window.addEventListener('resize',function(){ if(!V.ren)return; var hh=$('cad-field3d'); if(!hh)return; var ww=hh.clientWidth||600,h2=hh.clientHeight||440; V.ren.setSize(ww,h2); V.cam.aspect=ww/h2; V.cam.updateProjectionMatrix(); });
     return true;
@@ -10130,6 +10215,30 @@ window.CADRCS = {
     if(MESH) renderSegList();          // rebuild the per-part dropdowns with the current library
     if(chart){ try{ chart.resize(); chart.update('none'); chart.draw(); }catch(e){} }
   };
+})();
+</script>
+<script>
+/* ============================================================================
+ * PWA service-worker registration. Deliberately inert unless the app is being
+ * SERVED from a secure origin (the Tailscale Funnel HTTPS link, or localhost) —
+ * so opening waveguide_simulator.html straight off disk still behaves exactly as
+ * before, with no console noise and no caching.
+ * ==========================================================================*/
+(function(){
+  if(!('serviceWorker' in navigator)) return;
+  var h=location.hostname;
+  var ok = (location.protocol==='https:') || h==='localhost' || h==='127.0.0.1' || h==='[::1]';
+  if(!ok) return;                                     // file:// or plain-http LAN: skip
+  window.addEventListener('load',function(){
+    var had=!!navigator.serviceWorker.controller, reloaded=false;
+    navigator.serviceWorker.register('/sw.js',{scope:'/'}).then(function(){
+      // When a NEW worker takes over (after a git pull + bridge restart) reload once so
+      // the document and the cached shell can never disagree. Not on first install.
+      navigator.serviceWorker.addEventListener('controllerchange',function(){
+        if(had && !reloaded){ reloaded=true; location.reload(); }
+      });
+    }).catch(function(){ /* sidecar files absent — the app works exactly as before */ });
+  });
 })();
 </script>
 </body>

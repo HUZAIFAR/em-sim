@@ -667,6 +667,41 @@ def upload_rcs():
     info["ok"] = True; info["stl"] = norm; info["stl_scale"] = 1.0   # already mm + centred
     return jsonify(info), 200
 
+# ---------------- PWA sidecar files (installable on phone / iPad over the Funnel link) -------
+# The app itself stays a single self-contained HTML file; these are additive and only used when
+# it is SERVED. sw.js must be served from the ROOT path so its scope covers the whole app.
+PWA = os.path.join(PROJ, "pwa")
+
+@app.route("/manifest.webmanifest")
+def pwa_manifest():
+    r = send_from_directory(PWA, "manifest.webmanifest", mimetype="application/manifest+json")
+    r.headers["Cache-Control"] = "no-cache"
+    return r
+
+@app.route("/sw.js")
+def pwa_sw():
+    # root scope + never cached by the browser, so a new worker is always picked up
+    r = send_from_directory(PWA, "sw.js", mimetype="application/javascript")
+    r.headers["Cache-Control"] = "no-cache"
+    r.headers["Service-Worker-Allowed"] = "/"
+    return r
+
+@app.route("/icons/<path:fn>")
+def pwa_icon(fn):
+    r = send_from_directory(os.path.join(PWA, "icons"), fn)
+    r.headers["Cache-Control"] = "public, max-age=604800"
+    return r
+
+@app.route("/apple-touch-icon.png")
+@app.route("/apple-touch-icon-precomposed.png")
+def pwa_apple_icon():
+    # iOS probes these root paths directly when there is no <link rel="apple-touch-icon">
+    return send_from_directory(os.path.join(PWA, "icons"), "apple-touch-icon.png")
+
+@app.route("/favicon.ico")
+def pwa_favicon():
+    return send_from_directory(os.path.join(PWA, "icons"), "favicon-32.png", mimetype="image/png")
+
 @app.route("/upload_cad", methods=["POST"])
 def upload_cad():
     """STEP -> segmented triangle-mesh JSON for the ANALYTICAL CAD-RCS tab (gmsh/OCC).

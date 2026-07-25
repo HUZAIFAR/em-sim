@@ -215,3 +215,34 @@ bridge and Tailscale running while they test.
   **RCS STL** upload posts to your PC (same origin). Both fine over HTTPS Funnel.
 - Nothing here changes macOS behavior — the env vars only take effect when set, so the same files still
   run on the Mac with no config.
+
+---
+
+## 7. Use it on a phone or iPad (install it as an app)
+
+The page is a **PWA**, so the Funnel HTTPS link can be installed to a home screen and runs
+full-screen like a native app. Nothing extra to configure — the bridge already serves the
+manifest, the service worker and the icons.
+
+1. Start the bridge (`run_bridge.bat`) and the funnel (`share_funnel.bat` / `tailscale funnel 8731`).
+2. On the device, open `https://<machine>.<tailnet>.ts.net` in **Safari** (iPhone/iPad) or
+   **Chrome** (Android).
+3. **iOS:** Share ⇧ → *Add to Home Screen*.  **Android:** ⋮ → *Install app* (or the install prompt).
+4. Launch it from the home-screen icon: no browser chrome, dark status bar, own app switcher entry.
+
+What works on mobile: every analytical tab (waveguide, horn, RL, sweeps, material library,
+CAD-RCS incl. STL import, which is parsed in the browser), and the openEMS **Run** buttons —
+those execute on the Windows PC, so the phone is just the front end. STEP import also works,
+because the tessellation happens on the PC too.
+
+Notes:
+- **HTTPS is required** for installation and for the service worker; the Tailscale Funnel link
+  is HTTPS, so that is satisfied. A plain `http://<lan-ip>:8731` address will still load the app
+  but cannot be installed.
+- The service worker caches only the app shell and the CDN libraries. It **never** caches
+  `/run*`, `/upload*`, `/progress`, `/results`, `/cad` or `/fullwave_figures`, so a solve
+  launched from a phone is always a real, fresh solve.
+- After a `git pull` + bridge restart, the app updates itself on next launch (the document is
+  fetched network-first, and a new service worker triggers a single reload).
+- The material library lives in each browser's local storage, so it is per-device — the tester
+  pins their own materials.
