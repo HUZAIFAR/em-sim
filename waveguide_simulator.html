@@ -428,7 +428,7 @@
         <button class="morelink" data-page="rlcalc"><svg class="tabic" viewBox="0 0 24 24"><path d="M3 5v15h18"/><path d="M6 14c3 0 4-8 7-8s3 6 6 6" opacity=".85"/></svg>Reflection loss (RL)</button>
         <button class="morelink" data-page="sweep"><svg class="tabic" viewBox="0 0 24 24"><circle cx="6" cy="6" r="1.5"/><circle cx="12" cy="6" r="1.5"/><circle cx="18" cy="6" r="1.5"/><circle cx="6" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="18" cy="12" r="1.5"/><circle cx="6" cy="18" r="1.5"/><circle cx="12" cy="18" r="1.5"/><circle cx="18" cy="18" r="1.5"/></svg>Parametric sweep</button>
         <button class="morelink" data-page="invrcs"><svg class="tabic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="2.6"/><line x1="12" y1="1.5" x2="12" y2="4.5"/><line x1="12" y1="19.5" x2="12" y2="22.5"/><line x1="1.5" y1="12" x2="4.5" y2="12"/><line x1="19.5" y1="12" x2="22.5" y2="12"/></svg>Inverse RAM design</button>
-        <button class="morelink" data-page="rcscmp"><svg class="tabic" viewBox="0 0 24 24"><line x1="4" y1="20" x2="20" y2="20"/><rect x="5.5" y="11" width="3.2" height="7"/><rect x="11" y="6" width="3.2" height="12"/><rect x="16.5" y="14" width="3.2" height="4"/></svg>Run comparison</button>
+        <button class="morelink" data-page="matlib"><svg class="tabic" viewBox="0 0 24 24"><rect x="3.5" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="16" rx="1" opacity=".7"/><rect x="16.5" y="4" width="4" height="16" rx="1" opacity=".45"/></svg>Material library</button>
         <button class="morelink" data-page="rcsbatch"><svg class="tabic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="4" rx="1" opacity=".75"/><rect x="3" y="16" width="18" height="4" rx="1" opacity=".5"/></svg>Batch sweeps</button>
         <button class="morelink" data-page="cadrcs"><svg class="tabic" viewBox="0 0 24 24"><path d="M12 2 L21 7 L21 17 L12 22 L3 17 L3 7 Z"/><path d="M12 2 L12 22" opacity=".55"/><path d="M3 7 L12 12 L21 7" opacity=".55"/></svg>CAD-RCS (STEP/STL)</button>
       </div>
@@ -1172,7 +1172,6 @@
       <button class="btn" id="rcs-sum-btn">Summary</button>
       <button class="btn" id="rcs-math-btn">Show math</button>
       <button class="btn" id="rcs-manifest-btn">Run manifest</button>
-      <button class="btn" id="rcs-pin-btn" title="Add this run to the Run comparison tab">📌 Pin this run</button>
     </div>
     <pre id="rcs-summary" style="display:none;white-space:pre-wrap;font-family:var(--font-mono);font-size:11.5px;line-height:1.55;background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;padding:14px 16px;margin:0 0 18px;overflow-x:auto;"></pre>
     <pre id="rcs-math" style="display:none;white-space:pre-wrap;font-family:var(--font-mono);font-size:11.5px;line-height:1.5;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin:0 0 18px;overflow-x:auto;"></pre>
@@ -1294,24 +1293,53 @@
     <footer>Metal-backed transfer-matrix reflection loss at normal incidence — the coating's intrinsic absorbing ability, computed instantly. This is the flat-reflector proxy; the RCS (openEMS) tab confirms it on a real 3-D target (a coated flat plate's RCS reduction ≈ this reflection loss). Archetypes and the Rozanov thickness bound are exact textbook results (see the References tab).</footer>
   </div>
 
-  <!-- ============ RCS RUN COMPARISON ============ -->
-  <div class="page" id="page-rcscmp">
-    <button class="pageinfo" data-info="rcscmp">ⓘ&nbsp;Info</button>
-    <p class="eyebrow">RCS · run comparison</p>
-    <h1 style="font-size:26px;margin:2px 0 6px;">Compare pinned RCS runs</h1>
-    <p class="lede">Pin any RCS solve with the <strong>📌 Pin this run</strong> button on the RCS tab, and every pinned run's monostatic curve is overlaid here — the fastest way to A/B/C different materials, thicknesses or shapes. Pins persist in your browser between sessions.</p>
-    <div id="rcscmp-empty" style="padding:22px;border:1px dashed var(--line);border-radius:10px;color:var(--muted);text-align:center;">No runs pinned yet. Run something on the <strong>RCS (openEMS)</strong> tab, then click <strong>📌 Pin this run</strong> in the results button row.</div>
-    <div id="rcscmp-actions" style="display:none;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
-      <button class="btn" id="rcscmp-csv">⬇ Download comparison (CSV)</button>
-      <button class="btn" id="rcscmp-clear">Clear all pins</button>
+  <!-- ============ MATERIAL LIBRARY (compare saved materials) ============ -->
+  <div class="page" id="page-matlib">
+    <button class="pageinfo" data-info="matlib">ⓘ&nbsp;Info</button>
+    <p class="eyebrow">Radar-absorbing material · saved materials</p>
+    <h1 style="font-size:26px;margin:2px 0 6px;">Material library — compare your saved materials</h1>
+    <p class="lede">Every material you pin with <strong>📌 Pin material to library</strong> on the <strong>Reflection-loss (RL)</strong> tab lands here. This page overlays their <strong>reflection-loss curves</strong> so you can see, side by side, which material absorbs best and over what bandwidth — and the same library feeds the per-part coating dropdowns on the <strong>CAD-RCS</strong> tab. Everything is analytical and instant; the library is stored in your browser and survives between sessions.</p>
+
+    <div id="mlb-empty" style="padding:22px;border:1px dashed var(--line);border-radius:10px;color:var(--muted);text-align:center;line-height:1.7;">
+      No materials saved yet.<br>Go to <strong>RCS ▾ → Reflection loss (RL)</strong>, load or type a material, press <strong>Compute reflection loss</strong>, then press <strong>📌 Pin material to library</strong>. Repeat for each material you want to compare.
     </div>
-    <div id="rcscmp-chart-fig" style="display:none;">
-    <p class="charttitle">Monostatic RCS — pinned runs overlaid</p>
-    <p class="chartsub">Backscatter vs frequency for each pinned run (dBsm). Lower = stealthier.</p>
-    <div class="panel" style="padding:16px;margin-bottom:24px;"><canvas id="rcscmp-chart" height="160"></canvas></div>
-    </div>
-    <div id="rcscmp-table-wrap" style="display:none;overflow-x:auto;">
-    <table id="rcscmp-table" style="width:100%;border-collapse:collapse;font-size:12.5px;"><thead></thead><tbody></tbody></table>
+
+    <div id="mlb-body" style="display:none;">
+      <div class="panel" style="padding:16px 18px;margin-bottom:18px;">
+        <div class="oe-head">Comparison settings</div>
+        <div class="oe-grid">
+          <div><div class="oe-lab">Band f min (GHz)</div>
+            <input id="mlb-fmin" type="number" value="2" step="0.5" min="0.1" style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-mono);font-size:13px;"></div>
+          <div><div class="oe-lab">Band f max (GHz)</div>
+            <input id="mlb-fmax" type="number" value="18" step="0.5" min="0.2" style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-mono);font-size:13px;"></div>
+          <div><div class="oe-lab">Target frequency (GHz)</div>
+            <input id="mlb-ftarget" type="number" value="10" step="0.1" min="0.1" style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-mono);font-size:13px;"></div>
+          <div><div class="oe-lab">&nbsp;</div>
+            <button class="btn primary" id="mlb-recompute" type="button" style="width:100%;">Recompute</button></div>
+        </div>
+        <div class="oe-lab" style="margin-top:8px;line-height:1.55;">Each curve is the exact metal-backed reflection loss <span style="white-space:nowrap;">RL = 20·log₁₀|(Z<sub>in</sub>−1)/(Z<sub>in</sub>+1)|</span> at that material's saved thickness — the same engine as the RL tab. Materials pinned from an <strong>uploaded measured file</strong> carry their real ε/μ dispersion (exact); materials pinned from constant ε/μ are evaluated with those constants held across the band (flagged <em>const</em> in the table).</div>
+      </div>
+
+      <div class="oe-actionbar" style="gap:8px;flex-wrap:wrap;background:#0d1117;padding:10px 12px;border-radius:10px;margin-bottom:14px;">
+        <button class="btn" id="mlb-csv" type="button" style="font-size:12px;">⬇ Comparison (CSV)</button>
+        <button class="btn" id="mlb-curves-csv" type="button" style="font-size:12px;">⬇ RL curves (CSV)</button>
+        <button class="btn" id="mlb-clear" type="button" style="font-size:12px;">Clear library</button>
+      </div>
+
+      <div id="mlb-best" style="margin-bottom:16px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--panel2);"></div>
+
+      <div id="mlb-chart-fig" style="display:none;">
+        <p class="charttitle">Reflection loss vs frequency — saved materials overlaid <button class="chartinfo" data-info="mlb-chart" title="About this chart">ⓘ</button></p>
+        <p class="chartsub">One curve per saved material, at its own saved thickness. Deeper (more negative) = more absorbing. The dashed line is the −10 dB engineering threshold (90 % of the power absorbed).</p>
+        <div class="panel" style="padding:16px;margin-bottom:20px;"><canvas id="mlb-chart" height="150"></canvas></div>
+      </div>
+
+      <p class="charttitle">Saved materials</p>
+      <p class="chartsub">Edit a thickness to re-evaluate that material instantly. <strong>EAB</strong> = effective absorption bandwidth, the contiguous width where RL ≤ −10 dB.</p>
+      <div class="panel" style="padding:0;margin-bottom:10px;overflow:auto;">
+        <table id="mlb-table" style="border-collapse:collapse;width:100%;font-family:var(--font-mono);font-size:11.5px;"></table>
+      </div>
+      <p id="mlb-note" style="font-family:var(--font-mono);font-size:11.5px;color:var(--faint);margin:0 0 20px;"></p>
     </div>
   </div>
 
@@ -3000,7 +3028,7 @@ function build(){
 // tab GROUPS: which pages light up which group button in the nav bar
 const TAB_GROUPS={ wg:['sim','cst','invdes','fit','space','compare'],
                    horngrp:['horn','horninv','horncmp','hornfw'],
-                   rcsgrp:['rcs','rlcalc','sweep','invrcs','rcscmp','rcsbatch','cadrcs'],
+                   rcsgrp:['rcs','rlcalc','sweep','invrcs','matlib','rcsbatch','cadrcs'],
                    more:['phys','mat','guide','refs'] };
 function activateTab(page){
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
@@ -3017,7 +3045,7 @@ function activateTab(page){
   if(page==='space' && window.spaceInit) window.spaceInit();
   if(page==='rcs' && window.rcsInit) window.rcsInit();
   if(page==='invrcs' && window.invrcsInit) window.invrcsInit();
-  if(page==='rcscmp' && window.rcscmpShow) window.rcscmpShow();
+  if(page==='matlib' && window.matlibInit) window.matlibInit();
   if(page==='rcsbatch' && window.rcsbatchInit) window.rcsbatchInit();
   if(page==='rlcalc' && window.rlcInit) window.rlcInit();
   if(page==='sweep' && window.sweepInit) window.sweepInit();
@@ -5029,9 +5057,15 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
     'invrcs-refl':{title:'Reflection loss of the winning design', html:`
 <h4>How to read it</h4>
 <p>Reflection loss = −20·log₁₀|Γ| across the band — how many dB the coating removes from a metal reflector (higher = better absorber). The dashed line is your target. A Dallenbach/Jaumann absorber shows one or two broad dips; a Salisbury screen a single sharp dip at its quarter-wave frequency. The note reports the <strong>Rozanov thickness bound</strong>, the physical floor on thickness for this bandwidth.</p>`},
-    'rcscmp':{title:'Run comparison', html:`
+    'matlib':{title:'Material library — compare saved materials', html:`
 <h4>What this tab does</h4>
-<p>Pin any RCS solve with the <strong>📌 Pin this run</strong> button on the RCS tab and every pinned run's monostatic (backscatter) curve is overlaid here — the fastest way to A/B/C different materials, thicknesses or shapes on one chart. The table lists RCS at band centre and the coating reduction for each. Pins are saved in your browser, so they survive between sessions. Export the comparison as CSV or clear the list any time.</p>`},
+<p>It is your shelf of radar-absorbing materials. Every material you pin on the <strong>Reflection-loss (RL)</strong> tab with <strong>📌 Pin material to library</strong> appears here, and this page overlays their <strong>reflection-loss curves</strong> on one chart so you can answer "which of my materials absorbs best, and over how wide a band?" at a glance.</p>
+<h4>How to fill it</h4>
+<p>On the RL tab: load or type a material → <strong>Compute reflection loss</strong> → <strong>📌 Pin material to library</strong>. Pinning captures that material's <em>optimal</em> point — the ε/μ at its deepest-RL frequency and the thickness that achieved it — plus its full measured ε/μ dispersion when you uploaded a lab file. Repeat for each candidate material. The same library feeds the per-part coating dropdowns on the <strong>CAD-RCS</strong> tab, so anything you pin here can be painted onto a part of an imported 3-D model.</p>
+<h4>Reading it</h4>
+<p><strong>min RL</strong> is the deepest absorption in the band and <strong>at (GHz)</strong> is where it happens. <strong>EAB</strong> (effective absorption bandwidth) is the contiguous width where RL ≤ −10 dB, i.e. where at least 90 % of the incident power is absorbed — usually the more important number for a real design than a single deep null. <strong>RL @ target</strong> evaluates every material at one frequency you choose, so you can rank them for a specific threat band. <strong>RCS cut @ target</strong> is how much that coating lowers a flat metal surface's specular return there — it equals |RL|, because σ<sub>coated</sub> = σ<sub>bare</sub>·|Γ|². Editing a thickness in the table re-evaluates that material instantly, which is the quickest way to retune a coating.</p>
+<h4>Honest note</h4>
+<p>The <strong>Data</strong> column says how each curve was produced. <em>measured</em> = the material carries its real ε/μ dispersion from your uploaded file, so the curve is exact. <em>const</em> = it was pinned from constant ε/μ, so those values are held across the whole band; that is fine near the pinned frequency but increasingly approximate away from it, because real materials disperse. All of this is the same analytical metal-backed transmission-line engine as the RL tab — nothing here is full-wave.</p>`},
     'rcsbatch':{title:'Batch parameter sweep', html:`
 <h4>What this tab does</h4>
 <p>Vary <strong>one</strong> parameter — coating thickness, conductivity, dielectric or magnetic loss, target size, or incidence angle — across a range, and the tool runs a full openEMS RCS solve at each value <strong>in sequence</strong>, plotting how the RCS (and the coating reduction) responds. It's the tool for "how thick does the absorber need to be?" studies.</p>
@@ -5575,9 +5609,15 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
     'invrcs-refl':{title:'خسارة انعكاس التصميم الفائز', html:`
 <h4>كيف تقراه</h4>
 <p>خسارة الانعكاس = −20·log₁₀|Γ| عبر النطاق — كم ديسيبل يزيل الطلاء من عاكس معدني (أعلى = ماصّ أفضل). الخط المتقطّع هو هدفك. ماصّ Dallenbach/Jaumann يُظهر انخفاضاً أو انخفاضين عريضين؛ وشاشة Salisbury انخفاضاً حاداً واحداً عند تردد الربع موجة. الملاحظة تذكر <strong>حدّ Rozanov</strong> للسماكة.</p>`},
-    'rcscmp':{title:'مقارنة التشغيلات', html:`
-<h4>شنو يفعل هالتبويب</h4>
-<p>ثبّت أي حلّ RCS بزرّ <strong>📌 Pin this run</strong> في تبويب RCS فتُرسَم منحنيات الارتداد الأحادي لكل تشغيل مثبّت هنا فوق بعضها — أسرع طريقة لمقارنة A/B/C لمواد أو سماكات أو أشكال مختلفة. الجدول يعرض RCS عند وسط النطاق وخفض الطلاء لكل تشغيل. التثبيتات تُحفظ في متصفّحك. صدّر المقارنة CSV أو امسح القائمة وقت ما تريد.</p>`},
+    'matlib':{title:'مكتبة المواد — قارن الموادّ المحفوظة', html:`
+<h4>شنو تسوي هالصفحة</h4>
+<p>هي رفّ الموادّ الماصّة للرادار عندك. كل مادة تثبّتها في تبويب <strong>فقد الانعكاس (RL)</strong> بزر <strong>📌 Pin material to library</strong> تظهر هنا، وهالصفحة ترسم منحنيات فقد الانعكاس لكلها فوق بعض على مخطط واحد، عشان تجاوب فورًا: أي مادة تمتص أفضل، وعلى أي عرض نطاق؟</p>
+<h4>كيف تعبّيها</h4>
+<p>في تبويب RL: حمّل أو اكتب مادة ← <strong>Compute reflection loss</strong> ← <strong>📌 Pin material to library</strong>. التثبيت يحفظ النقطة <em>المثالية</em> للمادة — قيم ε/μ عند أعمق RL والسماكة اللي حققتها — بالإضافة إلى تشتّت ε/μ المقاس بالكامل إذا رفعت ملف مختبر. كرّرها لكل مادة مرشّحة. ونفس المكتبة تغذّي قوائم الطلاء لكل جزء في تبويب <strong>CAD-RCS</strong>، فأي مادة تثبّتها هنا تنفع تطليها على أي جزء من موديل ثلاثي الأبعاد.</p>
+<h4>كيف تقرأها</h4>
+<p><strong>min RL</strong> أعمق امتصاص في النطاق و<strong>at (GHz)</strong> وين يصير. و<strong>EAB</strong> (عرض نطاق الامتصاص الفعّال) هو العرض المتّصل اللي فيه RL ≤ −10 dB، أي حيث يُمتص 90 % من الطاقة على الأقل — وغالبًا أهم من قيمة عميقة عند ترد واحد. و<strong>RL @ target</strong> يقيّم كل المواد عند ترد تختاره أنت، فتقدر ترتّبها لنطاق تهديد محدد. و<strong>RCS cut @ target</strong> كم يخفّض الطلاء ارتداد سطح معدني مستوٍ هناك — ويساوي |RL| لأن σ_coated = σ_bare·|Γ|². تعديل السماكة في الجدول يعيد الحساب فورًا، وهي أسرع طريقة لإعادة ضبط الطلاء.</p>
+<h4>ملاحظة بصراحة</h4>
+<p>عمود <strong>Data</strong> يقول كيف أُنتج كل منحنى. <em>measured</em> = المادة تحمل تشتّت ε/μ الحقيقي من ملفك، فالمنحنى دقيق. <em>const</em> = ثُبّتت من ε/μ ثابتة، فتُثبَّت تلك القيم على كل النطاق؛ هذا مقبول قريب من ترد التثبيت لكنه يصير تقريبيًا أكثر وأنت تبعد عنه، لأن الموادّ الحقيقية متشتّتة. وكل هذا بنفس المحرّك التحليلي (خط نقل مدعوم بمعدن) الموجود في تبويب RL — ما فيه شي هنا موجة كاملة.</p>`},
     'rcsbatch':{title:'مسح دفعي للمعامل', html:`
 <h4>شنو يفعل هالتبويب</h4>
 <p>غيّر <strong>معاملاً واحداً</strong> — سماكة الطلاء، الموصلية، الخسارة العازلة أو المغناطيسية، حجم الهدف، أو زاوية السقوط — عبر مدى، فتشغّل الأداة حلّ openEMS RCS كامل عند كل قيمة <strong>بالتتابع</strong>، وترسم كيف يستجيب RCS (وخفض الطلاء). هي أداة دراسات "كم سماكة يحتاج الماصّ؟".</p>
@@ -7010,10 +7050,6 @@ window.LabCal = (function(){
   // scattered-field animation <-> steady-|E| toggle (checkbox listeners are wired inside buildRcsPicker)
   document.querySelectorAll('.rcs-fld-tog').forEach(function(b){ b.addEventListener('click',function(){ fieldMode=b.getAttribute('data-mode'); setFieldImg(); }); });
   document.querySelectorAll('.rcs-lobe-tog').forEach(function(b){ b.addEventListener('click',function(){ lobeMode=b.getAttribute('data-mode'); syncLobe(); }); });
-  // pin the current run to the Run-comparison tab
-  var pinBtn=$('rcs-pin-btn'); if(pinBtn) pinBtn.addEventListener('click',function(){
-    if(window.rcsPinAdd && window.rcsPinAdd(window.__rcsRun)){ pinBtn.textContent='📌 Pinned ✓'; setTimeout(function(){pinBtn.textContent='📌 Pin this run';},1500); }
-  });
   // ---- top action row (mirrors the wg/horn tabs): Summary / Show math toggles, Download all (zip), Run manifest ----
   function rcsToggle(preId, btnId, showTxt, hideTxt){
     var pre=$(preId), b=$(btnId); if(!pre||!b) return;
@@ -7366,51 +7402,6 @@ window.LabCal = (function(){
     var st=$('rcs-status'); if(st){ st.style.color=''; st.textContent='Loaded the inverse-design winner ('+d.label+') as a coated flat plate — press "Run RCS on openEMS" to validate the '+d.RL.toFixed(1)+' dB reduction full-wave.'+(d.layers&&d.layers.length>1?' (Multilayer sent as its front layer — the RCS tab models one coating.)':''); }
     var run=$('rcs-run'); if(run) run.scrollIntoView({behavior:'smooth',block:'center'});
   }
-
-  // ==================================================================== RUN COMPARISON MANAGER
-  var PIN_KEY='rcsPins_v1';
-  function loadPins(){ try{ return JSON.parse(localStorage.getItem(PIN_KEY)||'[]'); }catch(e){ return []; } }
-  function savePins(p){ try{ localStorage.setItem(PIN_KEY,JSON.stringify(p)); }catch(e){} }
-  window.rcsPinAdd=function(run){
-    if(!run||!run.bare||!run.bare.freq){ return false; }
-    var src=(run.coated&&run.coated.freq&&run.coated.freq.length)?run.coated:run.bare;
-    var mid=src.freq[Math.floor(src.freq.length/2)];
-    var pins=loadPins();
-    pins.push({ id:Date.now(), label:(run.label||'run'),
-      shape:run.shape, band:run.band, construct:run.construct, f0:run.f0_ghz,
-      rcs_dbsm:+mid.dbsm.toFixed(2), reduction:(run.reduction_db!=null?run.reduction_db:null),
-      curve:src.freq.map(function(p){return {x:+p.f.toFixed(3),y:+p.dbsm.toFixed(2)};}) });
-    if(pins.length>8) pins=pins.slice(-8);
-    savePins(pins); return true;
-  };
-  var cmpChart=null;
-  window.rcscmpShow=function(){
-    var pins=loadPins(), empty=$('rcscmp-empty');
-    if(!pins.length){ if(empty)empty.style.display=''; ['rcscmp-actions','rcscmp-chart-fig','rcscmp-table-wrap'].forEach(function(id){var e=$(id);if(e)e.style.display='none';}); return; }
-    if(empty)empty.style.display='none';
-    $('rcscmp-actions').style.display='flex'; $('rcscmp-chart-fig').style.display=''; $('rcscmp-table-wrap').style.display='';
-    var cols=['#161a18','#0b6e54','#b4471f','#c9a227','#3b6fb0','#8e44ad','#16a085','#c0392b'];
-    var ds=pins.map(function(p,i){ return {label:p.label,data:p.curve,borderColor:cols[i%cols.length],borderWidth:2,pointRadius:0,tension:.2}; });
-    var opt={responsive:true,maintainAspectRatio:true,animation:{duration:300},interaction:{mode:'nearest',intersect:false},
-      scales:{x:{type:'linear',title:{display:true,text:'FREQUENCY (GHz)'}},y:{title:{display:true,text:'RCS (dBsm)'}}},
-      plugins:{legend:{display:true},tooltip:{callbacks:{title:function(i){return i.length?i[0].parsed.x.toFixed(2)+' GHz':'';},label:function(c){return c.dataset.label+': '+c.parsed.y.toFixed(1)+' dBsm';}}}}};
-    if(cmpChart){cmpChart.data.datasets=ds;cmpChart.options=opt;cmpChart.update();}
-    else if(window.Chart&&$('rcscmp-chart')) cmpChart=new Chart($('rcscmp-chart'),{type:'line',data:{datasets:ds},options:opt});
-    var th=$('rcscmp-table').querySelector('thead'), tb=$('rcscmp-table').querySelector('tbody');
-    th.innerHTML='<tr style="text-align:left;border-bottom:2px solid var(--line);"><th style="padding:6px 8px;">Run</th><th>Shape</th><th>Band</th><th>Construction</th><th>RCS@f₀ (dBsm)</th><th>Reduction (dB)</th><th></th></tr>';
-    tb.innerHTML='';
-    pins.forEach(function(p){ tb.insertAdjacentHTML('beforeend','<tr style="border-top:1px solid var(--line);">'+
-      '<td style="padding:6px 8px;">'+p.label+'</td><td>'+p.shape+'</td><td>'+p.band+'</td><td>'+(p.construct||'pec')+'</td><td>'+p.rcs_dbsm.toFixed(1)+'</td><td>'+(p.reduction!=null?p.reduction.toFixed(1):'—')+'</td>'+
-      '<td><button class="btn rcscmp-del" data-id="'+p.id+'" style="padding:2px 9px;font-size:11px;">✕</button></td></tr>'); });
-    tb.querySelectorAll('.rcscmp-del').forEach(function(b){ b.addEventListener('click',function(){ savePins(loadPins().filter(function(x){return x.id!=b.getAttribute('data-id');})); window.rcscmpShow(); }); });
-  };
-  var clr=$('rcscmp-clear'); if(clr) clr.addEventListener('click',function(){ savePins([]); window.rcscmpShow(); });
-  var ccsv=$('rcscmp-csv'); if(ccsv) ccsv.addEventListener('click',function(){
-    var pins=loadPins(), rows=[['run','shape','band','construction','rcs_f0_dbsm','reduction_db']];
-    pins.forEach(function(p){ rows.push([p.label,p.shape,p.band,p.construct||'pec',p.rcs_dbsm,(p.reduction!=null?p.reduction:'')]); });
-    var blob=new Blob([rows.map(function(r){return r.join(',');}).join('\n')],{type:'text/csv'});
-    var u=URL.createObjectURL(blob),a=document.createElement('a'); a.href=u; a.download='rcs_comparison.csv'; a.click(); setTimeout(function(){URL.revokeObjectURL(u);},4000);
-  });
 
   // ==================================================================== BATCH SWEEP RUNNER
   var batchBuilt=false, batchStop=false, batchRunning=false, batchRows=[], batchChart=null;
@@ -8228,7 +8219,19 @@ window.LabCal = (function(){
             mup:+(+row.mup).toFixed(4), mupp:+Math.abs(+row.mupp).toFixed(4),
             thick:+(+b.t).toFixed(3),
             note:'RL '+b.rl.toFixed(1)+' dB @ '+b.f.toFixed(2)+' GHz',
+            mode:((($('rlc-mode')||{}).value)||'constant'),
             src:'RL tab' };
+    // Also carry the material's real ε/μ DISPERSION (downsampled) so the Material-library
+    // tab can compare exact RL curves instead of holding one frequency's values constant.
+    try{
+      if(RL_ROWS && RL_ROWS.length){
+        var step=Math.max(1, Math.ceil(RL_ROWS.length/121)), ds=[];
+        for(var i=0;i<RL_ROWS.length;i+=step){ var r=RL_ROWS[i];
+          ds.push([+(+r.f).toFixed(4), +(+r.ep).toFixed(4), +Math.abs(+r.epp).toFixed(4),
+                   +(+r.mup).toFixed(4), +Math.abs(+r.mupp).toFixed(4)]); }
+        if(ds.length>1) m.rows=ds;                 // [f_GHz, ep, epp, mup, mupp]
+      }
+    }catch(e){}
     try{
       var KEY='cadMatLib_v1', a=JSON.parse(localStorage.getItem(KEY)||'[]');
       if(!Array.isArray(a)) a=[];
@@ -9037,6 +9040,223 @@ window.CADRCS = {
   buildPlate, buildSphere, buildCylinder,
   buildEdges, rcsFringe, rcsPOplusPTD,
 };
+})();
+</script>
+<script>
+/* ============================================================================
+ * MATERIAL LIBRARY tab — compare the materials you pinned from the RL tab.
+ * Reads the same localStorage library the CAD-RCS per-part dropdowns use
+ * ('cadMatLib_v1'), and overlays each material's reflection-loss curve using
+ * window.RLcore (the single RL engine). Materials pinned from a measured upload
+ * carry their real ε/μ dispersion (exact); constant-ε/μ materials are evaluated
+ * with those constants held across the band and flagged as such.
+ * ==========================================================================*/
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  var LIBKEY='cadMatLib_v1';
+  var chart=null, inited=false, LAST=null;
+  var COLS=['#0b6e54','#b4471f','#3b6fb0','#c9a227','#8e44ad','#16a085','#c0392b','#161a18','#7f8c8d','#d35400'];
+  function libGet(){ try{ var a=JSON.parse(localStorage.getItem(LIBKEY)||'[]'); return Array.isArray(a)?a:[]; }catch(e){ return []; } }
+  function libSet(a){ try{ localStorage.setItem(LIBKEY,JSON.stringify(a)); }catch(e){} }
+  var num=function(id,d){ var v=parseFloat(($(id)||{}).value); return isFinite(v)?v:d; };
+  var fmt=function(x,n){ return (x==null||!isFinite(x))?'—':(+x).toFixed(n==null?2:n); };
+
+  // ε/μ of a material at frequency f (GHz): interpolate its stored dispersion if present,
+  // else hold its single pinned value constant.
+  function rowAt(m,f){
+    if(m.rows && m.rows.length>1){
+      var R=m.rows;
+      if(f<=R[0][0]) { var a=R[0]; return {f:f,ep:a[1],epp:a[2],mup:a[3],mupp:a[4]}; }
+      if(f>=R[R.length-1][0]){ var z=R[R.length-1]; return {f:f,ep:z[1],epp:z[2],mup:z[3],mupp:z[4]}; }
+      for(var i=0;i<R.length-1;i++){
+        if(f>=R[i][0] && f<=R[i+1][0]){
+          var t=(R[i+1][0]-R[i][0])>1e-12 ? (f-R[i][0])/(R[i+1][0]-R[i][0]) : 0;
+          var L=R[i], H=R[i+1];
+          return {f:f, ep:L[1]+t*(H[1]-L[1]), epp:L[2]+t*(H[2]-L[2]),
+                       mup:L[3]+t*(H[3]-L[3]), mupp:L[4]+t*(H[4]-L[4])};
+        }
+      }
+    }
+    return {f:f, ep:m.ep, epp:Math.abs(m.epp), mup:m.mup, mupp:Math.abs(m.mupp)};
+  }
+  function valid(m){ return m && isFinite(m.ep) && isFinite(m.mup) && m.ep>0 && m.mup>0 && isFinite(m.thick) && m.thick>0; }
+
+  function compute(){
+    var lib=libGet();
+    if(!lib.length){ LAST=null; return null; }
+    var f0=num('mlb-fmin',2), f1=num('mlb-fmax',18), ft=num('mlb-ftarget',10);
+    if(f1<=f0) f1=f0*1.5;
+    var N=161, out=[];
+    lib.forEach(function(m){
+      if(!valid(m)) { out.push({m:m, bad:true}); return; }
+      var d=m.thick/1000, pts=[], best={rl:1e9,f:null}, eabLo=null, eabHi=null, run=null, bestRun=0;
+      for(var i=0;i<N;i++){
+        var f=f0+(f1-f0)*i/(N-1);
+        var rl=window.RLcore.rlAt(rowAt(m,f), d);
+        if(!isFinite(rl)) rl=0;
+        pts.push({x:+f.toFixed(4), y:+rl.toFixed(3)});
+        if(rl<best.rl){ best={rl:rl,f:f}; }
+        if(rl<=-10){ if(run===null) run=f; }
+        else if(run!==null){ if(f-run>bestRun){ bestRun=f-run; eabLo=run; eabHi=f; } run=null; }
+      }
+      if(run!==null && (f1-run)>bestRun){ bestRun=f1-run; eabLo=run; eabHi=f1; }
+      var rlT=window.RLcore.rlAt(rowAt(m,ft), d);
+      // disp = evaluated from a stored ε/μ table (true for both measured uploads and
+      // synthesised constants); meas = it actually came from a MEASURED file. Only the
+      // latter may be labelled "measured" — never present a model as data.
+      out.push({ m:m, pts:pts, minRL:best.rl, atF:best.f, eab:bestRun, eabLo:eabLo, eabHi:eabHi,
+                 rlTarget:isFinite(rlT)?rlT:null, disp:!!(m.rows&&m.rows.length>1),
+                 meas:(m.mode==='measured') });
+    });
+    LAST={ f0:f0, f1:f1, ft:ft, items:out };
+    return LAST;
+  }
+
+  function drawChart(){
+    var fig=$('mlb-chart-fig'); if(!fig||!LAST) return;
+    var good=LAST.items.filter(function(o){return !o.bad;});
+    if(!good.length){ fig.style.display='none'; return; }
+    fig.style.display='';                                     // reveal BEFORE creating the chart
+    var ds=good.map(function(o,i){
+      return { label:o.m.name+(o.meas?'':' (const ε/μ)'), data:o.pts, borderColor:COLS[i%COLS.length],
+               backgroundColor:'transparent', borderWidth:2, pointRadius:0, tension:.2 };
+    });
+    ds.push({ label:'−10 dB threshold', data:[{x:LAST.f0,y:-10},{x:LAST.f1,y:-10}], borderColor:'#8aa',
+              borderWidth:1, borderDash:[5,4], pointRadius:0, _guide:true });
+    var opts={ animation:false, responsive:true, maintainAspectRatio:true,
+      interaction:{mode:'index',intersect:false},
+      scales:{ x:{type:'linear',title:{display:true,text:'FREQUENCY (GHz)'},min:LAST.f0,max:LAST.f1},
+               y:{title:{display:true,text:'REFLECTION LOSS (dB)'}} },
+      plugins:{ legend:{labels:{boxWidth:14,font:{size:11}}},
+        tooltip:{ filter:function(it){ return !(it.dataset&&it.dataset._guide); },
+          callbacks:{ title:function(it){ return it.length? it[0].parsed.x.toFixed(2)+' GHz':''; },
+                      label:function(c){ return c.dataset.label+': '+c.parsed.y.toFixed(2)+' dB'; } } } } };
+    if(chart){ chart.data.datasets=ds; chart.options=opts; chart.update('none'); }
+    else if(window.Chart && $('mlb-chart')) chart=new Chart($('mlb-chart'),{type:'line',data:{datasets:ds},options:opts});
+    if(chart){ try{ chart.resize(); chart.update('none'); chart.draw(); }catch(e){} }
+  }
+
+  function drawBest(){
+    var el=$('mlb-best'); if(!el||!LAST) return;
+    var good=LAST.items.filter(function(o){return !o.bad;});
+    if(!good.length){ el.innerHTML='<span style="color:var(--muted);">No valid materials — check ε′, μ′ and thickness.</span>'; return; }
+    var deep=good.slice().sort(function(a,b){return a.minRL-b.minRL;})[0];
+    var wide=good.slice().sort(function(a,b){return b.eab-a.eab;})[0];
+    el.innerHTML='<div style="display:flex;gap:28px;flex-wrap:wrap;align-items:flex-end;">'+
+      '<div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Deepest absorber</div>'+
+        '<div style="font-size:20px;font-weight:700;color:var(--text);">'+deep.m.name+'</div>'+
+        '<div style="font-size:11.5px;color:var(--faint);">RL '+fmt(deep.minRL,1)+' dB at '+fmt(deep.atF,2)+' GHz · '+fmt(deep.m.thick,2)+' mm</div></div>'+
+      '<div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Widest bandwidth (≤ −10 dB)</div>'+
+        '<div style="font-size:20px;font-weight:700;color:var(--accent);">'+wide.m.name+'</div>'+
+        '<div style="font-size:11.5px;color:var(--faint);">EAB '+fmt(wide.eab,2)+' GHz'+(wide.eabLo!=null?(' ('+fmt(wide.eabLo,2)+'–'+fmt(wide.eabHi,2)+' GHz)'):'')+'</div></div>'+
+      '<div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Saved materials</div>'+
+        '<div style="font-size:20px;font-weight:700;color:var(--text);">'+libGet().length+'</div>'+
+        '<div style="font-size:11.5px;color:var(--faint);">compared over '+fmt(LAST.f0,1)+'–'+fmt(LAST.f1,1)+' GHz</div></div>'+
+      '</div>';
+  }
+
+  function drawTable(){
+    var t=$('mlb-table'); if(!t||!LAST) return;
+    var h='<tr style="background:var(--panel2);">'+
+      ['Material','ε′','ε″','μ′','μ″','Thickness (mm)','min RL (dB)','at (GHz)','EAB (GHz)',
+       'RL @ '+fmt(LAST.ft,1)+' GHz','RCS cut @ target','Data',''].map(function(c,i){
+        return '<th style="text-align:'+(i===0||i===11?'left':'right')+';padding:7px 9px;white-space:nowrap;">'+c+'</th>'; }).join('')+'</tr>';
+    LAST.items.forEach(function(o){
+      var m=o.m;
+      if(o.bad){
+        h+='<tr style="border-top:1px solid var(--line);"><td style="padding:6px 9px;">'+m.name+'</td>'+
+           '<td colspan="11" style="padding:6px 9px;color:#c0392b;">invalid ε/μ or thickness — remove and re-pin</td>'+
+           '<td style="padding:6px 9px;"><button class="btn mlb-del" data-id="'+m.id+'" style="padding:2px 8px;font-size:10.5px;">✕</button></td></tr>';
+        return;
+      }
+      var cut=(o.rlTarget!=null)?Math.abs(o.rlTarget):null;      // σ_coated/σ_bare = |Γ|² -> reduction = |RL|
+      h+='<tr style="border-top:1px solid var(--line);">'+
+        '<td style="padding:6px 9px;font-weight:600;color:var(--text);">'+m.name+'</td>'+
+        '<td style="text-align:right;padding:6px 9px;">'+fmt(m.ep,2)+'</td>'+
+        '<td style="text-align:right;padding:6px 9px;">'+fmt(Math.abs(m.epp),2)+'</td>'+
+        '<td style="text-align:right;padding:6px 9px;">'+fmt(m.mup,2)+'</td>'+
+        '<td style="text-align:right;padding:6px 9px;">'+fmt(Math.abs(m.mupp),2)+'</td>'+
+        '<td style="text-align:right;padding:6px 9px;"><input class="mlb-th" data-id="'+m.id+'" type="number" value="'+m.thick+'" step="0.05" min="0.01" style="width:70px;padding:4px 6px;border:1px solid var(--line);border-radius:5px;background:var(--panel);font-family:var(--font-mono);font-size:11px;text-align:right;"></td>'+
+        '<td style="text-align:right;padding:6px 9px;font-weight:600;color:'+(o.minRL<=-10?'#0b6e54':'inherit')+';">'+fmt(o.minRL,1)+'</td>'+
+        '<td style="text-align:right;padding:6px 9px;">'+fmt(o.atF,2)+'</td>'+
+        '<td style="text-align:right;padding:6px 9px;">'+(o.eab>0?fmt(o.eab,2):'—')+'</td>'+
+        '<td style="text-align:right;padding:6px 9px;">'+fmt(o.rlTarget,1)+'</td>'+
+        '<td style="text-align:right;padding:6px 9px;">'+(cut!=null?(fmt(cut,1)+' dB'):'—')+'</td>'+
+        '<td style="padding:6px 9px;color:var(--faint);">'+(o.meas?'measured':'const ε/μ')+'</td>'+
+        '<td style="padding:6px 9px;"><button class="btn mlb-del" data-id="'+m.id+'" style="padding:2px 8px;font-size:10.5px;">✕</button></td></tr>';
+    });
+    t.innerHTML=h;
+    t.querySelectorAll('.mlb-del').forEach(function(b){
+      b.addEventListener('click',function(){
+        libSet(libGet().filter(function(x){ return String(x.id)!==String(b.getAttribute('data-id')); }));
+        render();
+      });
+    });
+    t.querySelectorAll('.mlb-th').forEach(function(inp){
+      inp.addEventListener('change',function(){
+        var v=parseFloat(inp.value);
+        if(!isFinite(v)||v<=0){ inp.value=1; v=1; }
+        var lib=libGet(), id=String(inp.getAttribute('data-id'));
+        lib.forEach(function(x){ if(String(x.id)===id) x.thick=v; });
+        libSet(lib); render();
+      });
+    });
+    var nMeas=LAST.items.filter(function(o){return o.meas;}).length;
+    $('mlb-note').textContent='RCS cut @ target = how much this coating lowers a flat metal surface’s specular return at the target frequency (equal to |RL| there, since σ_coated = σ_bare·|Γ|²). '+
+      nMeas+' of '+LAST.items.length+' material(s) carry MEASURED ε/μ dispersion from an uploaded file; the rest were pinned from constant ε/μ, held across the band.';
+  }
+
+  function render(){
+    var lib=libGet(), empty=$('mlb-empty'), body=$('mlb-body');
+    if(!lib.length){ if(empty) empty.style.display=''; if(body) body.style.display='none'; return; }
+    if(empty) empty.style.display='none';
+    if(body) body.style.display='';
+    if(!window.RLcore){ $('mlb-best').innerHTML='<span style="color:#c0392b;">RL engine not loaded — open the Reflection-loss tab once, then come back.</span>'; return; }
+    if(!compute()) return;
+    drawBest(); drawChart(); drawTable();
+  }
+
+  function csvSummary(){
+    if(!LAST) return '';
+    var L=[['name','eps_re','eps_im','mu_re','mu_im','thickness_mm','min_RL_dB','matching_GHz','EAB_GHz','RL_at_'+fmt(LAST.ft,1)+'GHz','RCS_cut_dB','data'].join(',')];
+    LAST.items.forEach(function(o){ if(o.bad) return; var m=o.m;
+      L.push([JSON.stringify(m.name), m.ep, Math.abs(m.epp), m.mup, Math.abs(m.mupp), m.thick,
+              fmt(o.minRL,3), fmt(o.atF,4), fmt(o.eab,3), fmt(o.rlTarget,3),
+              (o.rlTarget!=null?fmt(Math.abs(o.rlTarget),3):''), (o.meas?'measured':'const')].join(','));
+    });
+    return L.join('\n');
+  }
+  function csvCurves(){
+    if(!LAST) return '';
+    var good=LAST.items.filter(function(o){return !o.bad;});
+    if(!good.length) return '';
+    var L=[['freq_ghz'].concat(good.map(function(o){return '"'+o.m.name+' RL_dB"';})).join(',')];
+    for(var i=0;i<good[0].pts.length;i++){
+      L.push([good[0].pts[i].x].concat(good.map(function(o){ return (o.pts[i]?o.pts[i].y:''); })).join(','));
+    }
+    return L.join('\n');
+  }
+  function dl(text,name){
+    if(!text){ return; }
+    var b=new Blob([text],{type:'text/csv'}), u=URL.createObjectURL(b);
+    var a=document.createElement('a'); a.href=u; a.download=name; a.click();
+    setTimeout(function(){URL.revokeObjectURL(u);},2000);
+  }
+
+  function wire(){
+    ['mlb-fmin','mlb-fmax','mlb-ftarget'].forEach(function(id){ var e=$(id); if(e) e.addEventListener('change',render); });
+    var rc=$('mlb-recompute'); if(rc) rc.addEventListener('click',render);
+    var c1=$('mlb-csv'); if(c1) c1.addEventListener('click',function(){ dl(csvSummary(),'material_library_comparison.csv'); });
+    var c2=$('mlb-curves-csv'); if(c2) c2.addEventListener('click',function(){ dl(csvCurves(),'material_library_RL_curves.csv'); });
+    var cl=$('mlb-clear'); if(cl) cl.addEventListener('click',function(){
+      if(!libGet().length) return;
+      if(confirm('Remove all saved materials from the library? This also clears them from the CAD-RCS part dropdowns.')){ libSet([]); render(); }
+    });
+  }
+  window.matlibInit=function(){
+    if(!inited){ wire(); inited=true; }
+    render();                                    // always re-read the library (it may have been pinned since)
+  };
 })();
 </script>
 <script>
