@@ -170,7 +170,13 @@ if __name__ == "__main__":
     # maskable: square plate + big safe zone, launchers crop these
     for s in (192, 512):
         save(draw_mark(s, 0.26, rounded=False), f"icon-maskable-{s}.png")
-    # iOS home screen: opaque square, iOS applies its own rounding
-    save(draw_mark(180, 0.15, rounded=False), "apple-touch-icon.png", opaque=True)
+    # iOS home screen: opaque squares, NO alpha and NO rounding — iOS applies its own mask,
+    # and an apple-touch-icon with transparency is a documented way to get no icon at all.
+    # One file per device size iOS actually asks for (iPhone 180, iPad Pro 167, iPad 152,
+    # older 120); the plain name stays for the root-path probe.
+    for s, nm in ((180, "apple-touch-icon.png"), (180, "apple-touch-icon-180.png"),
+                  (167, "apple-touch-icon-167.png"), (152, "apple-touch-icon-152.png"),
+                  (120, "apple-touch-icon-120.png")):
+        save(draw_mark(s, 0.15, rounded=False), nm, opaque=True)
     save(draw_mark(32, 0.08, rounded=True), "favicon-32.png")
     print("done")

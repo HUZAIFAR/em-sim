@@ -16,7 +16,22 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Signature" />
 <link rel="manifest" href="/manifest.webmanifest" />
-<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+<!-- iOS home-screen icon. It needs ALL of this to be reliable:
+       * one <link> per size iOS asks for (iPhone 180, iPad Pro 167, iPad 152, older 120) —
+         with no `sizes` attribute iOS may skip the link entirely and fall back to a letter,
+       * `apple-touch-icon-precomposed` as well, for older iOS,
+       * opaque PNGs with NO alpha and NO rounding (iOS masks them itself; transparency is a
+         documented way to end up with no icon),
+       * NEW filenames rather than a ?v= query — iOS caches the home-screen icon per URL, so a
+         fresh path is the only dependable way to retire a previously-installed icon.
+     The root-path files (/apple-touch-icon.png, -precomposed) are served too: iOS probes
+     those directly. -->
+<link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon-180.png" />
+<link rel="apple-touch-icon-precomposed" sizes="180x180" href="/icons/apple-touch-icon-180.png" />
+<link rel="apple-touch-icon" sizes="167x167" href="/icons/apple-touch-icon-167.png" />
+<link rel="apple-touch-icon" sizes="152x152" href="/icons/apple-touch-icon-152.png" />
+<link rel="apple-touch-icon" sizes="120x120" href="/icons/apple-touch-icon-120.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -452,6 +467,135 @@
     #hrn-field3d{height:min(46vh,360px)!important;}
     #rcs-lobe3d,#cad-field3d{height:min(48vh,360px)!important;}
   }
+
+  /* ==========================================================================
+     NATIVE-FEELING MOBILE NAVIGATION  (phones + iPad portrait, <=820px)
+     The desktop nav is a row of dropdowns sitting *inside the page flow*, below the
+     masthead — on a phone that scrolls away and is easy to lose. On mobile it is
+     replaced by the two bars a native app would use, plus a drawer:
+        #mbar    sticky top app bar   — hamburger + the current page's name
+        #mtabs   fixed bottom tab bar — the four groups; tapping one opens
+        #msheet  a bottom sheet       — the pages inside that group
+        #mdrawer a left side drawer   — EVERY page, opened by the hamburger or by
+                                        swiping right from the left edge
+     DESKTOP IS UNTOUCHED: all five elements are display:none by default and only
+     switched on inside the media query, and `nav.tabs` is only hidden in there.
+     `nav.tabs` STAYS IN THE DOM on mobile — activateTab() and several tabs read
+     .morelink/.grouptab for their active state, and the mobile menus are BUILT from
+     it, so there is one source of truth and new tabs appear automatically.
+     ========================================================================== */
+  #mbar,#mtabs,#mdrawer,#mscrim,#msheet,#msheet-scrim{display:none;}
+
+  @media screen and (max-width:820px){
+    nav.tabs{display:none;}
+    /* clear the fixed bottom tab bar (56px + label + the home-indicator inset) */
+    /* body already carries env(safe-area-inset-bottom) — don't count it twice */
+    .wrap{padding-bottom:86px;}
+    /* #mbar now owns the notch inset (it sits above the banner), so drop it here */
+    .topbar{padding-top:0;}
+
+    /* ---- sticky top app bar -------------------------------------------------
+       It is the FIRST element on the page (above the Khalifa University banner),
+       so it owns the notch inset and stays put once the banner scrolls away. */
+    #mbar{display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:880;
+      background:var(--ink);color:#eef2ef;padding:0 6px 0 2px;min-height:50px;
+      box-shadow:0 1px 0 rgba(255,255,255,.07);}
+    @supports (padding: env(safe-area-inset-top)){
+      #mbar{padding-top:env(safe-area-inset-top);}
+    }
+    #mbar-burger{flex:none;width:46px;height:46px;display:grid;place-items:center;
+      background:none;border:none;padding:0;cursor:pointer;color:#eef2ef;-webkit-tap-highlight-color:transparent;}
+    #mbar-burger svg{width:22px;height:22px;stroke:currentColor;stroke-width:1.9;fill:none;
+      stroke-linecap:round;transition:transform .25s var(--ease,ease);}
+    #mbar-burger:active svg{transform:scale(.9);}
+    #mbar-title{flex:1 1 auto;min-width:0;font-family:var(--font-head);font-size:15px;
+      font-weight:600;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    #mbar-grp{flex:none;font-family:var(--font-mono);font-size:9.5px;letter-spacing:.08em;
+      text-transform:uppercase;color:#8fd9bd;border:1px solid rgba(143,217,189,.4);
+      border-radius:20px;padding:3px 9px;}
+
+    /* ---- fixed bottom tab bar ---------------------------------------------- */
+    #mtabs{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:900;
+      background:rgba(251,250,246,.93);backdrop-filter:saturate(180%) blur(14px);
+      -webkit-backdrop-filter:saturate(180%) blur(14px);
+      border-top:1px solid var(--line);padding:5px 2px 4px;}
+    @supports (padding: env(safe-area-inset-bottom)){
+      #mtabs{padding-bottom:calc(4px + env(safe-area-inset-bottom));}
+    }
+    #mtabs button{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;
+      gap:3px;background:none;border:none;padding:5px 2px 3px;cursor:pointer;color:var(--faint);
+      font-family:var(--font-body);font-size:10.5px;font-weight:500;letter-spacing:.01em;
+      -webkit-tap-highlight-color:transparent;transition:color .15s;}
+    #mtabs button svg{width:23px;height:23px;stroke:currentColor;stroke-width:1.5;fill:none;
+      stroke-linejoin:round;transition:transform .18s var(--ease,ease);}
+    #mtabs button span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+    #mtabs button.on{color:var(--accent);}
+    #mtabs button.on svg{transform:translateY(-1px) scale(1.06);}
+    #mtabs button:active svg{transform:scale(.92);}
+
+    /* ---- bottom sheet: the pages inside one group --------------------------- */
+    #msheet-scrim{display:block;position:fixed;inset:0;z-index:1050;background:rgba(10,14,12,.42);
+      opacity:0;pointer-events:none;transition:opacity .24s var(--ease,ease);touch-action:none;}
+    #msheet-scrim.open{opacity:1;pointer-events:auto;}
+    #msheet{display:block;position:fixed;left:0;right:0;bottom:0;z-index:1100;
+      background:var(--panel);border-top-left-radius:16px;border-top-right-radius:16px;
+      box-shadow:0 -10px 40px rgba(10,14,12,.22);padding:8px 10px 10px;
+      max-height:min(72vh,560px);overflow-y:auto;-webkit-overflow-scrolling:touch;
+      overscroll-behavior:contain;transform:translateY(110%);
+      transition:transform .26s var(--ease,cubic-bezier(.32,.72,0,1));}
+    @supports (padding: env(safe-area-inset-bottom)){
+      #msheet{padding-bottom:calc(10px + env(safe-area-inset-bottom));}
+    }
+    #msheet.open{transform:none;}
+    #msheet .grip{width:38px;height:4px;border-radius:4px;background:var(--line);
+      margin:2px auto 8px;}
+    #msheet .shead{font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;
+      text-transform:uppercase;color:var(--faint);padding:0 8px 8px;}
+
+    /* ---- left side drawer: every page --------------------------------------- */
+    #mscrim{display:block;position:fixed;inset:0;z-index:1150;background:rgba(10,14,12,.45);
+      opacity:0;pointer-events:none;transition:opacity .28s var(--ease,ease);touch-action:none;}
+    #mscrim.open{opacity:1;pointer-events:auto;}
+    #mdrawer{display:flex;flex-direction:column;position:fixed;top:0;bottom:0;left:0;z-index:1200;
+      width:min(310px,84vw);background:var(--panel);border-right:1px solid var(--line);
+      box-shadow:14px 0 44px rgba(10,14,12,.24);transform:translateX(-101%);
+      transition:transform .28s var(--ease,cubic-bezier(.32,.72,0,1));}
+    #mdrawer.open{transform:none;}
+    /* while a finger is dragging it, the inline transform must not be animated */
+    #mdrawer.dragging,#mscrim.dragging{transition:none;}
+    #mdrawer .dhead{flex:none;background:var(--ink);color:#eef2ef;padding:14px 16px 13px;
+      display:flex;align-items:flex-end;justify-content:space-between;gap:10px;}
+    @supports (padding: env(safe-area-inset-top)){
+      #mdrawer .dhead{padding-top:calc(14px + env(safe-area-inset-top));}
+    }
+    #mdrawer .dhead b{font-family:var(--font-head);font-size:16px;font-weight:600;
+      letter-spacing:-.01em;display:block;}
+    #mdrawer .dhead small{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.07em;
+      color:#8a938d;display:block;margin-top:3px;}
+    #mdrawer-close{background:none;border:none;color:#cdd6d1;font-size:22px;line-height:1;
+      padding:4px 6px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+    #mdrawer-body{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;
+      overscroll-behavior:contain;padding:8px 8px 22px;}
+    #mdrawer-body .dgrp{font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;
+      text-transform:uppercase;color:var(--faint);padding:14px 10px 6px;}
+    #mdrawer-body .dgrp:first-child{padding-top:6px;}
+
+    /* one row style for both the sheet and the drawer */
+    .mlink{display:flex;align-items:center;gap:11px;width:100%;text-align:left;
+      background:none;border:none;border-radius:9px;padding:11px 10px;min-height:46px;
+      font-family:var(--font-body);font-size:14.5px;color:var(--muted);cursor:pointer;
+      -webkit-tap-highlight-color:transparent;}
+    .mlink svg{flex:none;width:19px;height:19px;stroke:currentColor;stroke-width:1.5;fill:none;
+      stroke-linejoin:round;opacity:.75;}
+    .mlink span{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .mlink:active{background:var(--line-soft);}
+    .mlink.on{background:var(--accent-soft);color:var(--accent);font-weight:600;}
+    .mlink.on svg{opacity:1;}
+    .mlink .tick{flex:none;color:var(--accent);font-size:13px;opacity:0;}
+    .mlink.on .tick{opacity:1;}
+  }
+  /* the two bars are screen furniture — never print them */
+  @media print{ #mbar,#mtabs,#mdrawer,#mscrim,#msheet,#msheet-scrim{display:none!important;} }
 </style>
 </head>
 <body>
@@ -501,6 +645,16 @@
   s.addEventListener('click',hide); // click to skip
 })();
 </script>
+<!-- Mobile app bar. First element on the page so it owns the notch inset and stays
+     stuck once the banner below it scrolls away. Hidden above 820px. -->
+<div id="mbar">
+  <button id="mbar-burger" type="button" aria-label="Open the page menu" aria-controls="mdrawer" aria-expanded="false">
+    <svg viewBox="0 0 24 24"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+  </button>
+  <div id="mbar-title">Analytical Simulator</div>
+  <div id="mbar-grp">Waveguide</div>
+</div>
+
 <div class="topbar"><div class="in">
   <span>KHALIFA UNIVERSITY · <span dir="rtl" lang="ar">جامعة خليفة</span></span>
   <span class="dim">SIGNAL TO SIGNATURE — v3.8</span>
@@ -3220,6 +3374,7 @@ function activateTab(page){
   if(page==='cadrcs' && window.cadrcsInit) window.cadrcsInit();
   if(['horn','horninv','horncmp','hornfw'].indexOf(page)>=0 && window.hornAnaInit) window.hornAnaInit();
   document.querySelectorAll('.more-menu').forEach(m=>m.classList.remove('open'));
+  if(window.mnavSync) window.mnavSync(page);      // mobile app bar + tab bar + drawer
 }
 document.querySelectorAll('.tab[data-page]').forEach(t=>t.addEventListener('click',()=>activateTab(t.dataset.page)));
 document.querySelectorAll('.morelink').forEach(t=>t.addEventListener('click',()=>activateTab(t.dataset.page)));
@@ -10389,6 +10544,272 @@ window.CADRCS = {
       });
     }).catch(function(){ /* sidecar files absent — the app works exactly as before */ });
   });
+})();
+</script>
+
+<!-- ============================================================================
+     MOBILE NAVIGATION (<=820px). The bottom tab bar, its bottom sheet and the side
+     drawer. All three are display:none above the breakpoint, so desktop is untouched.
+     Their CONTENTS are built by JS from <nav class="tabs"> so there is exactly one
+     source of truth for the tab list — add a tab there and it appears here too.
+     ========================================================================= -->
+<nav id="mtabs" aria-label="Sections"></nav>
+<div id="msheet-scrim"></div>
+<div id="msheet" role="dialog" aria-modal="true" aria-label="Pages in this section">
+  <div class="grip"></div><div class="shead" id="msheet-head"></div><div id="msheet-body"></div>
+</div>
+<div id="mscrim"></div>
+<aside id="mdrawer" role="dialog" aria-modal="true" aria-label="All pages">
+  <div class="dhead">
+    <div><b>Signal to Signature</b><small>KHALIFA UNIVERSITY · v3.8</small></div>
+    <button id="mdrawer-close" type="button" aria-label="Close the menu">&times;</button>
+  </div>
+  <div id="mdrawer-body"></div>
+</aside>
+
+<script>
+/* ============================================================================
+ * Mobile navigation controller.
+ *
+ * Builds the bottom tab bar, the per-group bottom sheet and the side drawer by
+ * READING <nav class="tabs"> — the desktop nav stays in the DOM (hidden), so it
+ * remains the single source of truth and every other tab's `.morelink` state
+ * handling keeps working untouched.
+ *
+ * Navigation itself goes through activateTab(), the same entry point the desktop
+ * nav uses; nothing about the page logic is duplicated here.
+ *
+ * FAIL-SAFE: if anything in here throws, the desktop nav is un-hidden so the app
+ * can never end up with no way to change page.
+ * ==========================================================================*/
+(function(){
+  var BP = 820;                                   // must match the CSS breakpoint
+  var mtabs = document.getElementById('mtabs'),
+      sheet = document.getElementById('msheet'),   ssc = document.getElementById('msheet-scrim'),
+      shead = document.getElementById('msheet-head'), sbody = document.getElementById('msheet-body'),
+      drawer = document.getElementById('mdrawer'), scrim = document.getElementById('mscrim'),
+      dbody = document.getElementById('mdrawer-body'),
+      burger = document.getElementById('mbar-burger'),
+      btitle = document.getElementById('mbar-title'), bgrp = document.getElementById('mbar-grp');
+  if(!mtabs || !drawer || !sheet) return;
+
+  function bail(e){                               // never leave the user stranded
+    try{
+      var n=document.querySelector('nav.tabs'); if(n) n.style.display='flex';
+      mtabs.style.display='none'; drawer.style.display='none'; sheet.style.display='none';
+      var mb=document.getElementById('mbar'); if(mb) mb.style.display='none';
+    }catch(_){}
+    if(window.console) console.error('mobile nav disabled:', e);
+  }
+
+  /* ---- read the desktop nav ------------------------------------------------ */
+  var GROUPS = [];
+  try{
+    Array.prototype.forEach.call(document.querySelectorAll('nav.tabs .moredrop'), function(dd){
+      var b = dd.querySelector('.moretab'); if(!b) return;
+      var svg = b.querySelector('svg');
+      var g = { group : b.dataset.group || '',
+                // strip the desktop dropdown caret
+                label : (b.textContent||'').replace(/[▾▼]/g,'').trim(),
+                icon  : svg ? svg.outerHTML : '',
+                pages : [] };
+      Array.prototype.forEach.call(dd.querySelectorAll('.morelink[data-page]'), function(l){
+        var s = l.querySelector('svg');
+        g.pages.push({ page:l.dataset.page, label:(l.textContent||'').trim(),
+                       icon: s ? s.outerHTML : '', el:l });
+      });
+      if(g.pages.length) GROUPS.push(g);
+    });
+    if(!GROUPS.length) throw new Error('no tab groups found in nav.tabs');
+  }catch(e){ bail(e); return; }
+
+  function pageInfo(page){
+    for(var i=0;i<GROUPS.length;i++)
+      for(var j=0;j<GROUPS[i].pages.length;j++)
+        if(GROUPS[i].pages[j].page===page) return {g:GROUPS[i], p:GROUPS[i].pages[j]};
+    return null;
+  }
+  function linkHTML(p){
+    return '<button class="mlink" type="button" data-page="'+p.page+'">'+p.icon+
+           '<span>'+p.label+'</span><span class="tick">✓</span></button>';
+  }
+
+  /* ---- build the bottom tab bar ------------------------------------------- */
+  try{
+    mtabs.innerHTML = GROUPS.map(function(g){
+      return '<button type="button" data-group="'+g.group+'" aria-label="'+g.label+
+             ' section">'+g.icon+'<span>'+g.label+'</span></button>';
+    }).join('');
+    dbody.innerHTML = GROUPS.map(function(g){
+      return '<div class="dgrp">'+g.label+'</div>'+g.pages.map(linkHTML).join('');
+    }).join('');
+  }catch(e){ bail(e); return; }
+
+  /* ---- open / close ------------------------------------------------------- */
+  var sheetGroup = null;
+  function hide(el,yes){ if(yes) el.setAttribute('aria-hidden','true'); else el.removeAttribute('aria-hidden'); }
+  function closeSheet(){ sheet.classList.remove('open'); ssc.classList.remove('open'); hide(sheet,true); sheetGroup=null; }
+  function openSheet(g){
+    sheetGroup = g.group;
+    shead.textContent = g.label;
+    sbody.innerHTML = g.pages.map(linkHTML).join('');
+    mark(sbody);
+    sheet.classList.add('open'); ssc.classList.add('open'); hide(sheet,false);
+  }
+  function closeDrawer(){
+    drawer.classList.remove('open'); scrim.classList.remove('open'); hide(drawer,true);
+    burger.setAttribute('aria-expanded','false');
+  }
+  function openDrawer(){
+    drawer.classList.add('open'); scrim.classList.add('open'); hide(drawer,false);
+    burger.setAttribute('aria-expanded','true');
+    var on = dbody.querySelector('.mlink.on');
+    if(on && on.scrollIntoView) try{ on.scrollIntoView({block:'nearest'}); }catch(_){}
+  }
+  function closeAll(){ closeSheet(); closeDrawer(); }
+
+  /* ---- keep every surface in step with the active page --------------------- */
+  function mark(root){
+    var cur = (document.querySelector('.page.on')||{id:''}).id.replace(/^page-/,'');
+    Array.prototype.forEach.call(root.querySelectorAll('.mlink'), function(b){
+      b.classList.toggle('on', b.dataset.page===cur);
+    });
+  }
+  window.mnavSync = function(page){
+    var inf = pageInfo(page);
+    if(btitle && inf) btitle.textContent = inf.p.label;
+    if(bgrp  && inf) bgrp.textContent  = inf.g.label;
+    Array.prototype.forEach.call(mtabs.querySelectorAll('button'), function(b){
+      b.classList.toggle('on', !!inf && b.dataset.group===inf.g.group);
+    });
+    mark(dbody); if(sheetGroup) mark(sbody);
+  };
+
+  function go(page){
+    closeAll();
+    if(typeof activateTab === 'function') activateTab(page);
+    else { var l=pageInfo(page); if(l) l.p.el.click(); }        // belt and braces
+    window.scrollTo(0,0);
+  }
+
+  /* ---- wiring ------------------------------------------------------------- */
+  mtabs.addEventListener('click', function(e){
+    var b = e.target.closest('button[data-group]'); if(!b) return;
+    if(sheetGroup === b.dataset.group){ closeSheet(); return; }   // tap again to dismiss
+    for(var i=0;i<GROUPS.length;i++) if(GROUPS[i].group===b.dataset.group){ closeDrawer(); openSheet(GROUPS[i]); return; }
+  });
+  function linkClick(e){ var b=e.target.closest('.mlink'); if(b) go(b.dataset.page); }
+  sbody.addEventListener('click', linkClick);
+  dbody.addEventListener('click', linkClick);
+  ssc.addEventListener('click', closeSheet);
+  scrim.addEventListener('click', closeDrawer);
+  document.getElementById('mdrawer-close').addEventListener('click', closeDrawer);
+  burger.addEventListener('click', function(){
+    if(drawer.classList.contains('open')) closeDrawer(); else { closeSheet(); openDrawer(); }
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key==='Escape'){ if(drawer.classList.contains('open')) closeDrawer(); else if(sheetGroup) closeSheet(); }
+  });
+
+  /* ---- swipe right from the left edge -> open the drawer -------------------
+     The gesture follows the finger, so it feels like the OS one. Two rules keep it
+     from stealing anything: it only arms in the leftmost 24px, and it only claims
+     the touch (preventDefault) once the movement is clearly horizontal — a vertical
+     scroll that starts near the edge is released immediately. Elements that own
+     their own touches (the 3-D viewers, sliders, canvases, anything horizontally
+     scrollable) are skipped outright. */
+  var W = 0, sx = 0, sy = 0, arm = false, own = false, last = 0, lastT = 0, vel = 0;
+  function mobile(){ return window.innerWidth <= BP; }
+  function width(){ return drawer.offsetWidth || Math.min(310, window.innerWidth*0.84); }
+
+  function ownsTouch(t){
+    if(!t || typeof t.closest !== 'function') return true;   // not an element -> don't claim it
+    if(t.closest('canvas,svg,input[type=range],.infomodal,.prevmodal,#msheet,#mdrawer,#mtabs')) return true;
+    // a horizontally scrollable ancestor (wide tables inside .panel) gets the gesture
+    for(var n=t; n && n!==document.body; n=n.parentElement){
+      if(n.scrollWidth - n.clientWidth > 4){
+        var ov = getComputedStyle(n).overflowX;
+        if(ov==='auto' || ov==='scroll') return true;
+      }
+    }
+    return false;
+  }
+  function dragTo(x){
+    W = W || width();
+    x = Math.max(0, Math.min(W, x));
+    drawer.style.transform = 'translateX(' + (x - W) + 'px)';
+    scrim.style.opacity = (x / W).toFixed(3);
+    scrim.style.pointerEvents = 'auto';
+  }
+  function endDrag(open){
+    drawer.classList.remove('dragging'); scrim.classList.remove('dragging');
+    drawer.style.transform = ''; scrim.style.opacity = ''; scrim.style.pointerEvents = '';
+    if(open) openDrawer(); else closeDrawer();
+    arm = own = false;
+  }
+
+  document.addEventListener('touchstart', function(e){
+    if(own) endDrag(false);            // a second finger aborts the drag CLEANLY — without
+    arm = own = false;                 // this the inline transform was left applied forever
+    if(!mobile() || e.touches.length !== 1) return;
+    if(drawer.classList.contains('open') || sheetGroup) return;
+    var t = e.touches[0];
+    if(t.clientX > 24) return;
+    if(ownsTouch(e.target)) return;
+    sx = last = t.clientX; sy = t.clientY; arm = true; W = width();
+    lastT = e.timeStamp || 0; vel = 0;
+  }, {passive:true});
+
+  document.addEventListener('touchmove', function(e){
+    if(!arm || e.touches.length !== 1) return;
+    var t = e.touches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+    if(!own){
+      if(Math.abs(dy) > 16 && Math.abs(dy) > Math.abs(dx)){ arm = false; return; }  // it's a scroll
+      if(dx < 13 || dx < Math.abs(dy) * 1.4) return;                                // not decided yet
+      own = true;
+      drawer.classList.add('dragging'); scrim.classList.add('dragging');
+    }
+    e.preventDefault();                                                             // the gesture is ours
+    // Velocity over a >=25 ms window only. Successive touchmove timestamps can be well
+    // under a millisecond apart, and dx/dt then explodes — a slow short drag registered
+    // as a flick and opened the drawer when it should have snapped back.
+    var now = e.timeStamp || 0, dt = now - lastT;
+    if(dt >= 25){ vel = (t.clientX - last) / dt; last = t.clientX; lastT = now; }
+    dragTo(dx);
+  }, {passive:false});
+
+  function finish(e){
+    if(!arm) return;
+    if(!own){ arm = false; return; }
+    var t = (e.changedTouches && e.changedTouches[0]) || null;
+    var dx = t ? t.clientX - sx : 0;
+    endDrag(dx > W * 0.4 || vel > 0.35);            // past 40% of the width, or a flick
+  }
+  document.addEventListener('touchend', finish, {passive:true});
+  document.addEventListener('touchcancel', function(){ if(own) endDrag(false); else arm=false; }, {passive:true});
+
+  /* swipe LEFT on the open drawer closes it (threshold only — no need to animate
+     against the finger here, the drawer is already on screen) */
+  (function(){
+    var x0=0, y0=0, live=false;
+    drawer.addEventListener('touchstart', function(e){
+      if(e.touches.length!==1){ live=false; return; }
+      x0=e.touches[0].clientX; y0=e.touches[0].clientY; live=true;
+    }, {passive:true});
+    drawer.addEventListener('touchend', function(e){
+      if(!live) return; live=false;
+      var t=e.changedTouches&&e.changedTouches[0]; if(!t) return;
+      var dx=t.clientX-x0, dy=t.clientY-y0;
+      if(dx < -60 && Math.abs(dx) > Math.abs(dy)*1.5) closeDrawer();
+    }, {passive:true});
+  })();
+
+  /* leaving mobile width mid-session: shut everything so the desktop nav is clean */
+  window.addEventListener('resize', function(){ if(!mobile()) closeAll(); W = 0; });
+
+  hide(sheet,true); hide(drawer,true);
+  // paint the initial state
+  window.mnavSync((document.querySelector('.page.on')||{id:'page-sim'}).id.replace(/^page-/,''));
 })();
 </script>
 </body>

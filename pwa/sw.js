@@ -15,7 +15,7 @@
  * ==========================================================================*/
 // Bump on ANY change to the icons, the manifest or this file — the shell cache holds
 // the icons and manifest, so without a bump an installed phone keeps the old artwork.
-const CACHE_VERSION = 'emsim-v3.8.2';
+const CACHE_VERSION = 'emsim-v3.8.3';
 const SHELL_CACHE   = CACHE_VERSION + '-shell';
 const LIB_CACHE     = CACHE_VERSION + '-lib';
 
@@ -26,7 +26,7 @@ const NEVER_CACHE = [
 ];
 
 const SHELL = ['/', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png',
-               '/icons/apple-touch-icon.png'];
+               '/icons/apple-touch-icon.png', '/icons/apple-touch-icon-180.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
