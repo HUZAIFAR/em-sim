@@ -1781,6 +1781,7 @@ for t_mm in [0.5, 1, 2, 3, 4]:
         <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;" title="Recolours the same view with each part's coating applied (echo × |Γ|²), so you can see which hot-spots the RAM actually kills."><input id="cad-view-coat" type="checkbox"> <strong>Apply coating to this view</strong> — the red hot-spots should dim</label>
         <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;" title="Shrinks the model to the size an UNCOATED copy would have to be to give the same echo — the ghost is the real size."><input id="cad-view-shrink" type="checkbox"> <strong>Show apparent size</strong> — shrunk vs real (ghost)</label>
       </div>
+      <p id="cad-view-note" style="display:none;margin:8px 0 0;font-size:11.5px;line-height:1.55;color:#b4471f;"></p>
     </div>
 
     <!-- HOW SMALL DOES IT LOOK TO RADAR -->
@@ -9943,16 +9944,23 @@ window.CADRCS = {
     var g=lookGeom(LAST.plane,LAST.pol,angDeg), kh=g.kh, k=2*Math.PI/LAST.lam;
     var w=[kh[0]*2*k,kh[1]*2*k,kh[2]*2*k], uh=[-kh[0],-kh[1],-kh[2]];
     var gfn=coated?buildGamma(LAST.f):null;
-    var mags=new Float32Array(MESH.facets.length), mx=1e-30;
+    var mags=new Float32Array(MESH.facets.length), mx=1e-30, ref=1e-30;
     for(var i=0;i<MESH.facets.length;i++){
       var fc=MESH.facets[i], ndu=fc.n[0]*uh[0]+fc.n[1]*uh[1]+fc.n[2]*uh[2];
       if(ndu<=0){ mags[i]=0; continue; }
       var g1=w[0]*fc.v1[0]+w[1]*fc.v1[1]+w[2]*fc.v1[2], g2=w[0]*fc.v2[0]+w[1]*fc.v2[1]+w[2]*fc.v2[2], g3=w[0]*fc.v3[0]+w[1]*fc.v3[1]+w[2]*fc.v3[2];
-      var fi=window.CADRCS.triPhaseIntegral(fc.area,g1,g2,g3), mag=ndu*Math.hypot(fi.re,fi.im);
+      var fi=window.CADRCS.triPhaseIntegral(fc.area,g1,g2,g3);
+      var bare=ndu*Math.hypot(fi.re,fi.im);
+      if(bare>ref) ref=bare;                       // BARE peak — the colour reference
+      var mag=bare;
       if(gfn){ var gg=gfn(fc); if(gg) mag*=Math.hypot(gg.re,gg.im); }
       mags[i]=mag; if(mag>mx)mx=mag;
     }
-    return {mags:mags,mx:mx};
+    // `ref` (the BARE peak) is what the colours are scaled against, NOT the coated peak.
+    // Normalising a coated view to its own peak would re-brighten it: a uniform coating
+    // scales every facet equally, so the picture would come out pixel-identical to bare
+    // and "Apply coating to this view" would appear to do nothing.
+    return {mags:mags, mx:mx, ref:ref};
   }
   function viewerLoad(){
     // Reveal the panel BEFORE creating the renderer, so the canvas is sized from a real
@@ -9968,7 +9976,9 @@ window.CADRCS = {
   function viewerDraw(angDeg, coated){
     if(!V.grp||!LAST||!MESH) return;
     while(V.grp.children.length){ var c=V.grp.children.pop(); if(c.geometry)c.geometry.dispose(); if(c.material)c.material.dispose(); V.grp.remove(c); }
-    var fm=facetMags(angDeg,coated), mags=fm.mags, lg=Math.log10(Math.max(fm.mx,1e-30));
+    // scale against the BARE peak (fm.ref), so a coated view genuinely dims instead of
+    // being re-normalised back to full brightness
+    var fm=facetMags(angDeg,coated), mags=fm.mags, lg=Math.log10(Math.max(fm.ref,1e-30));
     var pos=[], col=[];
     for(var i=0;i<MESH.facets.length;i++){
       var fc=MESH.facets[i];
@@ -10193,11 +10203,35 @@ window.CADRCS = {
     var fi=$('cad-file'); if(fi) fi.addEventListener('change',function(e){ onFile(e.target.files[0]); e.target.value=''; });
     var ex=$('cad-example'); if(ex) ex.addEventListener('click',loadExample);
     var run=$('cad-run'); if(run) run.addEventListener('click',compute);
-    var vc=$('cad-view-coat'); if(vc) vc.addEventListener('change',function(){ if(LAST) viewerDraw(parseFloat($('cad-view-ang').value), vc.checked); });
+    // both viewer toggles explain themselves RIGHT HERE (a message up by the Compute
+    // button is invisible when you are looking at the 3-D view)
+    var vnote=function(msg){ var n=$('cad-view-note'); if(!n) return; n.textContent=msg||''; n.style.display=msg?'':'none'; };
+    var vc=$('cad-view-coat'); if(vc) vc.addEventListener('change',function(){
+      if(!LAST){ vc.checked=false; vnote('Press “Compute RCS” first.'); return; }
+      if(vc.checked && LAST.coat==null){
+        vc.checked=false;
+        vnote('Nothing to apply: no part has a coating yet. Set a material on a part in “3 · Coating per part” (or use Apply to all), keep “Overlay coated result” ticked, then press Compute RCS.');
+        return;
+      }
+      vnote('');
+      viewerDraw(parseFloat($('cad-view-ang').value), vc.checked);
+    });
     var vs=$('cad-view-shrink'); if(vs) vs.addEventListener('change',function(){
-      if(!LAST) return;
-      if(vs.checked && LAST.coat==null){ vs.checked=false; $('cad-runstatus').textContent='Apparent size needs a coating — assign a material to at least one part, tick “Overlay coated result”, then Compute.'; return; }
-      if(vs.checked && !LAST.shrink){ vs.checked=false; $('cad-runstatus').textContent='Could not solve an equivalent size for this shape/reduction — the numbers above still apply.'; return; }
+      if(!LAST){ vs.checked=false; vnote('Press “Compute RCS” first.'); return; }
+      if(vs.checked && LAST.coat==null){
+        vs.checked=false;
+        vnote('Apparent size needs a coating to compare against bare metal: set a material on a part in “3 · Coating per part”, keep “Overlay coated result” ticked, then press Compute RCS.');
+        return;
+      }
+      if(vs.checked && !LAST.shrink){
+        // the equivalent-size solve normally runs deferred after a compute; if it hasn't
+        // landed (or was superseded) just do it now rather than refusing the click
+        vnote('solving the equivalent size…');
+        LAST.shrink=apparentScale();
+        drawShrink();
+        if(!LAST.shrink){ vs.checked=false; vnote('Could not solve an equivalent size for this shape and reduction — the figures in the panel above still apply.'); return; }
+      }
+      vnote('');
       viewerDraw(parseFloat($('cad-view-ang').value), ($('cad-view-coat')||{}).checked);
     });
     var va=$('cad-view-ang'); if(va) va.addEventListener('input',function(){ var lab=$('cad-view-anglab'); if(lab) lab.textContent=Math.round(va.value)+'°'; if(LAST) viewerDraw(parseFloat(va.value), ($('cad-view-coat')||{}).checked); });
