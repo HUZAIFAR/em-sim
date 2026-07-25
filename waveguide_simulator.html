@@ -326,14 +326,23 @@
   }
 
   /* ==========================================================================
-     MOBILE / TABLET + installed-PWA polish (v3.8).
-     Appended LAST so it overrides without touching any rule above. Everything is
-     inside a media query or @supports, so the desktop layout is byte-identical.
+     MOBILE / TABLET / installed-PWA layout (v3.8).
+     Appended last; nothing above is modified. Every media query is scoped to
+     `screen` on purpose: A4 print width is ~794 CSS px, i.e. UNDER the 900px
+     breakpoint, so without it the phone layout would leak into the Print
+     stylesheet defined earlier in this file.
+     Measured at 390x800 and 820x1024 with every display:none results panel
+     force-revealed: zero page-level horizontal scroll on all tabs.
      ========================================================================== */
-  /* NB every rule below is scoped to `screen`. A4 print width is ~794 CSS px, which is
-     under the 900px breakpoint, so without this the phone layout (and the safe-area
-     padding) would leak into the Print stylesheet defined earlier in this file. */
-  /* notched iPhones in standalone mode: keep content out of the rounded corners */
+
+  /* ---- all widths: hardening (safe in print too) ---- */
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+  img,svg,video{max-width:100%;}
+  input,select,textarea{max-width:100%;}            /* #cad-all-mode measured 453px */
+  code,pre,.mono,a[href^="http"]{overflow-wrap:anywhere;}
+  mjx-container[display="true"]{max-width:100%;overflow-x:auto;overflow-y:hidden;}
+
+  /* ---- notched iPhones in standalone mode ---- */
   @media screen {
     @supports (padding: env(safe-area-inset-left)) {
       .wrap{ padding-left:calc(26px + env(safe-area-inset-left)); padding-right:calc(26px + env(safe-area-inset-right)); }
@@ -341,39 +350,107 @@
       body{ padding-bottom:env(safe-area-inset-bottom); }
     }
   }
-  @media screen and (max-width: 900px){
-    /* never let the page itself scroll sideways — wide content scrolls inside its panel */
-    html,body{ max-width:100%; overflow-x:hidden; }
-    .wrap{ padding-left:16px; padding-right:16px; padding-bottom:64px; }
-    @supports (padding: env(safe-area-inset-left)) {
-      .wrap{ padding-left:calc(16px + env(safe-area-inset-left)); padding-right:calc(16px + env(safe-area-inset-right)); }
-    }
-    .panel{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
-    .panel table{ min-width:max-content; }          /* keep table semantics; the panel scrolls */
-    .tabs{ gap:8px 16px; }
-    h1{ font-size:22px !important; }
-    /* iOS zooms the whole page when a focused input is under 16px — stop that */
-    input, select, textarea{ font-size:16px !important; max-width:100%; }
-    /* comfortable tap targets */
-    .btn, .tab, .morelink, .moretab{ min-height:40px; }
-    .more-menu{ max-width:min(92vw, 340px); }
-    /* the 3-D viewers: shorter on a phone, and the canvas keeps its own gestures */
-    #cad-field3d{ height:320px !important; }
-    #hrn-field3d, #hrn-geo3d, #rcs-lobe3d{ height:300px !important; }
-    #cad-field3d canvas, #hrn-field3d canvas, #hrn-geo3d canvas, #rcs-lobe3d canvas{ touch-action:none; }
+
+  @media screen and (max-width:900px){
+    /* tables that are DIRECT children of a .page have no scroll wrapper (the five
+       References catalogues). `.page>` deliberately spares already-wrapped tables. */
+    .page>table.props{display:block;width:100%;max-width:100%;
+                      overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    #page-compare{width:auto;margin-left:0;}         /* undo the 1180px desktop breakout */
   }
-  @media screen and (max-width: 560px){
-    .wrap{ padding-left:12px; padding-right:12px; }
+
+  @media screen and (max-width:820px){
+    /* `1fr 1fr` is floored by the 300px <canvas> min-content -> ~678px of content,
+       which scrolled the whole Horn page sideways. Anonymous inline-styled divs, so
+       the attribute selector is the only hook. */
+    div[style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important;}
+    div[style*="grid-template-columns:1fr 1fr"]>div{min-width:0;}
+  }
+
+  @media screen and (max-width:700px){
+    .wrap{padding:0 14px 64px;}
     @supports (padding: env(safe-area-inset-left)) {
-      .wrap{ padding-left:calc(12px + env(safe-area-inset-left)); padding-right:calc(12px + env(safe-area-inset-right)); }
+      .wrap{ padding-left:calc(14px + env(safe-area-inset-left)); padding-right:calc(14px + env(safe-area-inset-right)); }
     }
-    .statstrip{ grid-template-columns:1fr; }         /* 3 stats stack instead of squeezing */
-    .oe-grid{ grid-template-columns:1fr; }           /* one control per row */
-    h1{ font-size:20px !important; }
-    .lede{ font-size:14px; }
-    /* the per-part coating rows wrap instead of overflowing */
-    .cad-seg, .rlc-mat{ align-items:flex-start; }
-    .cad-seg span[style*="min-width"]{ min-width:0 !important; }
+    .topbar .in{padding:9px 14px;gap:10px;flex-wrap:wrap;font-size:10px;}
+    .masthead{padding:26px 0 20px;margin-bottom:22px;}
+    .masthead h1{font-size:clamp(22px,7vw,30px);}
+    .page h1{font-size:clamp(19px,5.6vw,24px)!important;line-height:1.2;}
+
+    /* nav dropdowns: anchor to the nav itself, or the RCS menu opens 62px off the
+       right edge and the More menu 105px off the left — both unreachable. */
+    nav.tabs{position:relative;gap:8px 14px;}
+    .moredrop{position:static;}
+    .more-menu,.moredrop:last-child .more-menu{
+      left:0;right:0;width:auto;min-width:0;
+      max-height:min(60vh,420px);overflow-y:auto;-webkit-overflow-scrolling:touch;}
+
+    /* one real column. The inline `grid-column:span 2` cells otherwise forge a
+       phantom implicit track (measured 160px + 114px), which squeezed the segbars. */
+    .oe-grid{grid-template-columns:1fr!important;gap:14px;}
+    .oe-grid>*{grid-column:1/-1!important;min-width:0;}
+    .ctrls{padding:18px 16px;gap:20px;}
+    .statstrip{grid-template-columns:1fr;}
+    .bands{grid-template-columns:1fr;}
+    .bandbtn{border-right:none;border-bottom:1px solid var(--line);padding:13px 14px;}
+    .bandbtn:last-child{border-bottom:none;}
+
+    /* iOS zooms the page on focus below 16px and never zooms back out. The :not()
+       chain is required — attribute selectors miss inputs with no type attribute. */
+    input:not([type=range]):not([type=checkbox]):not([type=radio]):not([type=submit]):not([type=button]),
+    select:not(.segselect),textarea{font-size:16px!important;min-height:44px;}
+
+    /* 3px-tall sliders keep their look but get a 40px hit area */
+    input[type=range]{height:40px;border-radius:0;background:transparent;
+      background-image:linear-gradient(var(--line),var(--line));
+      background-size:100% 3px;background-position:center;background-repeat:no-repeat;}
+    input[type=range]::-webkit-slider-thumb{width:24px;height:24px;}
+    input[type=range]::-moz-range-thumb{width:22px;height:22px;}
+
+    /* JS-built tick-box dropdowns (inline position:absolute + min-width) */
+    div[style*="min-width:280px"],div[style*="min-width:330px"]{
+      left:0!important;right:auto!important;min-width:0!important;
+      width:calc(100vw - 40px)!important;max-width:calc(100vw - 40px)!important;
+      max-height:min(60vh,420px)!important;overflow-y:auto!important;}
+
+    /* nested scrollers must not own the whole screen */
+    #rlc-table-fig .panel,#cad-table-fig,#cad-seg-list{
+      max-height:60vh!important;overscroll-behavior:contain;}
+
+    /* wide panels scroll internally rather than widening the page */
+    .panel{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    .panel table{min-width:max-content;}
+
+    /* per-part coating rows wrap instead of overflowing */
+    .cad-seg,.rlc-mat{align-items:flex-start;}
+    .cad-seg span[style*="min-width"]{min-width:0!important;}
+
+    /* modals */
+    .infobox{margin:2vh 10px;max-height:94vh;border-radius:10px;}
+    .infobox .ihead{padding:12px 14px;}
+    .ibody{padding:16px;font-size:14px;}
+    .prevbox{top:1.5vh;width:calc(100vw - 16px);max-height:97vh;}
+    .prevbody{padding:12px;}
+  }
+
+  /* ---- touch devices, including the 820px iPad ---- */
+  @media screen and (pointer:coarse){
+    .tab{padding:10px 2px;} .tab.on::after{bottom:0;}
+    .morelink{padding:12px;font-size:15px;min-height:44px;}
+    .btn{min-height:44px;padding:11px 16px;}
+    .segbar button,.seg button{min-height:44px;}
+    .chartinfo{width:30px;height:30px;font-size:13px;}
+    .pageinfo{padding:9px 14px;}
+    input[type=checkbox],input[type=radio]{width:22px;height:22px;flex:none;}
+    .oe-actionbar{justify-content:stretch;}
+    .oe-actionbar .btn{flex:1 1 140px;}
+
+    /* Viewers that rotate on a PASSIVE touchmove cannot preventDefault, so
+       touch-action is the only way to stop the page scrolling underneath them. */
+    #prev-canvas-wrap,#hrn-geo3d,#hrn-field3d,#rcs-lobe3d,#cad-field3d{touch-action:none;}
+    #prev-canvas-wrap,#hrn-geo3d{height:min(42vh,320px)!important;}
+    #hrn-field3d{height:min(46vh,360px)!important;}
+    #rcs-lobe3d,#cad-field3d{height:min(48vh,360px)!important;}
   }
 </style>
 </head>
