@@ -1601,6 +1601,17 @@ for t_mm in [0.5, 1, 2, 3, 4]:
     <div class="panel" style="padding:16px;margin-bottom:8px;"><canvas id="rlc-rcs-chart" height="150"></canvas></div>
     <div class="panel" style="padding:0;margin:0 0 10px;overflow:auto;"><table id="rlc-rcs-table" style="border-collapse:collapse;width:100%;font-family:var(--font-mono);font-size:11.5px;"></table></div>
     <p id="rlc-rcs-note" style="font-family:var(--font-mono);font-size:11.5px;color:var(--faint);margin:0 0 18px;"></p>
+
+    <!-- HOW SMALL DOES IT LOOK TO RADAR -->
+    <div id="rlc-shrink" style="display:none;margin-bottom:20px;">
+      <p class="charttitle">How small does the coated plate look to a radar? <button class="chartinfo" data-info="rlc-shrink" title="How these numbers are derived">ⓘ</button></p>
+      <p class="chartsub">A coating doesn't change the object's physical size — it changes how much energy it sends back, which is what a radar actually measures. These are the three standard ways to express that, all from the same |Γ| your reflection loss gives.</p>
+      <div class="panel" style="padding:0;margin-bottom:8px;overflow:auto;">
+        <table id="rlc-shrink-table" style="border-collapse:collapse;width:100%;font-family:var(--font-mono);font-size:11.5px;"></table>
+      </div>
+      <div id="rlc-shrink-vis" style="display:flex;gap:18px;flex-wrap:wrap;"></div>
+      <p id="rlc-shrink-note" style="font-family:var(--font-mono);font-size:11.5px;color:var(--faint);margin:8px 0 0;"></p>
+    </div>
     </div>
 
     <footer>Reflection loss is the exact metal-backed transmission-line result (identical to the Inverse-RAM engine and to all five reference papers), validated against the supplied Excel to ~0.01 dB away from nulls. The coated-plate RCS is the physical-optics specular envelope scaled by the measured |Γ| — instant and exact at boresight; the openEMS RCS tab gives the rigorous angle-dependent reduction on a real 3-D plate. Everything here is <em>analytical</em> (dashed convention); full-wave is one click away.</footer>
@@ -1703,7 +1714,15 @@ for t_mm in [0.5, 1, 2, 3, 4]:
       <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-top:8px;">
         <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;flex:1;min-width:240px;">Look angle&nbsp; <input id="cad-view-ang" type="range" min="0" max="360" value="0" step="2" style="flex:1;"> <span id="cad-view-anglab" style="font-family:var(--font-mono);width:44px;text-align:right;">0°</span></label>
         <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;" title="Recolours the same view with each part's coating applied (echo × |Γ|²), so you can see which hot-spots the RAM actually kills."><input id="cad-view-coat" type="checkbox"> <strong>Apply coating to this view</strong> — the red hot-spots should dim</label>
+        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;" title="Shrinks the model to the size an UNCOATED copy would have to be to give the same echo — the ghost is the real size."><input id="cad-view-shrink" type="checkbox"> <strong>Show apparent size</strong> — shrunk vs real (ghost)</label>
       </div>
+    </div>
+
+    <!-- HOW SMALL DOES IT LOOK TO RADAR -->
+    <div class="panel" id="cad-shrink-fig" style="display:none;padding:14px 16px;margin-bottom:16px;">
+      <div class="oe-head">How small does the coated model look to a radar? <button class="chartinfo" data-info="cad-shrink" title="How these numbers are derived">ⓘ</button></div>
+      <div id="cad-shrink-body" style="font-size:12.5px;line-height:1.7;"></div>
+      <p id="cad-shrink-note" style="font-family:var(--font-mono);font-size:11px;color:var(--faint);margin:10px 0 0;line-height:1.6;"></p>
     </div>
 
     <!-- RCS-VS-ANGLE CHART -->
@@ -4627,6 +4646,28 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
 <p>The surface is thousands of tiny triangles. <strong>Physical Optics (PO)</strong> treats each lit triangle as a tiny mirror and sums their reflections with the correct phases — the coherent sum is the RCS. <strong>Ufimtsev PTD</strong> adds the diffraction from sharp edges, so the estimate stays finite and realistic at wide / edge-on angles where PO alone collapses. A coating multiplies each part's surface return by |Γ|² from the same metal-backed reflection-loss physics as the RL tab (edges stay conductive — RAM suppresses the specular flash, not edge diffraction).</p>
 <h4>Honest scope</h4>
 <p>Validated against textbook closed forms (plate = 4πA²/λ², sphere, cylinder) and against <strong>openEMS full-wave</strong> on a plate — broadside 0.15 dB, wide-angle/edge floor ~3.5 dB, while PO alone is up to 70 dB wrong at grazing. It does <em>not</em> model multiple bounces / cavities (corner reflectors, nozzles), creeping or travelling waves, tip diffraction, or ray self-occlusion (shadowing is per-facet by surface normal only). Curved-edge PTD is approximate. Use the openEMS RCS tab for cavities, coated edges and resonances. STEP import tessellates on the bridge (server running); STL is read in your browser (offline). For a per-part breakdown, export your CAD as a multi-body assembly.</p>`},
+    'rlc-shrink':{title:'How small does it look to radar?', html:`
+<h4>The one thing to understand first</h4>
+<p>A radar-absorbing coating does <strong>not</strong> make the object physically smaller. It absorbs energy that would otherwise bounce back, so <em>less power returns</em> — and returned power is the only thing a radar can measure. "Looking smaller" is shorthand for "returning as little power as a smaller piece of bare metal would".</p>
+<h4>The three numbers, and why they differ</h4>
+<p>All three come from the same |Γ| your reflection loss gives, via σ<sub>coated</sub> = σ<sub>bare</sub>·|Γ|². With a reduction of R dB:</p>
+<p style="margin-left:14px;"><strong>Echo left = 10<sup>−R/10</sup></strong> — the fraction of the bare power still coming back. R = 20 dB → 1 % left, 99 % removed. This one is a plain power ratio.<br><br>
+<strong>Equivalent-sphere diameter = 10<sup>−R/20</sup></strong> — solve σ = πa² for the metal sphere that would give the same echo. Because a sphere's RCS goes as size<strong>²</strong>, halving the diameter quarters the echo, so the diameter ratio is the square root of the power ratio. R = 20 dB → looks like a sphere 10 % of the diameter. This is the standard "apparent size" measure.<br><br>
+<strong>Same plate shrunk to = 10<sup>−R/40</sup></strong> — a flat plate's RCS goes as 4πA²/λ², i.e. size<strong>⁴</strong>, so shrinking a plate is a far more efficient way to lose echo than shrinking a sphere. R = 20 dB → the plate would only need to shrink to 32 % of its side. Same physics, different shape law — which is exactly why quoting a single "% smaller" without saying which measure is meaningless.</p>
+<h4>Radar range</h4>
+<p>The radar equation gives maximum detection range R<sub>max</sub> ∝ σ^¼ <a class="cref" href="#refs" data-goto="refs">[43]</a>, so range scales as 10<sup>−R/40</sup> too. A 20 dB reduction means a radar that used to see you at 100 km now sees you at about 32 km — usually the most operationally meaningful way to state a coating's benefit.</p>
+<h4>Scope</h4>
+<p>These are boresight (θ = 0) values at each coating's own frequency, on the flat-plate physical-optics model in the panel above. Off-boresight the plate's own pattern takes over, and edges keep diffracting whether or not you coat the faces — the CAD-RCS tab does the same calculation on a real 3-D shape over a full angle sweep.</p>`},
+    'cad-shrink':{title:'How small does the coated model look to radar?', html:`
+<h4>What this panel answers</h4>
+<p>You coated the model; a radar now gets a weaker echo from it. This turns that into sizes you can picture. The coating changes <em>returned power</em>, not physical dimensions — "smaller" means "as faint as a smaller bare-metal object".</p>
+<h4>The numbers</h4>
+<p><strong>Echo removed</strong> — the fraction of the bare power that no longer comes back (1 − |Γ|²), with the remainder shown next to it.</p>
+<p><strong>Looks like a metal sphere Ø</strong> — the diameter of the sphere that would give this same echo (σ = πa²). This is the standard apparent-size measure, and it is shape-independent, which makes it the safest single number to quote.</p>
+<p><strong>Radar detects it at … of the range</strong> — from R<sub>max</sub> ∝ σ^¼ <a class="cref" href="#refs" data-goto="refs">[43]</a>. Usually the most meaningful figure operationally.</p>
+<p><strong>Same shape shrunk to</strong> — how small an <em>uncoated copy of this exact geometry</em> would have to be to scatter as weakly as your coated one. This is not assumed from a formula: it is solved numerically against your own mesh using exact electromagnetic scaling, σ(s·mesh, λ) = s²·σ(mesh, λ/s), so it follows whatever law your shape actually obeys — flat panels behave as size⁴, curved bodies as size², and a real assembly is somewhere between. Tick <strong>Show apparent size</strong> under the 3-D view to see the model at that size against a translucent ghost of its real size.</p>
+<h4>Honest limits</h4>
+<p>Values are taken at the peak look-angle (the worst case for being seen). If the equivalent shrunken object comes out smaller than about two wavelengths, the panel says so — at that size the asymptotic PO+PTD model is outside its comfortable range and only that one figure becomes indicative; the echo, sphere and range numbers are closed-form and unaffected. And as everywhere on this tab, the underlying RCS is specular + first-order edge scattering only.</p>`},
     'cad-view':{title:'3-D model — what the colours mean', html:`
 <h4>The short version</h4>
 <p><strong>Red = this piece of surface is throwing a lot of radar energy straight back at the radar. Blue = it is throwing back very little. Dark grey = it is facing away, so it contributes nothing.</strong> Red areas are what make you visible — those are the ones worth coating or reshaping.</p>
@@ -5144,6 +5185,28 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
 <p>السطح آلاف المثلثات الصغيرة. <strong>البصريات الفيزيائية (PO)</strong> تعامل كل مثلث مضاء كأنه مرآة صغيرة وتجمع انعكاساتها بالأطوار الصحيحة — والمجموع المتّسق هو الـRCS. و<strong>PTD لأوفيمتسِف</strong> يضيف الحيود من الحواف الحادة، عشان التقدير يظل منطقي عند الزوايا الواسعة/الحافّة اللي فيها PO لحاله ينهار. الطلاء يضرب انعكاس السطح لكل جزء بـ|Γ|² من نفس فيزياء فقد الانعكاس بتبويب RL (الحواف تظل موصلة — الطلاء يخفّض الوميض المرآوي مو حيود الحواف).</p>
 <h4>الحدود بصراحة</h4>
 <p>مُتحقَّق منه مقابل صيغ الكتب (لوح = 4πA²/λ²، كرة، أسطوانة) ومقابل <strong>openEMS</strong> الموجة الكاملة على لوح — عند الأمام 0.15 dB وأرضية الزوايا الواسعة ~3.5 dB، بينما PO لحاله يغلط لين 70 dB عند التماس. ما يحسب الانعكاسات المتعددة/التجاويف (العاكسات الركنية، الفوّهات)، ولا الموجات الزاحفة/المتنقلة، ولا حيود الأطراف، ولا التظليل الذاتي (التظليل حسب اتجاه سطح المثلث فقط). PTD على الحواف المنحنية تقريبي. استخدم تبويب openEMS للتجاويف والحواف المطليّة والرنين. استيراد STEP يحتاج الجسر شغّال؛ STL يُقرأ بالمتصفح. عشان تفصيل لكل جزء صدّر تصميمك كتجميعة متعددة الأجسام.</p>`},
+    'rlc-shrink':{title:'كم يبدو الجسم أصغر للرادار؟', html:`
+<h4>أول شي لازم تفهمه</h4>
+<p>الطلاء الماص للرادار <strong>لا</strong> يصغّر الجسم فيزيائيًا. هو يمتص طاقة كانت ترتد، فترجع <em>طاقة أقل</em> — والطاقة المرتدة هي الشي الوحيد اللي يقيسه الرادار. فعبارة «يبدو أصغر» تعني «يرجّع طاقة بقدر ما يرجّعه قطعة معدن عارية أصغر».</p>
+<h4>الأرقام الثلاثة وليش تختلف</h4>
+<p>كلها من نفس |Γ| اللي يعطيه فقد الانعكاس، عبر σ_coated = σ_bare·|Γ|². وبخفض R dB:</p>
+<p style="margin-right:14px;"><strong>الصدى المتبقّي = 10<sup>−R/10</sup></strong> — نسبة الطاقة العارية اللي لا تزال ترجع. R = 20 dB ← يتبقّى 1 % ويُزال 99 %. هذه نسبة قدرة بسيطة.<br><br>
+<strong>قُطر الكرة المكافئة = 10<sup>−R/20</sup></strong> — حلّ σ = πa² للكرة المعدنية اللي تعطي نفس الصدى. وبما أن مقطع الكرة يتناسب مع الحجم<strong>²</strong>، فتنصيف القطر يربّع تقليل الصدى، فنسبة القطر هي الجذر التربيعي لنسبة القدرة. R = 20 dB ← تبدو ككرة بـ10 % من القطر. وهذا المقياس المعياري لـ«الحجم الظاهري».<br><br>
+<strong>اللوح نفسه يصغر إلى = 10<sup>−R/40</sup></strong> — مقطع اللوح المستوي = 4πA²/λ² أي الحجم<strong>⁴</strong>، فتصغير لوح طريقة أكفأ بكثير لتقليل الصدى من تصغير كرة. R = 20 dB ← يكفي أن يصغر ضلعه إلى 32 %. نفس الفيزياء وقانون شكل مختلف — ولهذا ذكر نسبة «أصغر» واحدة بدون تحديد المقياس بلا معنى.</p>
+<h4>مدى الرادار</h4>
+<p>معادلة الرادار تعطي أقصى مدى كشف R<sub>max</sub> ∝ σ^¼ <a class="cref" href="#refs" data-goto="refs">[43]</a>، فالمدى يتناسب مع 10<sup>−R/40</sup> أيضًا. خفض 20 dB يعني أن رادارًا كان يراك على 100 كم يراك الآن على 32 كم تقريبًا — وغالبًا هذه أهم طريقة عملية للتعبير عن فائدة الطلاء.</p>
+<h4>النطاق</h4>
+<p>هذه قيم عند الأمام (θ = 0) عند ترد كل طلاء، على موديل البصريات الفيزيائية للوح المستوي في اللوحة أعلاه. وبعيدًا عن الأمام يسيطر نمط اللوح نفسه، والحواف تظل تحيد سواء طليت الأوجه أو لا — وتبويب CAD-RCS يسوّي نفس الحساب على شكل ثلاثي الأبعاد حقيقي وعلى مسح زوايا كامل.</p>`},
+    'cad-shrink':{title:'كم يبدو الموديل المطلي أصغر للرادار؟', html:`
+<h4>شنو تجاوب هالّوحة</h4>
+<p>طليت الموديل، فصار الرادار يستقبل صدى أضعف منه. هذي اللوحة تترجم ذلك إلى أحجام تتخيّلها. الطلاء يغيّر <em>الطاقة المرتدة</em> لا الأبعاد الفيزيائية — و«أصغر» تعني «خافت مثل جسم معدني عارٍ أصغر».</p>
+<h4>الأرقام</h4>
+<p><strong>الصدى المُزال</strong> — نسبة الطاقة العارية اللي ما ترجع (1 − |Γ|²)، والباقي مذكور جانبها.</p>
+<p><strong>يبدو ككرة معدنية بقُطر</strong> — قطر الكرة اللي تعطي نفس الصدى (σ = πa²). وهذا المقياس المعياري للحجم الظاهري، ومستقلّ عن الشكل، فهو أسلم رقم واحد تذكره.</p>
+<p><strong>يُكشف على … من المدى</strong> — من R<sub>max</sub> ∝ σ^¼ <a class="cref" href="#refs" data-goto="refs">[43]</a>. وغالبًا أهم رقم عمليًا.</p>
+<p><strong>نفس الشكل يصغر إلى</strong> — كم يجب أن تكون نسخة <em>غير مطلية من نفس هذا الشكل</em> صغيرة حتى تبعثر بنفس ضعف المطلي. وهذا ليس مفترضًا من صيغة: يُحلّ عدديًا على شبكتك نفسها بتحجيم كهرومغناطيسي مضبوط، σ(s·mesh, λ) = s²·σ(mesh, λ/s)، فيتبع القانون اللي يطيعه شكلك فعلًا — الألواح المستوية كالحجم⁴، والأجسام المنحنية كالحجم²، والتجميعة الحقيقية بينهما. أشّر <strong>Show apparent size</strong> تحت العرض الثلاثي الأبعاد لتشوف الموديل بذاك الحجم مقابل طيف شفّاف لحجمه الحقيقي.</p>
+<h4>الحدود بصراحة</h4>
+<p>القيم عند زاوية النظر الأعظم (الأسوأ من ناحية الظهور). وإذا طلع الجسم المكافئ المصغّر أصغر من موجتين تقريبًا، تنبّهك اللوحة — عند ذاك الحجم يكون موديل PO+PTD خارج نطاقه المريح فيصير ذاك الرقم إرشاديًا فقط؛ أما أرقام الصدى والكرة والمدى فهي صيغ مغلقة وغير متأثرة. وكما في كل هذا التبويب، الـRCS الأساسي انعكاس مرآوي + حيود حواف من الدرجة الأولى فقط.</p>`},
     'cad-view':{title:'الموديل ثلاثي الأبعاد — معنى الألوان', html:`
 <h4>باختصار</h4>
 <p><strong>أحمر = هذا الجزء من السطح يرجّع طاقة رادارية كثيرة مباشرة للرادار. أزرق = يرجّع القليل جدًا. رمادي غامق = يواجه بعيدًا فلا يساهم أبدًا.</strong> المناطق الحمراء هي سبب ظهورك على الرادار — وهي الأولى بالطلاء أو بتعديل الشكل.</p>
@@ -7944,6 +8007,66 @@ window.LabCal = (function(){
     else if(window.Chart&&$('rlc-rcs-chart')) rcsChart=new Chart($('rlc-rcs-chart'),{type:'line',data:{datasets:ds},options:opt});
     repaintRL();
     $('rlc-rcs-note').textContent='Bare PEC boresight = 4π·A²/λ² = '+db(pec0).toFixed(2)+' dBsm at '+fpec.toFixed(1)+' GHz.'+(best?(' Best coating: '+best.name+' → '+best.red.toFixed(1)+' dB reduction (= its reflection loss).'):'')+' PO envelope keeps the reduction ~flat with angle; openEMS gives the true angular reduction.';
+    drawShrink(rows, w, h, pec0);
+  }
+
+  // ---- "how small does it look to radar" ----------------------------------------------
+  // A coating changes the RETURNED POWER, not the physical size. Three standard ways to say it,
+  // all from |Γ| (σ_coated = σ_bare·|Γ|², reduction R dB = −20·log10|Γ|):
+  //   echo left            = 10^(−R/10)   (fraction of the bare power coming back)
+  //   equivalent-sphere Ø  = 10^(−R/20)   (σ_sphere = πa² ⇒ a ∝ √σ) — the "looks this big" measure
+  //   same-shape shrink    : for a FLAT PLATE σ = 4πA²/λ² ∝ s⁴, so s = 10^(−R/40)
+  //   detection range      = 10^(−R/40)   (radar range equation R_max ∝ σ^¼, ref [43])
+  function drawShrink(rows, w, h, pec0){
+    var wrap=$('rlc-shrink'); if(!wrap) return;
+    if(!rows || !rows.length){ wrap.style.display='none'; return; }
+    wrap.style.display='';
+    var db=function(m2){ return 10*Math.log10(Math.max(m2,1e-12)); };
+    var dEq=function(sig){ return 2*Math.sqrt(Math.max(sig,1e-30)/Math.PI)*1000; };   // mm
+    var dBare=dEq(pec0), sideMm=Math.max(w,h)*1000;
+    var head='<thead><tr>'+
+      ['material','reduction (dB)','echo left','looks like a sphere Ø','same plate shrunk to','radar range'].map(function(c,i){
+        return '<th style="text-align:'+(i===0?'left':'right')+';padding:6px 9px;white-space:nowrap;">'+c+'</th>'; }).join('')+'</tr></thead>';
+    var body=rows.map(function(r){
+      var echo=Math.pow(10,-r.red/10), lin=Math.pow(10,-r.red/20), quart=Math.pow(10,-r.red/40);
+      var sigC=pec0*echo;
+      return '<tr>'+
+        '<td style="text-align:left;padding:4px 9px;">'+hesc(r.name)+'</td>'+
+        '<td style="text-align:right;padding:4px 9px;color:#0b6e54;font-weight:600;">'+r.red.toFixed(2)+'</td>'+
+        '<td style="text-align:right;padding:4px 9px;">'+pctTxt(echo)+'</td>'+
+        '<td style="text-align:right;padding:4px 9px;">'+dEq(sigC).toFixed(1)+' mm <span style="color:var(--faint);">('+pctTxt(lin)+')</span></td>'+
+        '<td style="text-align:right;padding:4px 9px;">'+(sideMm*quart).toFixed(1)+' mm <span style="color:var(--faint);">('+pctTxt(quart)+')</span></td>'+
+        '<td style="text-align:right;padding:4px 9px;">'+pctTxt(quart)+'</td></tr>';
+    }).join('');
+    $('rlc-shrink-table').innerHTML=head+'<tbody>'+body+'</tbody>';
+
+    // visual: the real plate outline vs the smaller BARE plate that would echo the same
+    var best=rows.slice().sort(function(a,b){return b.red-a.red;})[0];
+    var s=Math.pow(10,-best.red/40), box=150, inner=Math.max(2,box*s);
+    var off=(box-inner)/2;
+    $('rlc-shrink-vis').innerHTML=
+      '<div style="padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);">'+
+        '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Apparent size — '+hesc(best.name)+'</div>'+
+        '<svg width="'+(box+2)+'" height="'+(box+2)+'" viewBox="0 0 '+(box+2)+' '+(box+2)+'">'+
+          '<rect x="1" y="1" width="'+box+'" height="'+box+'" style="fill:none;stroke:#b4471f;stroke-width:2;stroke-dasharray:5 4;"/>'+
+          '<rect x="'+(off+1)+'" y="'+(off+1)+'" width="'+inner+'" height="'+inner+'" style="fill:#0b6e54;fill-opacity:.85;stroke:#0b6e54;stroke-width:1.5;"/>'+
+        '</svg>'+
+        '<div style="font-size:11px;color:var(--faint);line-height:1.6;margin-top:6px;">'+
+          '<span style="color:#b4471f;">▢ dashed</span> = the real '+sideMm.toFixed(0)+' mm plate, bare metal<br>'+
+          '<span style="color:#0b6e54;">■ solid</span> = a bare plate that would echo the same, '+(sideMm*s).toFixed(1)+' mm ('+pctTxt(s)+')<br>'+
+          'To this radar the coated plate is as faint as that smaller piece of metal.</div>'+
+      '</div>';
+    $('rlc-shrink-note').textContent='Bare plate σ = '+db(pec0).toFixed(2)+' dBsm ⇒ it already looks like a metal sphere '+dBare.toFixed(1)+' mm across. '+
+      '“Same plate shrunk to” uses the plate law σ ∝ size⁴ (so a ¼-power), while “sphere Ø” uses σ ∝ size² — that is why the two percentages differ; both are correct answers to different questions. '+
+      'Radar range uses R ∝ σ^¼ [43]. All boresight (θ=0) values at each coating’s own frequency.';
+  }
+  function pctTxt(fr){
+    if(!isFinite(fr)||fr<=0) return '≈0';
+    var p=fr*100;
+    if(p>=10) return p.toFixed(0)+'%';
+    if(p>=1)  return p.toFixed(1)+'%';
+    if(p>=0.01) return p.toFixed(2)+'%';
+    return p.toExponential(1)+'%';
   }
 
   function buildMath(){
@@ -9274,6 +9397,15 @@ window.CADRCS = {
   var GAMMA_BAD=[];// segIds whose coating fields were unusable (skipped -> left bare, reported)
   var chart=null, inited=false;
   var fmt=function(x,n){ return (x==null||!isFinite(x))?'—':(+x).toFixed(n==null?2:n); };
+  var pctTxt=function(fr){
+    if(!isFinite(fr)||fr<=0) return '≈0';
+    var p=fr*100;
+    if(p>=99.9 && p<100) return p.toFixed(2)+'%';
+    if(p>=10) return p.toFixed(0)+'%';
+    if(p>=1)  return p.toFixed(1)+'%';
+    if(p>=0.01) return p.toFixed(2)+'%';
+    return p.toExponential(1)+'%';
+  };
   var FLOOR=-80;   // display floor for PO collapse (dBsm)
   var fixdb=function(x){ return isFinite(x)?x:FLOOR; };
 
@@ -9553,8 +9685,18 @@ window.CADRCS = {
     };
     LAST={ f:f, lam:lam, plane:plane, pol:pol, angs:angs, po:po, tot:tot, coat:gfn?coat:null,
            pkAng:angs[pk], pkBare:tot[pk], pkCoat:gfn?coat[pk]:null, meanBare:mean(tot), meanCoat:gfn?mean(coat):null,
-           segBare:sb, segCoat:sc, usePTD:usePTD, nAng:nAng, oe:null };
-    headline(); drawChart(); renderTable(); viewerLoad();
+           segBare:sb, segCoat:sc, usePTD:usePTD, nAng:nAng, shrink:null, oe:null };
+    headline(); drawShrink(); drawChart(); renderTable(); viewerLoad();
+    // The equivalent-size solve costs ~20 extra full-mesh evaluations, so run it AFTER the
+    // UI has painted and fill the one figure in when it lands (the other three are closed-form).
+    if(gfn){
+      var stamp=LAST;
+      setTimeout(function(){
+        if(LAST!==stamp) return;                  // a newer run superseded this one
+        LAST.shrink=apparentScale();
+        drawShrink();
+      },30);
+    }
     $('cad-actions').style.display='flex';
     var warn='';
     if(showCoat && GAMMA_BAD.length){
@@ -9562,6 +9704,70 @@ window.CADRCS = {
       warn=' ⚠ left BARE (incomplete ε/μ or thickness): '+nm.join(', ');
     }
     $('cad-runstatus').textContent='done — '+nAng+' distinct look-angles @ '+f+' GHz'+(usePTD?' (PO+PTD)':' (PO only)')+warn;
+  }
+
+  // ---- apparent size: how small an UNCOATED copy of THIS shape would have to be ----
+  // Exact EM scaling: σ(s·mesh, λ) = s²·σ(mesh, λ/s). So the bare model scaled by s is
+  // evaluated on the SAME facets with λ/s — no mesh rebuild, no assumed power law (a flat
+  // panel scales as s⁴, a curved body as s²; scanning finds whatever this shape actually does).
+  function apparentScale(){
+    if(!LAST || LAST.coat==null || !MESH) return null;
+    var g=lookGeom(LAST.plane,LAST.pol,LAST.pkAng);
+    var edges=LAST.usePTD?MESH.edges:null;
+    var target=LAST.pkCoat;                       // dBsm we must match
+    var sig=function(s){
+      var r=window.CADRCS.rcsPOplusPTD(MESH.facets, edges, g.kh, LAST.lam/s, {Epol:g.ep});
+      return (isFinite(r.totalSigma) && r.totalSigma>0) ? 10*Math.log10(s*s*r.totalSigma) : -Infinity;
+    };
+    // The answer must lie between the two limiting shape laws (σ ∝ s² for a curved body,
+    // σ ∝ s⁴ for a flat panel), so bracket there — with margin — and bisect in log-s.
+    // ~20 evaluations instead of a blind scan over three decades.
+    var R=LAST.pkBare-LAST.pkCoat;
+    var lo=Math.max(1e-4, Math.pow(10,-R/20)/3), hi=Math.min(1, Math.pow(10,-R/40)*2);
+    var flo=sig(lo), fhi=sig(hi), guard=0;
+    while(flo>target && lo>1e-4 && guard++<6){ lo=Math.max(1e-4,lo/3); flo=sig(lo); }
+    while(fhi<target && hi<1 && guard++<12){ hi=Math.min(1,hi*2); fhi=sig(hi); }
+    if(!(flo<=target && fhi>=target)) return null;      // couldn't bracket — say nothing
+    for(var i=0;i<18;i++){
+      var mid=Math.sqrt(lo*hi), fm=sig(mid);
+      if(fm<target){ lo=mid; } else { hi=mid; }
+    }
+    var s=Math.sqrt(lo*hi), err=Math.abs(sig(s)-target);
+    if(!isFinite(err) || err>=3) return null;            // refuse to claim a scale we couldn't match
+    // How electrically large the equivalent object is. Below a couple of wavelengths the
+    // asymptotic PO+PTD model is no longer in its comfort zone, so flag the number.
+    return { s:s, err:err, elec:(MESH.half_m*2*s)/LAST.lam };
+  }
+  function drawShrink(){
+    var fig=$('cad-shrink-fig'); if(!fig) return;
+    if(!LAST || LAST.coat==null){ fig.style.display='none'; return; }
+    fig.style.display='';
+    var red=LAST.pkBare-LAST.pkCoat;
+    var echo=Math.pow(10,-red/10), lin=Math.pow(10,-red/20), quart=Math.pow(10,-red/40);
+    var dEq=function(dbsm){ return 2*Math.sqrt(Math.max(Math.pow(10,dbsm/10),1e-30)/Math.PI)*1000; };
+    var sc=LAST.shrink, spanMm=MESH.half_m*2*1000;
+    var big=function(v,u){ return '<strong style="font-size:19px;color:var(--text);">'+v+'</strong> <span style="color:var(--muted);font-size:12px;">'+u+'</span>'; };
+    $('cad-shrink-body').innerHTML=
+      '<div style="display:flex;gap:26px;flex-wrap:wrap;margin-bottom:6px;">'+
+        '<div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Echo removed</div>'+big(pctTxt(1-echo),'of the bare power')+
+          '<div style="font-size:11px;color:var(--faint);">only '+pctTxt(echo)+' still comes back ('+red.toFixed(1)+' dB down)</div></div>'+
+        '<div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Looks like a metal sphere</div>'+big(dEq(LAST.pkCoat).toFixed(0)+' mm','across')+
+          '<div style="font-size:11px;color:var(--faint);">was '+dEq(LAST.pkBare).toFixed(0)+' mm bare → '+pctTxt(lin)+' of the diameter</div></div>'+
+        '<div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Radar detects it at</div>'+big(pctTxt(quart),'of the range')+
+          '<div style="font-size:11px;color:var(--faint);">R ∝ σ¼ — e.g. 100 km → '+(100*quart).toFixed(0)+' km</div></div>'+
+        '<div><div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Same shape shrunk to</div>'+
+          (sc?(big(pctTxt(sc.s),'of its size')+
+              '<div style="font-size:11px;color:var(--faint);">'+spanMm.toFixed(0)+' mm → '+(spanMm*sc.s).toFixed(0)+' mm across'+
+              (sc.elec<2?' <span style="color:#b4471f;">· only '+sc.elec.toFixed(1)+'λ — indicative only</span>':'')+'</div>')
+             :('<strong style="font-size:19px;color:var(--muted);">…</strong>'+
+               '<div style="font-size:11px;color:var(--faint);">solving the equivalent size from your mesh…</div>'))+
+        '</div>'+
+      '</div>'+
+      '<div style="font-size:12px;color:var(--muted);">Tick <strong>Show apparent size</strong> under the 3-D view to see the model at that shrunken size against a ghost of its real size.</div>';
+    $('cad-shrink-note').textContent=
+      'A coating does not change the physical size — it changes how much energy returns, which is what a radar measures. '+
+      '"Echo removed" = 1−|Γ|². "Metal sphere" solves σ=πa² (σ ∝ size², the standard apparent-size measure). "Same shape shrunk to" is solved numerically from this very geometry using exact EM scaling σ(s·mesh,λ)=s²·σ(mesh,λ/s), so it follows whatever law this shape obeys'+(sc?(' (matched to '+sc.err.toFixed(2)+' dB)'):'')+' — a flat panel goes as size⁴, a curved body as size². "Radar range" uses R ∝ σ^¼ [43]. All at the peak look-angle '+LAST.pkAng+'°.'+
+      ((sc&&sc.elec<2)?(' ⚠ That equivalent object is only '+sc.elec.toFixed(1)+' wavelengths across, where asymptotic PO+PTD is outside its comfortable range — treat the shrink figure as indicative; the echo / sphere / range numbers are closed-form and unaffected.'):'');
   }
 
   function headline(){
@@ -9694,6 +9900,16 @@ window.CADRCS = {
     geo.computeVertexNormals(); geo.center();
     // scale to fit view
     geo.computeBoundingSphere(); var r=geo.boundingSphere.radius||1; geo.scale(1/r,1/r,1/r);
+    // "apparent size": show the model shrunk to the size an UNCOATED copy would need to be
+    // for the same echo, against a translucent ghost at its real size.
+    var shrinkOn = !!($('cad-view-shrink')||{}).checked, sc=LAST&&LAST.shrink;
+    if(shrinkOn && sc && sc.s>0 && sc.s<1){
+      var ghost=geo.clone();
+      ghost.deleteAttribute('color');
+      V.grp.add(new THREE.Mesh(ghost,new THREE.MeshBasicMaterial({
+        color:0x54636b, transparent:true, opacity:0.16, side:THREE.DoubleSide, depthWrite:false })));
+      geo.scale(sc.s,sc.s,sc.s);
+    }
     V.grp.add(new THREE.Mesh(geo,new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.DoubleSide})));
   }
 
@@ -9893,6 +10109,12 @@ window.CADRCS = {
     var ex=$('cad-example'); if(ex) ex.addEventListener('click',loadExample);
     var run=$('cad-run'); if(run) run.addEventListener('click',compute);
     var vc=$('cad-view-coat'); if(vc) vc.addEventListener('change',function(){ if(LAST) viewerDraw(parseFloat($('cad-view-ang').value), vc.checked); });
+    var vs=$('cad-view-shrink'); if(vs) vs.addEventListener('change',function(){
+      if(!LAST) return;
+      if(vs.checked && LAST.coat==null){ vs.checked=false; $('cad-runstatus').textContent='Apparent size needs a coating — assign a material to at least one part, tick “Overlay coated result”, then Compute.'; return; }
+      if(vs.checked && !LAST.shrink){ vs.checked=false; $('cad-runstatus').textContent='Could not solve an equivalent size for this shape/reduction — the numbers above still apply.'; return; }
+      viewerDraw(parseFloat($('cad-view-ang').value), ($('cad-view-coat')||{}).checked);
+    });
     var va=$('cad-view-ang'); if(va) va.addEventListener('input',function(){ var lab=$('cad-view-anglab'); if(lab) lab.textContent=Math.round(va.value)+'°'; if(LAST) viewerDraw(parseFloat(va.value), ($('cad-view-coat')||{}).checked); });
     var b;
     if((b=$('cad-csv'))) b.addEventListener('click',function(){ if(LAST) dl(csvText(),'CAD_RCS_'+safe()+'.csv','text/csv'); });
