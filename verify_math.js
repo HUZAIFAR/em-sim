@@ -249,4 +249,56 @@ const alOk = hornAl===appAl && srvAl===appAl;
 (alOk?pass++:fail++);
 console.log(`  [${alOk?'PASS':'FAIL'}] aluminum sigma aligned to ${appAl}: horn_wallloss.py=${hornAl}, openems_server.py=${srvAl}`);
 
+// 11. CAD-RCS analytical engine (PO + first-order PTD facet) — physics anchors.
+//     Requires cadrcs_engine.js (the single source of truth also inlined in the HTML).
+console.log("\n================ CAD-RCS (PO + PTD FACET ENGINE) ================");
+{
+  const CAD = require('./cadrcs_engine.js');
+  const C0 = 2.99792458e8, lam = C0/10e9;
+  const Aplate = 0.30*0.30;
+  const P  = CAD.buildPlate(0.30,0.30,60,60);
+  const Pf = CAD.prepMesh(P.verts,P.tris), Ped = CAD.buildEdges(P.verts,P.tris);
+  // PO plate boresight = 4 pi A^2 / lambda^2 (exact)
+  chk('CAD PO plate boresight = 4piA^2/lam^2', CAD.rcsMonostatic(Pf,[-1,0,0],lam).dbsm,
+      10*Math.log10(4*Math.PI*Aplate*Aplate/(lam*lam)), 0.02, 'dBsm');
+  // PO sphere -> optical/GO limit pi a^2 (PO sits ~0.34 dB above by known PO physics; loose tol)
+  const S = CAD.buildSphere(0.05,160,320); const Sf = CAD.prepMesh(S.verts,S.tris);
+  chk('CAD PO sphere ~ pi a^2 (optical/PO)', CAD.rcsMonostatic(Sf,[0,0,-1],lam).dbsm,
+      10*Math.log10(Math.PI*0.05*0.05), 0.5, 'dBsm');
+  // PO cylinder broadside = 2 pi a h^2 / lambda
+  const Cy = CAD.buildCylinder(0.02,0.20,180,72); const Cf = CAD.prepMesh(Cy.verts,Cy.tris);
+  chk('CAD PO cylinder broadside = 2piah^2/lam', CAD.rcsMonostatic(Cf,[-1,0,0],lam).dbsm,
+      10*Math.log10(2*Math.PI*0.02*0.04/lam), 0.15, 'dBsm');
+  // PTD plate edge-on floor = L^2/pi (PO alone collapses here)
+  const Epol = [0,0,1];
+  const eoT = 89.9*Math.PI/180, eoK = [-Math.cos(eoT), -Math.sin(eoT), 0];
+  const eo = CAD.rcsPOplusPTD(Pf,Ped,eoK,lam,{Epol});
+  chk('CAD PTD plate edge-on floor = L^2/pi', eo.totalDbsm, 10*Math.log10(Aplate/Math.PI), 0.3, 'dBsm');
+  // PTD leaves broadside (exact PO) untouched
+  const bore = CAD.rcsPOplusPTD(Pf,Ped,[-1,0,0],lam,{Epol});
+  chk('CAD PTD broadside preserved (PO ripple)', bore.totalDbsm,
+      10*Math.log10(4*Math.PI*Aplate*Aplate/(lam*lam)), 0.05, 'dBsm');
+  // PO alone collapses at edge-on -> PTD is what supplies the finite edge return
+  const collapseOK = eo.poDbsm < -50;
+  (collapseOK?pass++:fail++);
+  console.log(`  [${collapseOK?'PASS':'FAIL'}] CAD PO-only collapses at edge-on (got ${eo.poDbsm.toFixed(1)} dBsm < -50) -> PTD supplies the edge diffraction`);
+  // a tessellated SMOOTH body must yield ~no "real" edges — otherwise PTD adds huge spurious
+  // diffraction (a 1 deg dihedral tolerance made a sphere read +29 dB high). Regression guard.
+  const Sed = CAD.buildEdges(S.verts, S.tris);
+  const sphNoEdges = Sed.length === 0;
+  (sphNoEdges?pass++:fail++);
+  console.log(`  [${sphNoEdges?'PASS':'FAIL'}] CAD tessellated sphere has no false sharp edges (got ${Sed.length}) -> PTD adds nothing to a smooth body`);
+  chk('CAD PO+PTD sphere = PO sphere (no spurious edge term)',
+      CAD.rcsPOplusPTD(Sf, Sed, [0,0,-1], lam, {Epol}).totalDbsm,
+      CAD.rcsMonostatic(Sf,[0,0,-1],lam).dbsm, 0.05, 'dBsm');
+  // cross-file: the engine inlined in the HTML must match cadrcs_engine.js exactly (no silent drift)
+  const stripWs = s => s.replace(/\s+/g,'');
+  const between = txt => { const m = txt.match(/\/\/ __CADRCS_ENGINE_START__([\s\S]*?)\/\/ __CADRCS_ENGINE_END__/); return m ? stripWs(m[1]) : null; };
+  const eBlk = between(fs.readFileSync('./cadrcs_engine.js','utf8'));
+  const hBlk = between(fs.readFileSync('./waveguide_simulator.html','utf8'));
+  const engMatch = !!eBlk && !!hBlk && eBlk === hBlk;
+  (engMatch?pass++:fail++);
+  console.log(`  [${engMatch?'PASS':'FAIL'}] CAD engine block identical in cadrcs_engine.js & waveguide_simulator.html (${eBlk?eBlk.length:0} vs ${hBlk?hBlk.length:0} chars, ws-normalized)`);
+}
+
 console.log(`\n================ SUMMARY: ${pass} passed, ${fail} failed ================`);

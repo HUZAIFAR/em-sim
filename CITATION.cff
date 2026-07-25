@@ -9,7 +9,7 @@ abstract: >-
   loss, weight and launch-to-orbit cost instantly with a validated analytical
   engine, and validates chosen designs with a real 3-D FDTD solve (openEMS).
 type: software
-version: "3.7"
+version: "3.8"
 date-released: "2026-07-22"
 authors:
   - family-names: "Rangwala"

@@ -667,6 +667,42 @@ def upload_rcs():
     info["ok"] = True; info["stl"] = norm; info["stl_scale"] = 1.0   # already mm + centred
     return jsonify(info), 200
 
+@app.route("/upload_cad", methods=["POST"])
+def upload_cad():
+    """STEP -> segmented triangle-mesh JSON for the ANALYTICAL CAD-RCS tab (gmsh/OCC).
+    Each STEP solid becomes a named segment. STL is parsed client-side (no server needed);
+    this route handles .step/.stp only. Returns the full facet JSON (verts + per-segment
+    triangles, mm, recentred) inline so the browser PO+PTD engine can consume it directly."""
+    f = request.files.get("file")
+    if not f or not f.filename:
+        return jsonify({"ok": False, "log": "No file uploaded."}), 400
+    ext = os.path.splitext(f.filename)[1].lower()
+    if ext not in (".step", ".stp"):
+        return jsonify({"ok": False, "log": "This route accepts .step/.stp (STL is read in the browser)."}), 400
+    updir = os.path.join(OEMS, "uploads"); os.makedirs(updir, exist_ok=True)
+    src = os.path.join(updir, "cad_upload" + ext)
+    f.save(src)
+    outjson = os.path.join(updir, "cad_facets.json")
+    try:
+        if os.path.isfile(outjson):
+            os.remove(outjson)                      # never serve a stale mesh on failure
+    except Exception:
+        pass
+    try:
+        r = subprocess.run([PYTHON, os.path.join(CAD, "step_facets.py"), src, outjson, "--max-tri", "40000"],
+                           capture_output=True, text=True, timeout=600)
+    except Exception as e:
+        return jsonify({"ok": False, "stage": "tessellate", "log": str(e)}), 500
+    if r.returncode != 0 or not os.path.isfile(outjson):
+        return jsonify({"ok": False, "stage": "step_facets",
+                        "log": (r.stdout or "")[-2000:] + "\n" + (r.stderr or "")[-2000:]}), 500
+    try:
+        with open(outjson) as jf:
+            data = jf.read()
+    except Exception as e:
+        return jsonify({"ok": False, "stage": "read", "log": str(e)}), 500
+    return app.response_class(data, mimetype="application/json")   # full mesh JSON, verbatim
+
 @app.route("/run_rcs", methods=["POST"])
 def run_rcs():
     # Radar cross section via a plane-wave (TF/SF) solve + NF2FF (see rcs_run.m).
