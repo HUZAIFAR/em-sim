@@ -2099,6 +2099,7 @@ for t_mm in [0.5, 1, 2, 3, 4]:
       <button class="btn" id="cad-mathbtn" type="button" style="font-size:12px;">Show math</button>
       <button class="btn" id="cad-manifest" type="button" style="font-size:12px;">Run manifest</button>
       <button class="btn" id="cad-verify" type="button" style="font-size:12px;">Verify a part on openEMS</button>
+      <span id="cad-verify-status" style="font-family:var(--font-mono);font-size:11.5px;color:#cdd6d1;align-self:center;"></span>
     </div>
 
     <!-- SHOW MATH (directly under its button so it can never open off-screen) -->
@@ -4917,7 +4918,9 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
       results:{directivity_dBi:g.Dmax_dBi, s11_db:g.s11_db, HPBW_E_deg:m.HPBW_E_deg, HPBW_H_deg:m.HPBW_H_deg,
                SLL_E_dB:m.SLL_E_dB, FB_E_dB:m.FB_E_dB, VSWR_f0:m.VSWR_f0, bw_S11_10dB_GHz:m.bandwidth_S11_10dB_GHz,
                aperture_eff_pct:(m.aperture_eff_pct_f0!=null?m.aperture_eff_pct_f0:m.aperture_eff_pct)},
-      mesh:{cells_per_lambda:(($('hrn-cells')||{}).value||null), field_mode:(($('hrn-fieldview')||{}).value||null)},
+      // as above: what the run was launched with, not what the selectors say now
+      mesh:{cells_per_lambda:(j&&j.cells!=null)?j.cells:(($('hrn-cells')||{}).value||null),
+            field_mode:(j&&j.field_mode)||(($('hrn-fieldview')||{}).value||null)},
       run:{seconds:j.seconds!=null?j.seconds:null, materials_compared:(j.table||[]).map(r=>r.material)},
       caveats:['Gain, pattern and S11 are the trustworthy full-wave outputs; loss magnitude is coarse-mesh approximate.',
                'All coatings share one validated PEC solve; per-material differences are efficiency, gain penalty and realized gain (surface-impedance method).']
@@ -5126,8 +5129,10 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
       const fd=new FormData();
       fd.append('band',$('hrn-band').value);
       fd.append('coating',$('hrn-coating').value);
-      fd.append('cells', ($('hrn-cells')||{}).value||'15');
-      fd.append('field_mode', ($('hrn-fieldview')||{}).value||'freq');
+      const _cells=($('hrn-cells')||{}).value||'15', _fmode=($('hrn-fieldview')||{}).value||'freq';
+      fd.append('cells', _cells);
+      fd.append('field_mode', _fmode);
+      window.__hrnSubmitted={cells:_cells, field_mode:_fmode};
       if(fileI.files[0]) fd.append('step',fileI.files[0]);
       const res=await fetch('/run_horn',{method:'POST',body:fd});
       const j=await res.json();
@@ -5195,6 +5200,9 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
       });
 
       result.style.display='block';
+      // carry the submitted mesh onto the stored response so hrnManifest records the run, not the
+      // current selector (field_mode already comes back from the server)
+      if(window.__hrnSubmitted && j.cells==null) j.cells=window.__hrnSubmitted.cells;
       lastJ=j;
       mathPre.textContent=buildMath(j); mathPre.style.display='none'; if(mathBtn)mathBtn.textContent='Show math';
       sumPre.textContent=buildSummary(j); sumPre.style.display='none'; if(sumBtn)sumBtn.textContent='Summary';
@@ -7616,7 +7624,7 @@ window.LabCal = (function(){
     lines.push('');
     var near=function(c){ if(!c||!c.freq||!c.freq.length) return null; return c.freq[Math.floor(c.freq.length/2)]; };
     var b0=near(d&&d.bare), c0=near(d&&d.coated);
-    lines.push('3) This solve (openEMS full-wave, mesh lambda/'+($('rcs-cells').value)+'):');
+    lines.push('3) This solve (openEMS full-wave, mesh lambda/'+((d&&d.cells!=null)?d.cells:$('rcs-cells').value)+'):');
     lines.push('     backscatter sigma @ f0 (bare metal):  '+(b0?n(b0.dbsm)+' dBsm':'n/a'));
     if(c0) lines.push('     backscatter sigma @ f0 ('+(d&&d.construct==='solid'?'solid material':'coated')+'): '+n(c0.dbsm)+' dBsm');
     if(d&&d.reduction_db!=null) lines.push('     RCS reduction = sigma_bare - sigma_material = '+n(d.reduction_db)+' dB');
@@ -7635,7 +7643,10 @@ window.LabCal = (function(){
       target:{shape:S.shape, size1_mm:+(S.s1*1000).toFixed(3), size2_mm:+(S.s2*1000).toFixed(3), size3_mm:+(S.s3*1000).toFixed(3),
               construction:(d&&d.construct)||($('rcs-construct')?$('rcs-construct').value:'pec'), material:(d&&d.label)||'', incidence_deg:S.inc, polarization:(S.pol==='h'?'H':'V')},
       band:{name:$('rcs-band').value, fmin_ghz:g.f0, fmax_ghz:g.f1, f0_ghz:(d&&d.f0_ghz)!=null?d.f0_ghz:+((g.f0+g.f1)/2).toFixed(3)},
-      mesh:{cells_per_lambda:parseInt($('rcs-cells').value)||24, end_criteria:parseFloat($('rcs-endcrit').value)||1e-4, freq_points:parseInt($('rcs-nfreq').value)||101},
+      // from the run when we have it; the live controls are only the no-run fallback
+      mesh:{cells_per_lambda:(d&&d.cells!=null)?d.cells:(parseInt($('rcs-cells').value)||24),
+            end_criteria:(d&&d.endcrit!=null)?d.endcrit:(parseFloat($('rcs-endcrit').value)||1e-4),
+            freq_points:(d&&d.nfreq!=null)?d.nfreq:(parseInt($('rcs-nfreq').value)||101)},
       results:(function(){var near=function(c){return (c&&c.freq&&c.freq.length)?c.freq[Math.floor(c.freq.length/2)].dbsm:null;};
                return {bare_dbsm:near(d&&d.bare), material_dbsm:near(d&&d.coated), reduction_db:(d&&d.reduction_db!=null)?d.reduction_db:null, seconds:(d&&d.seconds)||null,
                        aspect_angles:(d&&d.aspect&&d.aspect.length)||0};})(),
@@ -7664,7 +7675,7 @@ window.LabCal = (function(){
       'Target:        '+S.shape+' ('+dims+'), construction: '+(d.construct||'pec'),
       'Material:      '+d.label,
       'Band:          '+g.f0+'–'+g.f1+' GHz (f0 = '+d.f0_ghz+' GHz) · polarization: '+((S.pol==='h')?'H (E in plane)':'V (E along z)')+' · incidence '+S.inc+'°',
-      'Solve:         mesh λ/'+($('rcs-cells').value)+', end criteria '+($('rcs-endcrit').value)+', '+($('rcs-nfreq').value)+' freq points, '+d.seconds+' s total',
+      'Solve:         mesh λ/'+((d.cells!=null)?d.cells:$('rcs-cells').value)+', end criteria '+((d.endcrit!=null)?d.endcrit:$('rcs-endcrit').value)+', '+((d.nfreq!=null)?d.nfreq:$('rcs-nfreq').value)+' freq points, '+d.seconds+' s total',
       '',
       'Backscatter RCS @ f0 (bare metal reference): '+(b0?b0.dbsm.toFixed(2)+' dBsm':'n/a'),
       (c0?('Backscatter RCS @ f0 ('+(d.construct==='solid'?'solid material':'coated')+'):      '+c0.dbsm.toFixed(2)+' dBsm'):null),
@@ -7707,6 +7718,9 @@ window.LabCal = (function(){
       var n=Math.min(13, Math.floor((Math.max(cfg.aspect_stop,cfg.aspect_start)-Math.min(cfg.aspect_stop,cfg.aspect_start))/cfg.aspect_step)+1);
       est += n*((S.shape==='sphere')?40:75);
     }
+    // same shared lock as the CAD verify and the batch driver — /run_rcs uses fixed scratch paths
+    if(window.__solveBusy){ $('rcs-status').textContent='Another openEMS solve is already running — wait for it to finish.'; return; }
+    window.__solveBusy=true;
     runBtn.disabled=true;
     $('rcs-status').style.color='';
     $('rcs-status').textContent='Running openEMS RCS'+(cp.construct!=='pec'?' (bare reference + material)':'')+(sims.indexOf('aspect')>=0?' + aspect sweep':'')+' — estimated ~'+Math.max(1,Math.round(est/60))+' min…';
@@ -7714,8 +7728,13 @@ window.LabCal = (function(){
     fetch('/run_rcs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg)})
       .then(function(res){return res.json();})
       .then(function(d){
-        if(!d.ok){ var tail=String(d.log||JSON.stringify(d)).split(/\r?\n/).filter(Boolean).slice(-8).join(' '); $('rcs-status').style.color='#c0392b'; $('rcs-status').textContent='Error at '+(d.stage||'run')+': '+tail.slice(0,300); rcsProg.fail('Error during the RCS solve.'); runBtn.disabled=false; return; }
-        d.label=cp.label; window.__rcsRun=d;
+        if(!d.ok){ var tail=String(d.log||JSON.stringify(d)).split(/\r?\n/).filter(Boolean).slice(-8).join(' '); $('rcs-status').style.color='#c0392b'; $('rcs-status').textContent='Error at '+(d.stage||'run')+': '+tail.slice(0,300); rcsProg.fail('Error during the RCS solve.'); window.__solveBusy=false; runBtn.disabled=false; return; }
+        d.label=cp.label;
+        // Stamp the SUBMITTED solver settings onto the response, the way the Full-wave tab does via
+        // __lastRun. Reading these live from the DOM meant changing Mesh after a run produced a
+        // manifest (and a ZIP) claiming lambda/48 for lambda/24 results.
+        d.cells=cp.cells; d.nfreq=cp.nfreq; d.endcrit=cp.endcrit;
+        window.__rcsRun=d;
         var msg='Done: '+S.shape+' · '+cp.label+' in '+d.seconds+' s.';
         if(d.reduction_db!=null) msg+=' The material '+(d.reduction_db>=0?'reduces':'INCREASES')+' backscatter by '+Math.abs(d.reduction_db).toFixed(1)+' dB at '+d.f0_ghz+' GHz.';
         if(d.errors&&Object.keys(d.errors).length){ msg+='  (issue: '+Object.keys(d.errors).join(', ')+')'; console.log('RCS issues',d.errors); }
@@ -7735,9 +7754,9 @@ window.LabCal = (function(){
         // reflect the freshly solved target in the radar-range calculator (σ at band centre + f0)
         var hv=$('rcs-hl-rcs')?parseFloat($('rcs-hl-rcs').textContent):NaN; if(!isNaN(hv)&&$('rr-rcs')) $('rr-rcs').value=hv.toFixed(1);
         if($('rr-freq')&&d.f0_ghz!=null) $('rr-freq').value=(+d.f0_ghz).toFixed(2);
-        redraw(); radarRange(); forceRepaint(); requestAnimationFrame(forceRepaint); runBtn.disabled=false;
+        redraw(); radarRange(); forceRepaint(); requestAnimationFrame(forceRepaint); window.__solveBusy=false; runBtn.disabled=false;
       })
-      .catch(function(err){ if(window.bridgeErr)window.bridgeErr($('rcs-status')); else $('rcs-status').textContent='Could not reach the bridge. Start openEMS/openems_server.py and open this page at http://localhost:8731.'; rcsProg.fail('Could not reach the openEMS bridge.'); console.log(err); runBtn.disabled=false; });
+      .catch(function(err){ if(window.bridgeErr)window.bridgeErr($('rcs-status')); else $('rcs-status').textContent='Could not reach the bridge. Start openEMS/openems_server.py and open this page at http://localhost:8731.'; rcsProg.fail('Could not reach the openEMS bridge.'); console.log(err); window.__solveBusy=false; runBtn.disabled=false; });
   });
 
   // control listeners: analytical curves recompute instantly; changing the target clears stale openEMS data
@@ -7769,7 +7788,10 @@ window.LabCal = (function(){
   function rcsRunStamp(){ var S=sizes(); return S.shape+'_'+($('rcs-band').value)+'_'+(($('rcs-construct')?$('rcs-construct').value:'pec')); }
   function saveBlob(blob, fname){ var url=URL.createObjectURL(blob), a=document.createElement('a'); a.href=url; a.download=fname; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){URL.revokeObjectURL(url);},6000); }
   var manBtn=$('rcs-manifest-btn'); if(manBtn) manBtn.addEventListener('click',function(){
-    var d=window.__rcsRun; var man=rcsManifest(d);
+    // guard like the wg/horn manifest buttons: with no run this produced a downloadable
+    // all-null manifest that looked like a record of something
+    var d=window.__rcsRun; if(!d){ return; }
+    var man=rcsManifest(d);
     saveBlob(new Blob([JSON.stringify(man,null,2)],{type:'application/json'}), 'rcs_manifest_'+rcsRunStamp()+'.json');
   });
   var dlBtn=$('rcs-dl-btn'); if(dlBtn) dlBtn.addEventListener('click',async function(){
@@ -8166,6 +8188,10 @@ window.LabCal = (function(){
   }
   async function runBatch(){
     if(batchRunning) return; var vals=batchValues(); if(!vals.length){ $('rcsb-status').textContent='Enter a valid From/To range.'; return; }
+    // the batch driver issues many /run_rcs calls in sequence — hold the shared lock for the whole
+    // sweep so a CAD verify or an RCS-tab Run cannot interleave onto the same fixed scratch paths
+    if(window.__solveBusy){ $('rcsb-status').textContent='Another openEMS solve is already running — wait for it to finish.'; return; }
+    window.__solveBusy=true;
     batchRunning=true; batchStop=false; batchRows=[];
     var v=$('rcsb-var').value, shape=$('rcsb-shape').value, band=$('rcsb-band').value, construct=$('rcsb-construct').value, cells=parseInt($('rcsb-cells').value)||18;
     var mp=rcsbMatProps(), size1=parseFloat($('rcsb-size1').value)||15, thick=parseFloat($('rcsb-thick').value)||2, inc=0;
@@ -8216,6 +8242,7 @@ window.LabCal = (function(){
     } else {
       st.style.color=''; st.textContent='Done: '+batchRows.length+' of '+vals.length+' solves complete.';
     }
+    window.__solveBusy=false;
     $('rcsb-run').disabled=false; $('rcsb-stop').style.display='none'; batchRunning=false;
   }
 
@@ -10060,8 +10087,25 @@ window.CADRCS = {
         var v=parseFloat(inp.value);
         if(!isFinite(v)||v<=0){ inp.value=1; v=1; }
         var lib=libGet(), id=String(inp.getAttribute('data-id'));
-        lib.forEach(function(x){ if(String(x.id)===id) x.thick=v; });
-        libSet(lib); render();
+        // Drop the note BEFORE saving. It was baked by pinMaterial for the then-current thickness,
+        // and libLabel concatenates it into every CAD part dropdown and "Apply to all parts" —
+        // so after 3 mm -> 1.5 mm those menus advertised "1.50 mm · RL -32.5 dB @ 8.48 GHz", a
+        // figure that only ever held at 3 mm. Deleting first is load-bearing: if the recompute
+        // below cannot produce a figure, the label then shows nothing rather than the old one.
+        lib.forEach(function(x){ if(String(x.id)===id){ x.thick=v; delete x.note; } });
+        libSet(lib);
+        render();                                   // recomputes the whole library at the new thickness
+        // write the note back from what render() just measured, for this material only
+        try{
+          if(LAST && LAST.items){
+            var it=null; LAST.items.forEach(function(o){ if(o.m && String(o.m.id)===id) it=o; });
+            if(it && !it.bad && isFinite(it.minRL) && isFinite(it.atF)){
+              var l2=libGet();
+              l2.forEach(function(x){ if(String(x.id)===id) x.note='RL '+it.minRL.toFixed(1)+' dB @ '+it.atF.toFixed(2)+' GHz'; });
+              libSet(l2);
+            }
+          }
+        }catch(e){}
       });
     });
     var nMeas=LAST.items.filter(function(o){return o.meas;}).length;
@@ -10798,7 +10842,11 @@ window.CADRCS = {
 
   // ---------- openEMS cross-check on a small part ----------
   function verifyOpenems(){
-    var st=$('cad-runstatus');
+    // Report where the BUTTON is, not only in the config panel far up the page — on a phone that
+    // line is off-screen, so a tap looked completely dead for a minute and users tapped again.
+    var near=$('cad-verify-status'), btn=$('cad-verify');
+    var st={ set textContent(v){ $('cad-runstatus').textContent=v; if(near) near.textContent=String(v).slice(0,90); },
+             get textContent(){ return $('cad-runstatus').textContent; } };
     if(!LAST){ st.textContent='Compute first.'; return; }
     if(!MESH.file){ st.textContent='openEMS cross-check needs the original uploaded file (load a STEP/STL, not the example).'; return; }
     // rcs_run.m confines the plane wave to the x-y plane and its V-pol is E‖z, so only the
@@ -10811,6 +10859,14 @@ window.CADRCS = {
     // while rcs_run.m uses k_dir = +[cos inc, sin inc, 0] (radar at 180°+inc). Without the flip the
     // full-wave solve illuminates the OPPOSITE side of the model and the comparison is meaningless.
     var incOE=(LAST.pkAng+180)%360;
+    // Serialize against every other solve: /run_rcs writes to fixed scratch paths and fixed
+    // result CSVs, so a second run started while this one is in flight corrupts both. One SHARED
+    // flag, because three independent local flags cannot see each other.
+    if(window.__solveBusy){ st.textContent='Another openEMS solve is already running — wait for it to finish.'; return; }
+    window.__solveBusy=true;
+    var lbl0=btn?btn.textContent:'';
+    if(btn){ btn.disabled=true; btn.textContent='Solving on openEMS…'; }
+    var release=function(){ window.__solveBusy=false; if(btn){ btn.disabled=false; btn.textContent=lbl0; } };
     st.textContent='openEMS: uploading + solving at '+LAST.pkAng+'° (this takes a minute)…';
     var fd=new FormData(); fd.append('file', MESH.file);
     fetch('/upload_rcs',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){
@@ -10835,7 +10891,8 @@ window.CADRCS = {
       LAST.oe=[{x:LAST.pkAng,y:oe}]; drawChart();
       var an=LAST.tot[LAST.angs.indexOf(LAST.pkAng)];
       st.textContent='openEMS full-wave @'+LAST.pkAng+'° = '+oe.toFixed(2)+' dBsm vs analytical PO+PTD '+an.toFixed(2)+' dBsm (Δ '+Math.abs(oe-an).toFixed(2)+' dB).';
-    }).catch(function(e){ st.textContent='openEMS cross-check failed: '+e.message+' — is the bridge running at localhost:8731?'; });
+    }).catch(function(e){ st.textContent='openEMS cross-check failed: '+e.message+' — is the bridge running at localhost:8731?';
+    }).finally(release);
   }
 
   // ---------- upload wiring ----------
@@ -11086,6 +11143,9 @@ window.CADRCS = {
   function hide(el,yes){ if(yes) el.setAttribute('aria-hidden','true'); else el.removeAttribute('aria-hidden'); }
   function closeSheet(){ sheet.classList.remove('open'); ssc.classList.remove('open'); hide(sheet,true); sheetGroup=null; }
   function openSheet(g){
+    // measure the bar HERE too, not only at init and on resize: the value is only ever used by the
+    // sheet, and a page that loaded above the breakpoint and was then narrowed has not measured yet
+    measureBar();
     sheetGroup = g.group;
     shead.textContent = g.label;
     sbody.innerHTML = g.pages.map(linkHTML).join('');
