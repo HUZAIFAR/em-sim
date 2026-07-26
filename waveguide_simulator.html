@@ -419,23 +419,21 @@
     .bandbtn{border-right:none;border-bottom:1px solid var(--line);padding:13px 14px;}
     .bandbtn:last-child{border-bottom:none;}
 
-    /* iOS zooms the page on focus below 16px and never zooms back out. The :not()
-       chain is required — attribute selectors miss inputs with no type attribute. */
-    input:not([type=range]):not([type=checkbox]):not([type=radio]):not([type=submit]):not([type=button]),
-    select:not(.segselect),textarea{font-size:16px!important;min-height:44px;}
-
-    /* 3px-tall sliders keep their look but get a 40px hit area */
-    input[type=range]{height:40px;border-radius:0;background:transparent;
-      background-image:linear-gradient(var(--line),var(--line));
-      background-size:100% 3px;background-position:center;background-repeat:no-repeat;}
-    input[type=range]::-webkit-slider-thumb{width:24px;height:24px;}
-    input[type=range]::-moz-range-thumb{width:22px;height:22px;}
-
     /* JS-built tick-box dropdowns (inline position:absolute + min-width) */
-    div[style*="min-width:280px"],div[style*="min-width:330px"]{
+    /* The two "Simulations ▾" tick-box popovers. This rule used to be written as
+       div[style*="min-width:330px"] and NEVER MATCHED: the panels are built with
+       element.style.cssText, which CSSOM re-serialises with a space ("min-width: 330px").
+       They carry a real class now. */
+    .simpicker{
       left:0!important;right:auto!important;min-width:0!important;
       width:calc(100vw - 40px)!important;max-width:calc(100vw - 40px)!important;
-      max-height:min(60vh,420px)!important;overflow-y:auto!important;}
+      max-height:min(60vh,420px)!important;overflow-y:auto!important;
+      -webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+    /* ...and the popover was CLIPPED regardless, because `.panel{overflow-x:auto}` (added for the
+       wide tables) makes every panel a scroll container, and a scroll container clips its
+       absolutely-positioned descendants. Only 1 of 8 sims was visible and page-scrolling could not
+       reach the rest. Panels that host a picker opt out; panels with a wide table keep scrolling. */
+    .panel:has(.simpicker){overflow:visible!important;}
 
     /* nested scrollers must not own the whole screen */
     #rlc-table-fig .panel,#cad-table-fig,#cad-seg-list{
@@ -514,6 +512,22 @@
     @supports (padding: env(safe-area-inset-top)){
       #mbar{padding-top:env(safe-area-inset-top);}
     }
+    /* Landscape on a notched iPhone (812px, still <=820): the hamburger sat at padding-left:2px,
+       largely under the corner rounding inside the 44px inset. Inset the CONTENT, not the bar. */
+    @supports (padding: env(safe-area-inset-left)){
+      #mbar{padding-left:calc(2px + env(safe-area-inset-left));
+            padding-right:calc(6px + env(safe-area-inset-right));}
+      /* widen the drawer by the inset rather than offsetting it — `left:env(...)` would leave a
+         strip of page content visible down the side of an open drawer */
+      #mdrawer{width:calc(min(310px,84vw) + env(safe-area-inset-left));}
+      #mdrawer-body,#mdrawer .dhead{padding-left:calc(8px + env(safe-area-inset-left));}
+      #msheet{padding-left:calc(10px + env(safe-area-inset-left));
+              padding-right:calc(10px + env(safe-area-inset-right));}
+      .topbar .in{padding-left:calc(14px + env(safe-area-inset-left));
+                  padding-right:calc(14px + env(safe-area-inset-right));}
+    }
+    /* #mtabs is deliberately left alone: its cells are flex:1 1 0, so even at 812px each is ~180px
+       with its icon centred well outside the inset — padding would only narrow the tabs. */
     #mbar-burger{flex:none;width:46px;height:46px;display:grid;place-items:center;
       background:none;border:none;padding:0;cursor:pointer;color:#eef2ef;-webkit-tap-highlight-color:transparent;}
     #mbar-burger svg{width:22px;height:22px;stroke:currentColor;stroke-width:1.9;fill:none;
@@ -526,7 +540,11 @@
       border-radius:20px;padding:3px 9px;}
 
     /* ---- fixed bottom tab bar ---------------------------------------------- */
-    #mtabs{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:900;
+    /* z-index above #msheet (1100) and its scrim (1050) so the bar stays tappable while a sheet is
+       open — otherwise a tap aimed at a tab hit the sheet's own last row and navigated to the wrong
+       page, and "tap the same tab again to dismiss" could never fire. Still below #mscrim (1150) and
+       #mdrawer (1200), so the drawer covers the bar exactly as before. */
+    #mtabs{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:1120;
       background:rgba(251,250,246,.93);backdrop-filter:saturate(180%) blur(14px);
       -webkit-backdrop-filter:saturate(180%) blur(14px);
       border-top:1px solid var(--line);padding:5px 2px 4px;}
@@ -548,15 +566,17 @@
     #msheet-scrim{display:block;position:fixed;inset:0;z-index:1050;background:rgba(10,14,12,.42);
       opacity:0;pointer-events:none;transition:opacity .24s var(--ease,ease);touch-action:none;}
     #msheet-scrim.open{opacity:1;pointer-events:auto;}
+    #msheet-scrim{bottom:var(--mtabs-h,90px);}
     #msheet{display:block;position:fixed;left:0;right:0;bottom:0;z-index:1100;
       background:var(--panel);border-top-left-radius:16px;border-top-right-radius:16px;
       box-shadow:0 -10px 40px rgba(10,14,12,.22);padding:8px 10px 10px;
       max-height:min(72vh,560px);overflow-y:auto;-webkit-overflow-scrolling:touch;
       overscroll-behavior:contain;transform:translateY(110%);
       transition:transform .26s var(--ease,cubic-bezier(.32,.72,0,1));}
-    @supports (padding: env(safe-area-inset-bottom)){
-      #msheet{padding-bottom:calc(10px + env(safe-area-inset-bottom));}
-    }
+    /* clear the tab bar's REAL height, measured in JS — the bar is ~57px with no inset but ~91px
+       on a notched iPhone in standalone, so a hardcoded number would be wrong on one of them */
+    #msheet{padding-bottom:calc(10px + var(--mtabs-h,90px));
+            max-height:calc(min(72vh,560px) + var(--mtabs-h,90px));}
     #msheet.open{transform:none;}
     #msheet .grip{width:38px;height:4px;border-radius:4px;background:var(--line);
       margin:2px auto 8px;}
@@ -612,12 +632,18 @@
        themselves in vh, which accounts for neither, so the info panel clipped at
        both ends with no way to reach the clipped parts. Pad the backdrop into the
        safe area and let the panel's own body be the scroller. */
-    .infomodal,.prevmodal{
+    /* #cmp-modal is included deliberately: it is the app's only overlay built from inline styles
+       with no class, so it was invisible to every rule here — its title row sat inside the Dynamic
+       Island strip and it still sized itself in vh. It is NOT given class="infobox", because that
+       delegates scrolling to a .ibody child it does not have; its own body becomes the scroller. */
+    .infomodal,.prevmodal,#cmp-modal{
       padding:calc(8px + env(safe-area-inset-top)) 8px calc(8px + env(safe-area-inset-bottom));
+      padding-left:calc(8px + env(safe-area-inset-left));
+      padding-right:calc(8px + env(safe-area-inset-right));
       overflow:hidden;}
-    .infobox{margin:0 auto!important;max-height:100%!important;border-radius:12px;
+    .infobox,#cmp-modal>div{margin:0 auto!important;max-height:100%!important;border-radius:12px;
       display:flex;flex-direction:column;overflow:hidden;}
-    .infobox .ibody{flex:1 1 auto;min-height:0;overflow-y:auto;
+    .infobox .ibody,#cmp-modal-body{flex:1 1 auto;min-height:0;overflow-y:auto;
       -webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
     .prevbox{position:relative!important;top:0!important;left:auto!important;
       transform:none!important;width:100%!important;max-width:100%;max-height:100%!important;}
@@ -638,6 +664,19 @@
      narrowed under 820px picks it up too, which is what every other rule here does.
      ========================================================================== */
   @media screen and (max-width:820px), screen and (pointer:coarse){
+    /* MOVED HERE from the 700px block. Between 701 and 820px the page gets the full mobile nav,
+       so it IS a phone/tablet layout, but these two rules were missing — leaving 3px-tall
+       (undraggable) sliders and 12.5px inputs that make iOS zoom the page on focus and never zoom
+       back. 768px iPad portrait is a documented install target. */
+    input:not([type=range]):not([type=checkbox]):not([type=radio]):not([type=submit]):not([type=button]),
+    select:not(.segselect),textarea{font-size:16px!important;min-height:44px;}
+    /* the 3px hairline LOOK is kept by painting it as a background gradient inside a 40px box */
+    input[type=range]{height:40px;border-radius:0;background:transparent;
+      background-image:linear-gradient(var(--line),var(--line));
+      background-size:100% 3px;background-position:center;background-repeat:no-repeat;}
+    input[type=range]::-webkit-slider-thumb{width:24px;height:24px;}
+    input[type=range]::-moz-range-thumb{width:22px;height:22px;}
+
     select:not(.segselect),input:not([type=range]):not([type=checkbox]):not([type=radio]),textarea{
       color:var(--ink)!important;-webkit-text-fill-color:var(--ink)!important;
       /* background-color is NOT !important: several controls carry an inline var(--panel),
@@ -3150,14 +3189,15 @@ const SIMS=[
     if(!container) return;
     const wrap=document.createElement('div'); wrap.style.cssText='position:relative;display:inline-block;';
     const btn=document.createElement('button'); btn.type='button'; btn.className='btn'; btn.style.cssText='padding:7px 14px;font-size:13px;';
-    const panel=document.createElement('div'); panel.style.cssText='display:none;position:absolute;z-index:60;top:calc(100% + 6px);left:0;min-width:280px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;box-shadow:0 14px 34px rgba(0,0,0,.16);padding:8px 10px;';
+    const panel=document.createElement('div'); panel.className='simpicker'; panel.style.cssText='display:none;position:absolute;z-index:60;top:calc(100% + 6px);left:0;min-width:280px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;box-shadow:0 14px 34px rgba(0,0,0,.16);padding:8px 10px;';
     SIMS.forEach(s=>{ const row=document.createElement('label'); row.style.cssText='display:flex;gap:9px;align-items:flex-start;padding:6px 4px;font-size:13px;cursor:pointer;line-height:1.35;';
       const cb=document.createElement('input'); cb.type='checkbox'; cb.value=s.key; cb.style.marginTop='3px';
       cb.addEventListener('change',()=>toggle(s.key,cb.checked));
       const txt=document.createElement('span'); txt.innerHTML='<strong>'+s.label+'</strong><br><span style="color:var(--faint);font-size:11px;">'+s.note+'</span>';
       row.appendChild(cb); row.appendChild(txt); panel.appendChild(row);
     });
-    btn.addEventListener('click',e=>{e.stopPropagation();panel.style.display=panel.style.display==='none'?'block':'none';});
+    btn.addEventListener('click',e=>{e.stopPropagation();panel.style.display=panel.style.display==='none'?'block':'none';
+      if(panel.style.display==='block'&&window.clampPicker) window.clampPicker(panel);});
     document.addEventListener('click',e=>{if(!wrap.contains(e.target))panel.style.display='none';});
     wrap.appendChild(btn); wrap.appendChild(panel); container.appendChild(wrap);
     const p={refresh(){btn.textContent='Simulations ('+sel.length+') ▾';[...panel.querySelectorAll('input')].forEach(cb=>cb.checked=sel.includes(cb.value));}};
@@ -3421,6 +3461,29 @@ function build(){
     `Launch $${launch.toLocaleString()}/kg. Baseline walls solid, 1.5 mm. `+
     `Verified vs published WR-90 copper loss (~0.11 dB/m @ 10 GHz).`;
 }
+
+/* On a phone the "Simulations ▾" popover opens downward from a button at an arbitrary scroll
+ * position, so its 420px box can run past the bottom of the screen and under the fixed tab bar,
+ * where its last rows cannot be tapped. Clamp it to the space actually available above the bar
+ * (and flip it above the button when there is more room up there). Desktop never calls this. */
+window.clampPicker=function(dd){
+  if(!dd) return;
+  // Always clear first, THEN bail on desktop — an early return would have left a clamp applied on
+  // a narrow layout stuck on the element after a resize to desktop width.
+  dd.style.removeProperty('max-height'); dd.style.top=''; dd.style.bottom='';
+  if(window.innerWidth>820) return;
+  // NB setProperty(..., 'important'): the .simpicker rule sets max-height with !important, which a
+  // plain inline style would lose to.
+  var barH=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mtabs-h'))||0;
+  var r=dd.getBoundingClientRect(), floor=window.innerHeight-barH-8;
+  var below=floor-r.top, above=r.top-8;                 // r.top is where it opened, below the button
+  if(below<180 && above>below){                          // more room above -> open upward
+    dd.style.top='auto'; dd.style.bottom='calc(100% + 6px)';
+    dd.style.setProperty('max-height', Math.max(160,Math.floor(above))+'px', 'important');
+  } else {
+    dd.style.setProperty('max-height', Math.max(160,Math.floor(below))+'px', 'important');
+  }
+};
 
 /* ============================================================================================
  * ANIMATED FIELD FIGURES  (waveguide guided/reflection, horn interior field, RCS scattered field
@@ -4609,6 +4672,7 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
   // ---- Expand: detail pop-up with images + graphs ----
   let modalCharts=[];
   function closeModal(){ $('cmp-modal').style.display='none'; modalCharts.forEach(c=>{try{c.destroy();}catch(e){}}); modalCharts=[]; }
+  window.cmpCloseModal=closeModal;   // the mobile nav closes it on navigation (it has no class for CSS to reach)
   function openModal(key){
     const rec=findMat(key); if(!rec) return; const spec=rec.spec;
     const band=cmpBand.value, coats=+cmpCoats.value||20;
@@ -7189,7 +7253,7 @@ window.LabCal = (function(){
     var host=$('rcs-sims'); if(!host || host.__built) return; host.__built=true;
     host.style.position='relative'; host.style.display='inline-block';
     var btn=document.createElement('button'); btn.type='button'; btn.className='btn'; btn.style.cssText='padding:7px 13px;font-size:12.5px;';
-    var panel=document.createElement('div'); panel.style.cssText='position:absolute;z-index:60;top:112%;left:0;min-width:330px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 26px rgba(0,0,0,.14);padding:6px;display:none;';
+    var panel=document.createElement('div'); panel.className='simpicker'; panel.style.cssText='position:absolute;z-index:60;top:112%;left:0;min-width:330px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 26px rgba(0,0,0,.14);padding:6px;display:none;';
     function updateBtn(){ btn.textContent='Simulations ('+rcsSelSims().length+') ▾'; }
     RCS_SIMS.forEach(function(s){
       var lab=document.createElement('label'); lab.style.cssText='display:flex;align-items:flex-start;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;';
@@ -7199,7 +7263,8 @@ window.LabCal = (function(){
       var t=document.createElement('span'); t.innerHTML='<strong style="font-size:12.5px;">'+s.label+'</strong><br><span style="color:var(--faint);font-size:11px;">'+s.note+'</span>';
       lab.appendChild(cb); lab.appendChild(t); panel.appendChild(lab);
     });
-    btn.addEventListener('click',function(e){ e.stopPropagation(); panel.style.display=(panel.style.display==='none')?'block':'none'; });
+    btn.addEventListener('click',function(e){ e.stopPropagation(); panel.style.display=(panel.style.display==='none')?'block':'none';
+      if(panel.style.display==='block'&&window.clampPicker) window.clampPicker(panel); });
     document.addEventListener('click',function(e){ if(host && !host.contains(e.target)) panel.style.display='none'; });
     host.appendChild(btn); host.appendChild(panel); updateBtn();
   }
@@ -11024,8 +11089,32 @@ window.CADRCS = {
     mark(dbody); if(sheetGroup) mark(sbody);
   };
 
+  // The sheet/scrim clear the bar via --mtabs-h. Measured, not hardcoded: the bar is ~57px with no
+  // safe-area inset but ~91px on a notched iPhone in standalone.
+  function measureBar(){
+    var h=mtabs.offsetHeight||0;
+    if(h) document.documentElement.style.setProperty('--mtabs-h', h+'px');
+  }
+  function onResize(){
+    measureBar();
+    // re-clamp (or un-clamp) any open sim picker for the new size
+    document.querySelectorAll('.simpicker').forEach(function(dd){
+      if(dd.style.display!=='none' && window.clampPicker) window.clampPicker(dd);
+      else { dd.style.removeProperty('max-height'); dd.style.top=''; dd.style.bottom=''; }
+    });
+  }
+  measureBar();
+  window.addEventListener('resize', onResize);
+  window.addEventListener('orientationchange', onResize);
+
   function go(page){
     closeAll();
+    // #cmp-modal (Compare's material detail) is a fixed overlay with no class, so nothing else
+    // closes it — it used to survive navigation and sit layered over a completely different tab.
+    var cm=document.getElementById('cmp-modal');
+    if(cm && cm.style.display!=='none'){
+      if(window.cmpCloseModal) window.cmpCloseModal(); else cm.style.display='none';
+    }
     if(typeof activateTab === 'function') activateTab(page);
     else { var l=pageInfo(page); if(l) l.p.el.click(); }        // belt and braces
     window.scrollTo(0,0);
@@ -11063,7 +11152,7 @@ window.CADRCS = {
 
   function ownsTouch(t){
     if(!t || typeof t.closest !== 'function') return true;   // not an element -> don't claim it
-    if(t.closest('canvas,svg,input[type=range],.infomodal,.prevmodal,#msheet,#mdrawer,#mtabs')) return true;
+    if(t.closest('canvas,svg,input[type=range],.infomodal,.prevmodal,#cmp-modal,#msheet,#mdrawer,#mtabs')) return true;
     // a horizontally scrollable ancestor (wide tables inside .panel) gets the gesture
     for(var n=t; n && n!==document.body; n=n.parentElement){
       if(n.scrollWidth - n.clientWidth > 4){
