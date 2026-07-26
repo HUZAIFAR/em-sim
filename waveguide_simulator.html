@@ -8438,7 +8438,11 @@ window.LabCal = (function(){
   }
   function interpRow(fG){
     var r=RL_ROWS; if(!r||!r.length)return null;
-    if(fG<=r[0].f)return r[0]; if(fG>=r[r.length-1].f)return r[r.length-1];
+    // Outside the measured band, HOLD ε/μ at the nearest edge but keep the REQUESTED frequency —
+    // returning the edge row whole meant rlAt used k=2πf_edge/c, so an 18 GHz answer was printed
+    // under a "30 GHz" heading. `extrap` makes the caller say so instead of presenting it as data.
+    if(fG<=r[0].f){ var lo=r[0]; return {f:fG, ep:lo.ep, epp:lo.epp, mup:lo.mup, mupp:lo.mupp, extrap:true}; }
+    if(fG>=r[r.length-1].f){ var hi=r[r.length-1]; return {f:fG, ep:hi.ep, epp:hi.epp, mup:hi.mup, mupp:hi.mupp, extrap:true}; }
     for(var i=1;i<r.length;i++){ if(r[i].f>=fG){ var a=r[i-1],b=r[i],t=(fG-a.f)/((b.f-a.f)||1);
       return {f:fG, ep:a.ep+t*(b.ep-a.ep), epp:a.epp+t*(b.epp-a.epp), mup:a.mup+t*(b.mup-a.mup), mupp:a.mupp+t*(b.mupp-a.mupp)}; } }
     return r[r.length-1];
@@ -8614,16 +8618,23 @@ window.LabCal = (function(){
   function optimalThicknessAt(fG){
     var row=interpRow(fG); if(!row) return null;
     var tmin=parseFloat($('rlc-tmin').value)||0.5, tmax=parseFloat($('rlc-tmax').value)||6; if(tmax<=tmin) tmax=tmin+1;
-    var best={rl:1e9,t:tmin}, N=500;
-    for(var i=0;i<=N;i++){ var t=tmin+(tmax-tmin)*i/N, rl=rlAt(row,t/1000); if(rl<best.rl) best={rl:rl,t:t}; }
+    var best={rl:1e9,t:tmin,extrap:!!row.extrap}, N=500;
+    for(var i=0;i<=N;i++){ var t=tmin+(tmax-tmin)*i/N, rl=rlAt(row,t/1000); if(rl<best.rl) best={rl:rl,t:t,extrap:!!row.extrap}; }
     return best;
   }
+  function rlBandSpan(){ var r=RL_ROWS; return (r&&r.length)?[r[0].f, r[r.length-1].f]:null; }
   function renderOpt(){
     var el=$('rlc-opt-out'); if(!el||!RL_LAST) return;
     var fv=parseFloat($('rlc-opt-f').value), f=(isFinite(fv)&&fv>0)?fv:RL_LAST.best.f;
     var o=optimalThicknessAt(f);
     if(!o){ el.textContent='–'; return; }
-    el.innerHTML='At <b>'+fmt(f,2)+' GHz</b> → optimal thickness ≈ <b>'+fmt(o.t,2)+' mm</b> (RL '+fmt(o.rl,1)+' dB'+(o.rl<=-10?', ≥90% absorbed':'')+')';
+    // An extrapolated answer is not data-backed, so it loses the "≥90% absorbed" verdict and gains
+    // an explicit warning naming the band the material was actually measured over.
+    var sp=rlBandSpan();
+    el.innerHTML='At <b>'+fmt(f,2)+' GHz</b> → optimal thickness ≈ <b>'+fmt(o.t,2)+' mm</b> (RL '+fmt(o.rl,1)+' dB'
+      +((o.rl<=-10&&!o.extrap)?', ≥90% absorbed':'')+')'
+      +(o.extrap?('<br><span style="color:var(--amber);font-size:11.5px;">⚠ '+fmt(f,2)+' GHz is outside the loaded '
+        +(sp?(fmt(sp[0],2)+'–'+fmt(sp[1],2)+' GHz'):'measured')+' band — ε/μ held at the band edge (extrapolated), so treat this as indicative only.</span>'):'');
   }
 
   // ---- coated-plate RCS (physical optics) ----
@@ -9144,7 +9155,10 @@ window.LabCal = (function(){
     if(runStart!=null) eab=Math.max(eab,lastIn-runStart);
     // interpolate ε/μ at target for RL@target
     var a=rows[0],b=rows[rows.length-1],r=null;
-    if(target<=a.f)r=a; else if(target>=b.f)r=b; else{ for(var j=1;j<rows.length;j++){ if(rows[j].f>=target){ var p=rows[j-1],q=rows[j],w=(target-p.f)/((q.f-p.f)||1); r={f:target,ep:p.ep+w*(q.ep-p.ep),epp:p.epp+w*(q.epp-p.epp),mup:p.mup+w*(q.mup-p.mup),mupp:p.mupp+w*(q.mupp-p.mupp)}; break; } } }
+    // same convention as interpRow: hold ε/μ at the edge, keep the requested frequency, mark it
+    if(target<=a.f)r={f:target,ep:a.ep,epp:a.epp,mup:a.mup,mupp:a.mupp,extrap:true};
+    else if(target>=b.f)r={f:target,ep:b.ep,epp:b.epp,mup:b.mup,mupp:b.mupp,extrap:true};
+    else{ for(var j=1;j<rows.length;j++){ if(rows[j].f>=target){ var p=rows[j-1],q=rows[j],w=(target-p.f)/((q.f-p.f)||1); r={f:target,ep:p.ep+w*(q.ep-p.ep),epp:p.epp+w*(q.epp-p.epp),mup:p.mup+w*(q.mup-p.mup),mupp:p.mupp+w*(q.mupp-p.mupp)}; break; } } }
     return {minRL:minRL,fm:fm,eab:eab,rlTarget:r?RLcore.rlAt(r,dm):NaN};
   }
 
@@ -9878,9 +9892,11 @@ window.CADRCS = {
  * MATERIAL LIBRARY tab — compare the materials you pinned from the RL tab.
  * Reads the same localStorage library the CAD-RCS per-part dropdowns use
  * ('cadMatLib_v1'), and overlays each material's reflection-loss curve using
- * window.RLcore (the single RL engine). Materials pinned from a measured upload
- * carry their real ε/μ dispersion (exact); constant-ε/μ materials are evaluated
- * with those constants held across the band and flagged as such.
+ * window.RLcore (the single RL engine). Materials pinned from a measured upload carry their real
+ * ε/μ dispersion and are scored ONLY inside the band they were measured over — beyond it ε/μ is
+ * merely held at the edge, which is a model, so that part is drawn dashed and excluded from the
+ * headline, the EAB and the target column. Constant-ε/μ materials legitimately hold across the
+ * whole band and are flagged as such.
  * ==========================================================================*/
 (function(){
   var $=function(id){return document.getElementById(id);};
@@ -9897,8 +9913,8 @@ window.CADRCS = {
   function rowAt(m,f){
     if(m.rows && m.rows.length>1){
       var R=m.rows;
-      if(f<=R[0][0]) { var a=R[0]; return {f:f,ep:a[1],epp:a[2],mup:a[3],mupp:a[4]}; }
-      if(f>=R[R.length-1][0]){ var z=R[R.length-1]; return {f:f,ep:z[1],epp:z[2],mup:z[3],mupp:z[4]}; }
+      if(f<=R[0][0]) { var a=R[0]; return {f:f,ep:a[1],epp:a[2],mup:a[3],mupp:a[4],extrap:true}; }
+      if(f>=R[R.length-1][0]){ var z=R[R.length-1]; return {f:f,ep:z[1],epp:z[2],mup:z[3],mupp:z[4],extrap:true}; }
       for(var i=0;i<R.length-1;i++){
         if(f>=R[i][0] && f<=R[i+1][0]){
           var t=(R[i+1][0]-R[i][0])>1e-12 ? (f-R[i][0])/(R[i+1][0]-R[i][0]) : 0;
@@ -9920,22 +9936,32 @@ window.CADRCS = {
     var N=161, out=[];
     lib.forEach(function(m){
       if(!valid(m)) { out.push({m:m, bad:true}); return; }
-      var d=m.thick/1000, pts=[], best={rl:1e9,f:null}, eabLo=null, eabHi=null, run=null, bestRun=0;
+      // A measured material carries the span it was actually measured over; hold-at-the-edge
+      // outside it is a model, not data, so it must not feed the headline, the EAB or the target
+      // column. Constant-ε/μ materials legitimately hold across the whole band — never clamp them.
+      var meas=(m.mode==='measured'), span=(meas&&m.rows&&m.rows.length>1)?[m.rows[0][0], m.rows[m.rows.length-1][0]]:null;
+      var inBand=function(f){ return !span || (f>=span[0]-1e-9 && f<=span[1]+1e-9); };
+      var d=m.thick/1000, pts=[], xpts=[], best={rl:1e9,f:null}, eabLo=null, eabHi=null, run=null, bestRun=0, lastIn=null;
       for(var i=0;i<N;i++){
         var f=f0+(f1-f0)*i/(N-1);
         var rl=window.RLcore.rlAt(rowAt(m,f), d);
         if(!isFinite(rl)) rl=0;
-        pts.push({x:+f.toFixed(4), y:+rl.toFixed(3)});
+        var ok=inBand(f);
+        (ok?pts:xpts).push({x:+f.toFixed(4), y:+rl.toFixed(3)});
+        if(!ok){ if(run!==null){ if(lastIn-run>bestRun){ bestRun=lastIn-run; eabLo=run; eabHi=lastIn; } run=null; } continue; }
         if(rl<best.rl){ best={rl:rl,f:f}; }
-        if(rl<=-10){ if(run===null) run=f; }
+        if(rl<=-10){ if(run===null) run=f; lastIn=f; }
         else if(run!==null){ if(f-run>bestRun){ bestRun=f-run; eabLo=run; eabHi=f; } run=null; }
       }
-      if(run!==null && (f1-run)>bestRun){ bestRun=f1-run; eabLo=run; eabHi=f1; }
-      var rlT=window.RLcore.rlAt(rowAt(m,ft), d);
+      if(run!==null && (lastIn-run)>bestRun){ bestRun=lastIn-run; eabLo=run; eabHi=lastIn; }
+      if(best.f===null){ out.push({m:m, bad:true, why:'no overlap with its measured '+span[0]+'–'+span[1]+' GHz band'}); return; }
+      // outside its own band the target column is honestly unknown
+      var rlT=inBand(ft) ? window.RLcore.rlAt(rowAt(m,ft), d) : NaN;
       // disp = evaluated from a stored ε/μ table (true for both measured uploads and
       // synthesised constants); meas = it actually came from a MEASURED file. Only the
       // latter may be labelled "measured" — never present a model as data.
-      out.push({ m:m, pts:pts, minRL:best.rl, atF:best.f, eab:bestRun, eabLo:eabLo, eabHi:eabHi,
+      out.push({ m:m, pts:pts, xpts:xpts, span:span, minRL:best.rl, atF:best.f, eab:bestRun,
+                 eabLo:eabLo, eabHi:eabHi,
                  rlTarget:isFinite(rlT)?rlT:null, disp:!!(m.rows&&m.rows.length>1),
                  meas:(m.mode==='measured') });
     });
@@ -9948,9 +9974,15 @@ window.CADRCS = {
     var good=LAST.items.filter(function(o){return !o.bad;});
     if(!good.length){ fig.style.display='none'; return; }
     fig.style.display='';                                     // reveal BEFORE creating the chart
-    var ds=good.map(function(o,i){
-      return { label:o.m.name+(o.meas?'':' (const ε/μ)'), data:o.pts, borderColor:COLS[i%COLS.length],
-               backgroundColor:'transparent', borderWidth:2, pointRadius:0, tension:.2 };
+    var ds=[];
+    good.forEach(function(o,i){
+      ds.push({ label:o.m.name+(o.meas?'':' (const ε/μ)'), data:o.pts, borderColor:COLS[i%COLS.length],
+                backgroundColor:'transparent', borderWidth:2, pointRadius:0, tension:.2 });
+      // the part of the sweep beyond a measured material's own band: shown, but dashed and named,
+      // and it never contributed to the headline / EAB / target figures
+      if(o.xpts&&o.xpts.length) ds.push({ label:o.m.name+' (extrapolated, ε/μ held)', data:o.xpts,
+                borderColor:COLS[i%COLS.length], backgroundColor:'transparent', borderWidth:1.4,
+                borderDash:[4,4], pointRadius:0, tension:.2 });
     });
     ds.push({ label:'−10 dB threshold', data:[{x:LAST.f0,y:-10},{x:LAST.f1,y:-10}], borderColor:'#8aa',
               borderWidth:1, borderDash:[5,4], pointRadius:0, _guide:true });
