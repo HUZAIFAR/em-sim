@@ -350,7 +350,9 @@
   @media screen and (max-width:820px){
     /* sit above the bottom tab bar, and shrink so it never covers the content it sits over */
     .fab{right:10px;top:auto;bottom:calc(12px + var(--mtabs-h,90px));}
-    .fab button{padding:10px 14px;font-size:12.5px;}
+    /* min-height 44px: this is the button designed to be easy to hit, so it must clear the
+       touch-target minimum — padding alone left it at 37px */
+    .fab button{padding:11px 15px;font-size:12.5px;min-height:44px;}
     .fab button.sec{display:none;}          /* one button only on a phone */
   }
   @media print{ .fab{display:none!important;} }
@@ -7906,7 +7908,9 @@ window.LabCal = (function(){
         // Stamp the SUBMITTED solver settings onto the response, the way the Full-wave tab does via
         // __lastRun. Reading these live from the DOM meant changing Mesh after a run produced a
         // manifest (and a ZIP) claiming lambda/48 for lambda/24 results.
-        d.cells=cp.cells; d.nfreq=cp.nfreq; d.endcrit=cp.endcrit;
+        // `cfg` is the payload that was actually POSTed; `cp` is only the coating description and
+        // never carried these, so reading cp here silently left the manifest on the live DOM values.
+        d.cells=cfg.cells; d.nfreq=cfg.nfreq; d.endcrit=cfg.endcrit;
         window.__rcsRun=d;
         var msg='Done: '+S.shape+' · '+cp.label+' in '+d.seconds+' s.';
         if(d.reduction_db!=null) msg+=' The material '+(d.reduction_db>=0?'reduces':'INCREASES')+' backscatter by '+Math.abs(d.reduction_db).toFixed(1)+' dB at '+d.f0_ghz+' GHz.';
@@ -7943,7 +7947,13 @@ window.LabCal = (function(){
     buildFiles(r); buildSummary(r); buildRcsMath(r);
   }
   var conSel=$('rcs-construct'); if(conSel) conSel.addEventListener('input',function(){ syncConstruct(); dropStaleMaterial(); redraw(); });
-  var coatSel=$('rcs-coat'); if(coatSel) coatSel.addEventListener('change',function(){ syncConstruct(); dropStaleMaterial(); redraw(); });
+  var coatSel=$('rcs-coat'); if(coatSel) coatSel.addEventListener('change',function(){
+    // pre-fill the thickness NOW, not at run time — otherwise the box still shows the previous
+    // material's value and the user has no idea the solve will use something else
+    var k=coatSel.value;
+    if(k.indexOf('lib:')===0){ var m=rcsLibFind(k.slice(4));
+      if(m && $('rcs-thick') && isFinite(+m.thick) && +m.thick>0) $('rcs-thick').value=(+m.thick).toFixed(2); }
+    syncConstruct(); dropStaleMaterial(); redraw(); });
   ['rcs-cm-sigma','rcs-cm-epsr','rcs-cm-epspp','rcs-cm-mur','rcs-cm-mupp','rcs-thick'].forEach(function(id){ var e=$(id); if(e) e.addEventListener('input',function(){ if(window.__rcsRun&&window.__rcsRun.coated){ dropStaleMaterial(); redraw(); } }); });
   ['rcs-asp-start','rcs-asp-stop','rcs-asp-step'].forEach(function(id){ var e=$(id); if(e) e.addEventListener('input',function(){ updateAspEst(); drawAspect(); }); });
   // scattered-field animation <-> steady-|E| toggle (checkbox listeners are wired inside buildRcsPicker)
@@ -8874,7 +8884,9 @@ window.LabCal = (function(){
         if(!lib.length) sel.innerHTML='<option value="">(nothing pinned yet)</option>';
       };
       fill();
+      sel.__fill=fill;                                // so rlcInit can refresh every box
       sel.addEventListener('mousedown',fill);         // refresh just before it opens
+      sel.addEventListener('focus',fill);
       sel.addEventListener('change',function(){
         if(!sel.value) return;
         var lib=[]; try{ lib=JSON.parse(localStorage.getItem('cadMatLib_v1')||'[]')||[]; }catch(e){}
@@ -9225,6 +9237,9 @@ window.LabCal = (function(){
   }
   var wired=false;
   window.rlcInit=function(){
+    // refresh every coating box's pinned-material dropdown: a list built before something was
+    // pinned would otherwise stay stale until the user happened to click it open
+    document.querySelectorAll('#rlc-mat-list .rlc-m-lib').forEach(function(sl){ if(sl.__fill) sl.__fill(); });
     if(!wired){ wired=true;
       var run=$('rlc-run'); if(run) run.addEventListener('click',compute);
       var rr=$('rlc-rcs-run'); if(rr) rr.addEventListener('click',rcsCompute);
@@ -11546,7 +11561,7 @@ window.CADRCS = {
     var vm0=MESH.vm, tris=MESH.tris;
     var m0=meshMetrics(vm0), v0=meshVolume(vm0,tris);
     var base=evalShape(vm0,tris,sector,f,lam,plane,pol,usePTD,gfn);
-    var rows=[], i=0, stage=1, chain=[], chainVm=vm0, chainMean=base.mean, chainPeak=base.peak, used={};
+    var rows=[], i=0, stage=1, chain=[], chainVm=vm0, chainMean=base.mean, chainPeak=base.peak, used={}, skipped=[];
     OPT_RUNNING=true; OPT_STOP=false;
     $('cad-opt-run').disabled=true; $('cad-opt-stop').style.display='';
     var total=jobs.length*rounds;
@@ -11555,6 +11570,12 @@ window.CADRCS = {
     function finish(){
       OPT_RUNNING=false; $('cad-opt-run').disabled=false; $('cad-opt-stop').style.display='none';
       $('cad-opt-bar').style.display='none';
+      if(skipped.length){ console.log('shape search skipped '+skipped.length+' candidate(s):', skipped);
+        $('cad-opt-status').textContent+='  ·  '+skipped.length+' candidate'+(skipped.length===1?'':'s')+' skipped (see console)'; }
+      // Release every candidate's vertex array except the adopted chain's. optRender() never reads
+      // r.vm, and on a 39k-triangle model each one is a few hundred kB — with 80 candidates that is
+      // tens of MB retained for nothing, and it accumulates over repeated searches.
+      rows.forEach(function(r){ r.vm=null; });
       var mB=meshMetrics(chainVm), vB=meshVolume(chainVm,tris);
       OPT={ sector:sector, f:f, plane:plane, pol:pol, usePTD:usePTD,
             base:{mean:base.mean, peak:base.peak, len:m0.len, dia:m0.dia, vol:v0},
@@ -11563,6 +11584,17 @@ window.CADRCS = {
       optRender();
     }
     function step(){
+      try{ stepInner(); }
+      catch(e){
+        // never leave the panel stranded: say what happened, keep whatever was found, re-enable.
+        $('cad-opt-status').textContent='search stopped early: '+(e&&e.message||e)+
+          ' — keeping the '+rows.length+' candidate'+(rows.length===1?'':'s')+' already solved.';
+        console.error('shape search', e);
+        try{ finish(); }catch(_){ OPT_RUNNING=false; $('cad-opt-run').disabled=false;
+                                  $('cad-opt-stop').style.display='none'; }
+      }
+    }
+    function stepInner(){
       if(OPT_STOP){ $('cad-opt-status').textContent='stopped after '+rows.length+' candidates'; finish(); return; }
       var t=Date.now();
       // ~120 ms of work per tick keeps the progress bar and the Stop button responsive. When the
@@ -11572,16 +11604,26 @@ window.CADRCS = {
       while(i<jobs.length && (Date.now()-t)<budget){
         var j=jobs[i++];
         if(used[j.L.id]){ continue; }                       // already spent in an earlier round
-        var vm2, r;
-        try{ vm2=j.L.fn(chainVm, j.k); r=evalShape(vm2,tris,sector,f,lam,plane,pol,usePTD,gfn); }
-        catch(e){ continue; }
-        var mm=meshMetrics(vm2), vv=meshVolume(vm2,tris);
-        rows.push({ stage:stage, id:j.L.id, name:j.L.name, unit:j.L.unit, k:j.k, why:j.L.why,
-                    mean:r.mean, peak:r.peak, dMean:r.mean-chainMean, dPeak:r.peak-chainPeak,
-                    dLen:100*(mm.len/m0.len-1), dDia:100*(mm.dia/m0.dia-1), dVol:100*(vv/v0-1), vm:vm2 });
+        // EVERYTHING per-candidate is inside the try: a bad candidate must be skipped, never
+        // allowed to kill the search. meshMetrics/meshVolume used to sit outside it, so one throw
+        // escaped the loop and left the UI stuck with Run disabled and Stop showing forever.
+        try{
+          var vm2=j.L.fn(chainVm, j.k);
+          if(!vm2 || vm2.length!==chainVm.length) continue;
+          var r=evalShape(vm2,tris,sector,f,lam,plane,pol,usePTD,gfn);
+          if(!r || !isFinite(r.mean)) continue;
+          var mm=meshMetrics(vm2), vv=meshVolume(vm2,tris);
+          if(!isFinite(mm.len)||!isFinite(mm.dia)||!isFinite(vv)) continue;
+          rows.push({ stage:stage, id:j.L.id, name:j.L.name, unit:j.L.unit, k:j.k, why:j.L.why,
+                      mean:r.mean, peak:r.peak, dMean:r.mean-chainMean, dPeak:r.peak-chainPeak,
+                      dLen:100*(mm.len/m0.len-1), dDia:100*(mm.dia/m0.dia-1), dVol:100*(vv/v0-1), vm:vm2 });
+        }catch(e){ skipped.push(j.L.id+'='+j.k+': '+(e&&e.message||e)); continue; }
       }
       optSetBar((stage-1+i/jobs.length)/rounds);
-      $('cad-opt-status').textContent='stage '+stage+'/'+rounds+' — '+rows.length+' candidate shape'+(rows.length===1?'':'s')+' solved';
+      var el=(Date.now()-t0)/1000, frac=(stage-1+i/jobs.length)/rounds;
+      var eta=(frac>0.02)?('  ·  ~'+Math.max(1,Math.round(el*(1-frac)/frac))+' s left'):'';
+      $('cad-opt-status').textContent='stage '+stage+'/'+rounds+' — '+rows.length+' candidate shape'+
+        (rows.length===1?'':'s')+' solved  ·  '+Math.round(el)+' s'+eta;
       if(i<jobs.length){ setTimeout(step,0); return; }
       // ---- end of a round: adopt the single best improvement, then go again on top of it -------
       var pick=null;
