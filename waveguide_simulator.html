@@ -47,6 +47,7 @@
     --accent:#0b6e54; --teal-d:#0a5d47; --accent-soft:#e7f0eb;
     --amber:#9a6a16; --amber-soft:#f6efdf;
     --slate:#5f6b67;
+    --go:#2fd48a; --go-hi:#43e59b; --go-dim:#1fae70;   /* action-button green (Run / Compute / Download) */
     --font-head:'Space Grotesk',sans-serif; --font-body:'Inter',sans-serif; --font-mono:'JetBrains Mono',monospace;
     /* ---- design tokens (v3.2 UI polish) ---- */
     --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px; --sp-8:48px;
@@ -324,6 +325,14 @@
   .animfig-msg{display:none;font-family:var(--font-mono);font-size:11.5px;color:var(--muted);
     background:var(--panel2);border:1px dashed var(--line);border-radius:8px;padding:14px 16px;
     margin:0 0 6px;text-align:center;}
+
+  /* Bright-green action buttons: Run / Compute / Download / Search. These are the buttons the eye
+     should land on when scanning a long results page, so they get a colour of their own rather than
+     the ink-black `.primary`. --go-dim is the pressed/disabled shade. */
+  .btn.go{background:var(--go)!important;border-color:var(--go)!important;color:#04231a!important;font-weight:600;}
+  .btn.go:hover{background:var(--go-hi)!important;border-color:var(--go-hi)!important;}
+  .btn.go:active{background:var(--go-dim)!important;border-color:var(--go-dim)!important;}
+  .btn.go:disabled{background:var(--go-dim)!important;border-color:var(--go-dim)!important;color:#0a3b2c!important;opacity:.75;}
 
   /* --- friendly error / bridge banner --- */
   .errbanner{background:var(--amber-soft);border:1px solid #ecd7ad;border-left:3px solid var(--amber);border-radius:var(--r-sm);padding:12px 15px;margin:10px 0 0;font-family:var(--font-body);font-size:13px;color:var(--ink);line-height:1.55;box-shadow:var(--sh-1);}
@@ -2144,6 +2153,66 @@ for t_mm in [0.5, 1, 2, 3, 4]:
       <table id="cad-table" style="border-collapse:collapse;width:100%;font-family:var(--font-mono);font-size:11.5px;"></table>
     </div>
     <p id="cad-note" style="font-family:var(--font-mono);font-size:11.5px;color:var(--faint);margin:0 0 16px;"></p>
+
+    <!-- ===================== 4 · SHAPE IMPROVEMENT (analytical) ===================== -->
+    <div class="panel" id="cad-opt-wrap" style="display:none;padding:18px 20px;margin-bottom:16px;border:2px solid var(--accent);">
+      <div class="oe-head">4 · Shape improvement — lower the signature by changing the geometry</div>
+      <p style="font-size:13.5px;color:var(--muted);margin:0 0 14px;">
+        Coatings suppress the specular flash; <strong>shape decides where the flash goes in the first place</strong>, which is
+        why low-observable design is mostly geometry. This searches real deformations of <em>your</em> mesh — sharpening the
+        nose, tapering the body, flattening the cross-section, sweeping and canting the appendages, tilting or shrinking
+        whichever part dominates — re-runs the full PO+PTD solve on each candidate, and reports what it actually buys in the
+        radar direction you care about. Every candidate <strong>preserves the overall length</strong>, and the volume and
+        diameter cost of each is reported, so nothing "wins" by quietly shrinking the vehicle.
+      </p>
+      <p style="font-family:var(--font-mono);font-size:11.5px;color:var(--muted);margin:-6px 0 14px;">
+        The sector angle is measured in the <strong>sweep plane you chose in section 2</strong>, on the same
+        0–360° axis as the chart. For a model whose long axis is vertical, the azimuth sweep is a
+        <strong>broadside</strong> look — switch Sweep plane to <strong>Elevation</strong> if the threat is nose-on.
+        A search costs one full PO+PTD solve per candidate, so on a 20 000-triangle mesh expect roughly
+        half a second each: about 40 s for the default 8 deformations × 5 settings × 2 useful stages.
+        Stop is live throughout.
+      </p>
+      <div class="oe-grid" style="margin-bottom:12px;">
+        <div class="oe-f"><div class="oe-lab">Threat sector centre (° in the sweep plane)</div>
+          <input id="cad-opt-c" type="number" value="0" step="5" style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-mono);font-size:13px;"></div>
+        <div class="oe-f"><div class="oe-lab">Sector width (± °)</div>
+          <input id="cad-opt-w" type="number" value="30" step="5" min="5" max="180" style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-mono);font-size:13px;"></div>
+        <div class="oe-f"><div class="oe-lab">Sector angle step (°)</div>
+          <input id="cad-opt-step" type="number" value="5" step="1" min="1" max="15" style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-mono);font-size:13px;"></div>
+        <div class="oe-f"><div class="oe-lab">Combine best levers (rounds)</div>
+          <select id="cad-opt-rounds" style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-body);font-size:13px;">
+            <option value="1">1 — one change only</option>
+            <option value="2">2 — stack two changes</option>
+            <option value="3" selected>3 — stack three changes</option>
+          </select></div>
+      </div>
+      <div class="oe-lab" style="margin-bottom:6px;">Deformations to try</div>
+      <div id="cad-opt-levers" style="display:flex;flex-wrap:wrap;gap:6px 18px;margin-bottom:14px;"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+        <button class="btn go" id="cad-opt-run" type="button">Search for a better shape</button>
+        <button class="btn" id="cad-opt-stop" type="button" style="display:none;">Stop</button>
+        <span id="cad-opt-status" style="font-family:var(--font-mono);font-size:11.5px;color:var(--muted);"></span>
+      </div>
+      <div id="cad-opt-bar" style="display:none;margin-top:10px;height:8px;background:var(--line);border-radius:5px;overflow:hidden;">
+        <div id="cad-opt-bar-in" style="height:100%;width:0;background:var(--accent);transition:width .25s ease;"></div>
+      </div>
+
+      <div id="cad-opt-out" style="display:none;margin-top:16px;">
+        <div id="cad-opt-head" class="headline" style="margin:0 0 14px;"></div>
+        <div id="cad-opt-recipe" style="font-family:var(--font-mono);font-size:12.5px;line-height:1.75;background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;padding:13px 15px;margin-bottom:14px;"></div>
+        <div style="overflow:auto;margin-bottom:12px;">
+          <table id="cad-opt-table" style="border-collapse:collapse;width:100%;font-family:var(--font-mono);font-size:11.5px;"></table>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+          <button class="btn go" id="cad-opt-apply" type="button">Apply the improved shape to the model</button>
+          <button class="btn go" id="cad-opt-stl" type="button">⬇ Improved geometry (STL)</button>
+          <button class="btn go" id="cad-opt-csv" type="button">⬇ Search results (CSV)</button>
+          <button class="btn" id="cad-opt-revert" type="button" style="display:none;">Revert to the original shape</button>
+        </div>
+        <p id="cad-opt-caveat" style="font-family:var(--font-mono);font-size:11px;color:var(--amber);background:var(--amber-soft);border:1px solid #ecd7ad;border-radius:8px;padding:11px 13px;margin:0;"></p>
+      </div>
+    </div>
 
 
     <footer>Analytical Physical Optics + first-order Ufimtsev PTD — the standard asymptotic RCS method for electrically-large targets, validated against textbook closed forms (plate, sphere, cylinder) and openEMS full-wave. It is a fast engineering estimate of specular-plus-edge scattering for mostly-convex PEC shapes; it is <em>not</em> a substitute for full-wave on cavities, corner reflectors, coatings-on-edges, or resonances.</footer>
@@ -10251,7 +10320,9 @@ window.CADRCS = {
     });
     var facets=window.CADRCS.prepMesh(vm,tris);
     var edges=window.CADRCS.buildEdges(vm,tris);
-    MESH={ vm:vm, facets:facets, edges:edges, segs:segs, half_m:half_m, src:srcLabel, unit:unitGuess||'mm', file:file||null, nverts:vm.length, ntri:tris.length, nedge:edges.length };
+    // `tris` is retained because the shape-improvement search deforms the vertices and has to
+    // re-run prepMesh + buildEdges (a deformation changes facet normals AND dihedral angles).
+    MESH={ vm:vm, tris:tris, facets:facets, edges:edges, segs:segs, half_m:half_m, src:srcLabel, unit:unitGuess||'mm', file:file||null, nverts:vm.length, ntri:tris.length, nedge:edges.length };
     LAST=null;
     // A NEW model must not inherit the previous model's per-part coatings. renderSegList()
     // deliberately preserves existing rows (so a library change or tab re-activation doesn't
@@ -10600,7 +10671,10 @@ window.CADRCS = {
   }
 
   function resetOutputs(){
-    ['cad-headline','cad-chart-fig','cad-table-fig','cad-view-fig','cad-actions','cad-math'].forEach(function(id){ var e=$(id); if(e) e.style.display='none'; });
+    ['cad-headline','cad-chart-fig','cad-table-fig','cad-view-fig','cad-actions','cad-math','cad-opt-out'].forEach(function(id){ var e=$(id); if(e) e.style.display='none'; });
+    OPT=null;
+    var ow=$('cad-opt-wrap'); if(ow) ow.style.display=MESH?'':'none';
+    var os=$('cad-opt-status'); if(os) os.textContent='';
   }
 
   // ---------- 3-D per-facet heatmap viewer (Three.js r128) ----------
@@ -11002,13 +11076,376 @@ window.CADRCS = {
     var b;
     if((b=$('cad-csv'))) b.addEventListener('click',function(){ if(LAST) dl(csvText(),'CAD_RCS_'+safe()+'.csv','text/csv'); });
     if((b=$('cad-dlall'))) b.addEventListener('click',dlAll);
+    // ---- 4 · shape improvement ----
+    if((b=$('cad-opt-run')))    b.addEventListener('click', optRun);
+    if((b=$('cad-opt-stop')))   b.addEventListener('click', function(){ OPT_STOP=true; });
+    if((b=$('cad-opt-apply')))  b.addEventListener('click', optApply);
+    if((b=$('cad-opt-stl')))    b.addEventListener('click', optSTL);
+    if((b=$('cad-opt-csv')))    b.addEventListener('click', optCSV);
+    if((b=$('cad-opt-revert'))) b.addEventListener('click', optRevert);
     if((b=$('cad-manifest'))) b.addEventListener('click',function(){ if(LAST) dl(JSON.stringify(manifest(),null,2),'CAD_RCS_manifest_'+safe()+'.json','application/json'); });
     if((b=$('cad-mathbtn'))) b.addEventListener('click',showMath);
     if((b=$('cad-verify'))) b.addEventListener('click',verifyOpenems);
   }
 
+  /* ==========================================================================================
+   * 4 · SHAPE IMPROVEMENT — search real deformations of the user's own mesh for a lower signature.
+   *
+   * WHY THIS IS GEOMETRY AND NOT COATING. Physical optics says a surface returns a strong lobe when
+   * its normal points back at the radar; a coating multiplies that lobe by |Γ|², but the lobe is
+   * still there. Shaping instead moves the specular direction OUT of the sector the radar occupies,
+   * which is why low-observable design is dominated by geometry (canted panels, sharp ogives,
+   * planform alignment) and why a few degrees of tilt can beat a good absorber.
+   *
+   * HOW IT WORKS. Each "lever" is a closed-form vertex deformation of the loaded mesh. For every
+   * candidate we re-run prepMesh + buildEdges (the deformation changes facet normals AND dihedral
+   * angles, so both must be rebuilt) and evaluate the SAME validated PO+PTD solve used everywhere
+   * else, over the chosen threat sector only. Stage 1 sweeps each lever alone; stage 2 stacks the
+   * best ones by coordinate descent. Nothing here is a heuristic score — it is the same physics as
+   * the main sweep, on a genuinely different geometry.
+   *
+   * THE CHEAT WE REFUSE. Shrinking a target trivially lowers its RCS and is useless design advice,
+   * so every lever preserves the overall LENGTH along the body axis, and the volume and maximum
+   * diameter change of each candidate is measured and reported. Uniform scale is not a lever.
+   * ========================================================================================== */
+  var OPT=null, OPT_STOP=false, OPT_RUNNING=false, MESH0=null;   // MESH0 = the original, for revert
+
+  // --- body axis = the longest extent; u∈[0,1] runs along it, r = transverse radius -------------
+  function meshFrame(vm){
+    var lo=[Infinity,Infinity,Infinity], hi=[-Infinity,-Infinity,-Infinity];
+    for(var i=0;i<vm.length;i++){ for(var a=0;a<3;a++){ var v=vm[i][a]; if(v<lo[a])lo[a]=v; if(v>hi[a])hi[a]=v; } }
+    var ext=[hi[0]-lo[0],hi[1]-lo[1],hi[2]-lo[2]];
+    var ax=0; if(ext[1]>ext[ax])ax=1; if(ext[2]>ext[ax])ax=2;
+    var t1=(ax+1)%3, t2=(ax+2)%3;
+    return {lo:lo, hi:hi, ext:ext, ax:ax, t1:t1, t2:t2, len:ext[ax]||1e-9};
+  }
+  function meshMetrics(vm){
+    var F=meshFrame(vm), rmax=0;
+    for(var i=0;i<vm.length;i++){ var r=Math.hypot(vm[i][F.t1],vm[i][F.t2]); if(r>rmax) rmax=r; }
+    return {len:F.len, dia:2*rmax, ax:F.ax};
+  }
+  // signed volume via the divergence theorem over the closed triangle soup (sign-agnostic)
+  function meshVolume(vm,tris){
+    var V=0;
+    for(var i=0;i<tris.length;i++){ var A=vm[tris[i].i], B=vm[tris[i].j], D=vm[tris[i].k];
+      V += (A[0]*(B[1]*D[2]-B[2]*D[1]) - A[1]*(B[0]*D[2]-B[2]*D[0]) + A[2]*(B[0]*D[1]-B[1]*D[0]))/6; }
+    return Math.abs(V);
+  }
+  // which segment contributes most at the sector centre (used by the two part-specific levers)
+  function dominantSeg(){
+    var best=null, bv=-Infinity, sb=(LAST&&LAST.segBare)||{};
+    for(var k in sb){ if(sb[k]>bv){ bv=sb[k]; best=+k; } }
+    return best;
+  }
+
+  /* ---- the levers. Each returns a NEW vertex array; `k` is the lever's parameter. -------------
+     All of them keep the axial extent fixed (they only move transverse coordinates, or move axial
+     coordinates within the existing span), so length is preserved by construction. */
+  var LEVERS=[
+    { id:'nose', name:'Sharpen the nose', unit:'ogive power', grid:[1.3,1.7,2.2,3.0,4.0],
+      why:'A blunter nose presents a near-normal surface head-on. Raising the ogive power pulls the forward radius in, so the nose-on specular is spread over a steeper, smaller-normal surface.',
+      fn:function(vm,k){ var F=meshFrame(vm), out=new Array(vm.length), zN=F.lo[F.ax]+0.30*F.len;
+        for(var i=0;i<vm.length;i++){ var p=vm[i].slice();
+          if(p[F.ax]<zN){ var u=(p[F.ax]-F.lo[F.ax])/(zN-F.lo[F.ax]||1e-9);   // 0 at tip, 1 at station
+            var f=Math.pow(Math.max(0,Math.min(1,u)),1/k)/Math.max(1e-9,Math.pow(1,1/k));
+            p[F.t1]*=f; p[F.t2]*=f; }
+          out[i]=p; }
+        return out; } },
+    { id:'tail', name:'Boat-tail the aft end', unit:'aft radius ×', grid:[0.85,0.72,0.60,0.48,0.35],
+      why:'A flat or full base is a broadside-facing disc. Contracting the aft radius removes that normal-incidence area and tilts the aft surface away from the sector.',
+      fn:function(vm,k){ var F=meshFrame(vm), out=new Array(vm.length), zT=F.hi[F.ax]-0.30*F.len;
+        for(var i=0;i<vm.length;i++){ var p=vm[i].slice();
+          if(p[F.ax]>zT){ var u=(p[F.ax]-zT)/(F.hi[F.ax]-zT||1e-9), f=1+(k-1)*u;
+            p[F.t1]*=f; p[F.t2]*=f; }
+          out[i]=p; }
+        return out; } },
+    { id:'taper', name:'Taper the body', unit:'fore/aft radius ratio', grid:[0.90,0.80,0.70,1.15,1.30],
+      why:'A constant-radius cylinder returns a broadside specular line at exactly 90°. A steady taper rotates every side normal off broadside, so the flash leaves the sector.',
+      fn:function(vm,k){ var F=meshFrame(vm), out=new Array(vm.length);
+        for(var i=0;i<vm.length;i++){ var p=vm[i].slice(), u=(p[F.ax]-F.lo[F.ax])/F.len, f=1+(k-1)*(1-u);
+          p[F.t1]*=f; p[F.t2]*=f; out[i]=p; }
+        return out; } },
+    { id:'ellipse', name:'Flatten the cross-section', unit:'width/height', grid:[0.75,0.60,0.48,1.35,1.7],
+      why:'A circular section always presents a normal somewhere in every azimuth. An elliptical (or faceted) section concentrates the normals into fewer azimuths, which can be aimed away from the threat sector.',
+      fn:function(vm,k){ var F=meshFrame(vm), out=new Array(vm.length), s=Math.sqrt(k);
+        for(var i=0;i<vm.length;i++){ var p=vm[i].slice(); p[F.t1]*=s; p[F.t2]/=s; out[i]=p; }
+        return out; } },
+    { id:'sweep', name:'Sweep the planform back', unit:'shear (° from normal)', grid:[15,25,35,45,55],
+      why:'Ufimtsev PTD: an edge radiates a cone about itself, so an edge perpendicular to the line of sight throws its diffraction lobe straight back. Sweeping the planform rotates every leading edge out of that condition (planform alignment).',
+      fn:function(vm,k){ var F=meshFrame(vm), out=new Array(vm.length), t=Math.tan(k*Math.PI/180);
+        for(var i=0;i<vm.length;i++){ var p=vm[i].slice();
+          p[F.ax]+= t*Math.abs(p[F.t1]);                              // shear axially with |transverse|
+          out[i]=p; }
+        // re-normalise the axial span so LENGTH is preserved exactly
+        var G=meshFrame(out), sc=F.len/(G.len||1e-9), z0=G.lo[F.ax];
+        for(var j=0;j<out.length;j++) out[j][F.ax]=F.lo[F.ax]+(out[j][F.ax]-z0)*sc;
+        return out; } },
+    { id:'cant', name:'Cant the appendages', unit:'roll (°)', grid:[10,20,30,40,50],
+      why:'Fins and panels normal to the incident wave are strong flat-plate scatterers. Rolling them about the body axis moves their specular peak to a different azimuth, and their edges out of perpendicularity.',
+      fn:function(vm,k){ var F=meshFrame(vm), out=vm.map(function(p){return p.slice();});
+        // "appendages" = every segment except the largest by area (the body)
+        var big=null, ba=-1; (MESH.segs||[]).forEach(function(s){ if(s.area_cm2>ba){ba=s.area_cm2;big=s.id;} });
+        var mark=new Uint8Array(vm.length);
+        for(var t=0;t<MESH.tris.length;t++){ var tr=MESH.tris[t];
+          if(tr.segId!==big){ mark[tr.i]=1; mark[tr.j]=1; mark[tr.k]=1; } }
+        var c=Math.cos(k*Math.PI/180), s2=Math.sin(k*Math.PI/180);
+        for(var i=0;i<out.length;i++){ if(!mark[i]) continue;
+          var x=out[i][F.t1], y=out[i][F.t2];
+          out[i][F.t1]=x*c-y*s2; out[i][F.t2]=x*s2+y*c; }
+        return out; } },
+    { id:'tilt', name:'Tilt the dominant part', unit:'tilt (°)', grid:[6,12,18,25,32],
+      why:'Whichever part carries most of the return is the one worth tilting: a flat panel\'s PO lobe is a narrow beam about its normal, so a few degrees of tilt can drop its contribution by tens of dB in that direction.',
+      fn:function(vm,k){ var F=meshFrame(vm), out=vm.map(function(p){return p.slice();});
+        var dom=dominantSeg(); if(dom==null) return out;
+        var mark=new Uint8Array(vm.length);
+        for(var t=0;t<MESH.tris.length;t++){ var tr=MESH.tris[t];
+          if(tr.segId===dom){ mark[tr.i]=1; mark[tr.j]=1; mark[tr.k]=1; } }
+        // rotate that part about the t2 axis, through its own centroid
+        var cx=0,cy=0,n=0;
+        for(var i=0;i<out.length;i++) if(mark[i]){ cx+=out[i][F.ax]; cy+=out[i][F.t1]; n++; }
+        if(!n) return out; cx/=n; cy/=n;
+        var c=Math.cos(k*Math.PI/180), s2=Math.sin(k*Math.PI/180);
+        for(var j=0;j<out.length;j++){ if(!mark[j]) continue;
+          var a=out[j][F.ax]-cx, b=out[j][F.t1]-cy;
+          out[j][F.ax]=cx+a*c-b*s2; out[j][F.t1]=cy+a*s2+b*c; }
+        // keep the overall length
+        var G=meshFrame(out), sc=F.len/(G.len||1e-9), z0=G.lo[F.ax];
+        for(var q=0;q<out.length;q++) out[q][F.ax]=F.lo[F.ax]+(out[q][F.ax]-z0)*sc;
+        return out; } },
+    { id:'slim', name:'Slim the dominant part', unit:'transverse ×', grid:[0.92,0.85,0.78,0.70,0.60],
+      why:'A direct area trade: PO backscatter from a flat region goes as area², so narrowing the biggest contributor buys signature at a cost in internal volume — which is why the volume column matters here.',
+      fn:function(vm,k){ var F=meshFrame(vm), out=vm.map(function(p){return p.slice();});
+        var dom=dominantSeg(); if(dom==null) return out;
+        var mark=new Uint8Array(vm.length);
+        for(var t=0;t<MESH.tris.length;t++){ var tr=MESH.tris[t];
+          if(tr.segId===dom){ mark[tr.i]=1; mark[tr.j]=1; mark[tr.k]=1; } }
+        for(var i=0;i<out.length;i++){ if(!mark[i]) continue; out[i][F.t1]*=k; out[i][F.t2]*=k; }
+        return out; } }
+  ];
+
+  function optSector(){
+    var c=parseFloat($('cad-opt-c').value); if(!isFinite(c)) c=0;
+    var w=Math.max(5,Math.min(180,parseFloat($('cad-opt-w').value)||30));
+    var st=Math.max(1,Math.min(15,parseFloat($('cad-opt-step').value)||5));
+    var angs=[]; for(var a=-w;a<=w+1e-9;a+=st) angs.push(((c+a)%360+360)%360);
+    return {c:c, w:w, step:st, angs:angs};
+  }
+  // sector mean + peak for a candidate vertex set (same power-mean convention as compute())
+  function evalShape(vm,tris,sector,f,lam,plane,pol,usePTD,gfn){
+    var facets=window.CADRCS.prepMesh(vm,tris);
+    var edges=usePTD?window.CADRCS.buildEdges(vm,tris):null;
+    var s=0, n=0, pk=-Infinity;
+    for(var i=0;i<sector.angs.length;i++){
+      var g=lookGeom(plane,pol,sector.angs[i]);
+      var r=window.CADRCS.rcsPOplusPTD(facets, edges, g.kh, lam, {Epol:g.ep, gammaFn:gfn||undefined});
+      var d=fixdb(r.totalDbsm);
+      if(d>pk) pk=d;
+      if(d>FLOOR) s+=Math.pow(10,d/10);
+      n++;
+    }
+    return { mean:(n&&s>0)?10*Math.log10(s/n):FLOOR, peak:pk, facets:facets, edges:edges };
+  }
+
+  function optLeverBoxes(){
+    var host=$('cad-opt-levers'); if(!host||host.__built) return; host.__built=true;
+    host.innerHTML=LEVERS.map(function(L){
+      return '<label style="display:flex;gap:7px;align-items:center;font-size:12.5px;color:var(--muted);cursor:pointer;">'+
+             '<input type="checkbox" class="cad-lever" value="'+L.id+'" checked>'+L.name+'</label>';
+    }).join('');
+  }
+  function optEnabled(){
+    var out=[]; document.querySelectorAll('.cad-lever').forEach(function(c){
+      if(c.checked){ LEVERS.forEach(function(L){ if(L.id===c.value) out.push(L); }); } });
+    return out;
+  }
+  function optSetBar(fr){ var b=$('cad-opt-bar'), i=$('cad-opt-bar-in');
+    if(b) b.style.display='block'; if(i) i.style.width=Math.round(Math.max(0,Math.min(1,fr))*100)+'%'; }
+
+  function optRun(){
+    if(OPT_RUNNING) return;
+    if(!MESH){ $('cad-opt-status').textContent='Upload a model first.'; return; }
+    if(!LAST){ $('cad-opt-status').textContent='Press “Compute RCS” once first — the search needs a baseline and the dominant-part levers need to know which part dominates.'; return; }
+    var levers=optEnabled();
+    if(!levers.length){ $('cad-opt-status').textContent='Tick at least one deformation to try.'; return; }
+    var sector=optSector(), f=LAST.f, lam=LAST.lam, plane=LAST.plane, pol=LAST.pol, usePTD=LAST.usePTD;
+    // Search the BARE shape: this is a geometry question, and mixing a coating in would let a
+    // coating change masquerade as a shape win. The coating is re-applied when you Compute again.
+    var gfn=null;
+    var rounds=parseInt($('cad-opt-rounds').value)||3;
+    var jobs=[]; levers.forEach(function(L){ L.grid.forEach(function(k){ jobs.push({L:L,k:k}); }); });
+    var vm0=MESH.vm, tris=MESH.tris;
+    var m0=meshMetrics(vm0), v0=meshVolume(vm0,tris);
+    var base=evalShape(vm0,tris,sector,f,lam,plane,pol,usePTD,gfn);
+    var rows=[], i=0, stage=1, chain=[], chainVm=vm0, chainMean=base.mean, chainPeak=base.peak, used={};
+    OPT_RUNNING=true; OPT_STOP=false;
+    $('cad-opt-run').disabled=true; $('cad-opt-stop').style.display='';
+    var total=jobs.length*rounds;
+    var t0=Date.now();
+
+    function finish(){
+      OPT_RUNNING=false; $('cad-opt-run').disabled=false; $('cad-opt-stop').style.display='none';
+      $('cad-opt-bar').style.display='none';
+      var mB=meshMetrics(chainVm), vB=meshVolume(chainVm,tris);
+      OPT={ sector:sector, f:f, plane:plane, pol:pol, usePTD:usePTD,
+            base:{mean:base.mean, peak:base.peak, len:m0.len, dia:m0.dia, vol:v0},
+            best:{mean:chainMean, peak:chainPeak, len:mB.len, dia:mB.dia, vol:vB},
+            chain:chain.slice(), rows:rows.slice(), vm:chainVm, secs:((Date.now()-t0)/1000) };
+      optRender();
+    }
+    function step(){
+      if(OPT_STOP){ $('cad-opt-status').textContent='stopped after '+rows.length+' candidates'; finish(); return; }
+      var t=Date.now();
+      // ~120 ms of work per tick keeps the progress bar and the Stop button responsive. When the
+      // page is HIDDEN there is no UI to keep responsive and setTimeout is clamped to ~1 s per
+      // tick, so a small budget would stretch a 30 s search into minutes — do long blocks instead.
+      var budget=(document.visibilityState==='hidden')?2500:120;
+      while(i<jobs.length && (Date.now()-t)<budget){
+        var j=jobs[i++];
+        if(used[j.L.id]){ continue; }                       // already spent in an earlier round
+        var vm2, r;
+        try{ vm2=j.L.fn(chainVm, j.k); r=evalShape(vm2,tris,sector,f,lam,plane,pol,usePTD,gfn); }
+        catch(e){ continue; }
+        var mm=meshMetrics(vm2), vv=meshVolume(vm2,tris);
+        rows.push({ stage:stage, id:j.L.id, name:j.L.name, unit:j.L.unit, k:j.k, why:j.L.why,
+                    mean:r.mean, peak:r.peak, dMean:r.mean-chainMean, dPeak:r.peak-chainPeak,
+                    dLen:100*(mm.len/m0.len-1), dDia:100*(mm.dia/m0.dia-1), dVol:100*(vv/v0-1), vm:vm2 });
+      }
+      optSetBar((stage-1+i/jobs.length)/rounds);
+      $('cad-opt-status').textContent='stage '+stage+'/'+rounds+' — '+rows.length+' candidate shape'+(rows.length===1?'':'s')+' solved';
+      if(i<jobs.length){ setTimeout(step,0); return; }
+      // ---- end of a round: adopt the single best improvement, then go again on top of it -------
+      var pick=null;
+      rows.forEach(function(r){ if(r.stage===stage && !used[r.id] && r.mean<chainMean-0.05 && (!pick||r.mean<pick.mean)) pick=r; });
+      if(!pick){ $('cad-opt-status').textContent='done — no further improvement found in stage '+stage; finish(); return; }
+      used[pick.id]=true; chain.push({id:pick.id, name:pick.name, unit:pick.unit, k:pick.k, mean:pick.mean, why:pick.why});
+      rows.forEach(function(r){ if(r!==pick) r.vm=null; });   // ~300 kB each — keep only the adopted one
+      chainVm=pick.vm; chainMean=pick.mean; chainPeak=pick.peak;
+      stage++;
+      if(stage>rounds){ $('cad-opt-status').textContent='done — '+rows.length+' candidates in '+((Date.now()-t0)/1000).toFixed(1)+' s'; finish(); return; }
+      i=0; setTimeout(step,0);
+    }
+    $('cad-opt-status').textContent='solving up to '+(jobs.length*rounds)+' candidate shapes ('+jobs.length+' per stage × '+rounds+') over '+sector.angs.length+' look-angles each…';
+    optSetBar(0); setTimeout(step,0);
+  }
+
+  function optRender(){
+    if(!OPT) return;
+    var d=OPT.best.mean-OPT.base.mean;                    // negative = improvement
+    var g=-d;                                             // dB removed
+    var echo=Math.pow(10,-g/10), sph=Math.pow(10,-g/20), rng=Math.pow(10,-g/40);
+    $('cad-opt-out').style.display='block';
+    $('cad-opt-head').innerHTML=
+      '<div class="hl-tag">Shape improvement · sector '+OPT.sector.c+'° ± '+OPT.sector.w+'° · '+OPT.f+' GHz</div>'+
+      '<div class="hl-metrics">'+
+      '<div class="hl-m"><span class="hl-v">'+OPT.base.mean.toFixed(1)+'</span><span class="hl-u">dBsm — original, sector mean</span></div>'+
+      '<div class="hl-m"><span class="hl-v" style="color:var(--accent);">'+OPT.best.mean.toFixed(1)+'</span><span class="hl-u">dBsm — improved shape</span></div>'+
+      '<div class="hl-m"><span class="hl-v">'+(g>=0?'−':'+')+Math.abs(g).toFixed(1)+'</span><span class="hl-u">dB in the threat sector</span></div>'+
+      '</div>';
+    var chain=OPT.chain;
+    var recipe = !chain.length
+      ? 'No deformation in the tried set lowered the sector mean by more than 0.05 dB. That is a real result: this shape is already close to a local optimum for these levers in this sector, and the remaining lever is coating (section 3) or a different sector.'
+      : chain.map(function(c,i){ return '<strong>'+(i+1)+'. '+c.name+'</strong> → '+c.unit+' = <strong>'+c.k+'</strong>'+
+            '<br><span style="color:var(--muted);">'+c.why+'</span>'; }).join('<br><br>')
+        + '<br><br><span style="color:var(--accent);">Together: sector mean '+OPT.base.mean.toFixed(1)+' → '+OPT.best.mean.toFixed(1)+' dBsm ('+
+          (g>=0?'−':'+')+Math.abs(g).toFixed(1)+' dB), sector peak '+OPT.base.peak.toFixed(1)+' → '+OPT.best.peak.toFixed(1)+' dBsm.</span>'
+        + '<br><span style="color:var(--muted);">What that means to a radar: <strong>'+(echo*100).toFixed(echo<0.01?2:1)+'%</strong> of the original echo power left, '+
+          'the same return as a metal sphere <strong>'+(sph*100).toFixed(0)+'%</strong> of the equivalent diameter, and detection range cut to <strong>'+
+          (rng*100).toFixed(0)+'%</strong> of its original value [43].</span>'
+        + '<br><span style="color:var(--muted);">Geometry cost: length '+(OPT.best.len/OPT.base.len*100).toFixed(1)+'% (held), maximum diameter '+
+          (OPT.best.dia/OPT.base.dia*100).toFixed(1)+'%, enclosed volume '+(OPT.best.vol/OPT.base.vol*100).toFixed(1)+'% of the original.</span>';
+    $('cad-opt-recipe').innerHTML=recipe;
+
+    var hd=['Stage','Deformation','Setting','Sector mean (dBsm)','Δ mean (dB)','Sector peak (dBsm)','Δ length %','Δ max dia %','Δ volume %'];
+    var h='<thead><tr style="text-align:left;border-bottom:2px solid var(--line);">'+
+      hd.map(function(x){return '<th style="padding:7px 9px;color:var(--muted);font-weight:600;">'+x+'</th>';}).join('')+'</tr></thead><tbody>';
+    OPT.rows.slice().sort(function(a,b){ return (a.stage-b.stage) || (a.mean-b.mean); }).forEach(function(r){
+      var win=r.dMean<-0.05, inChain=OPT.chain.some(function(c){return c.id===r.id && c.k===r.k;});
+      h+='<tr style="border-top:1px solid var(--line);'+(inChain?'background:var(--accent-soft);font-weight:600;':'')+'">'+
+        '<td style="padding:6px 9px;">'+r.stage+'</td>'+
+        '<td style="padding:6px 9px;">'+r.name+(inChain?' ★':'')+'</td>'+
+        '<td style="padding:6px 9px;">'+r.unit+' = '+r.k+'</td>'+
+        '<td style="padding:6px 9px;text-align:right;">'+r.mean.toFixed(2)+'</td>'+
+        '<td style="padding:6px 9px;text-align:right;color:'+(win?'#0b6e54':'var(--faint)')+';">'+(r.dMean>0?'+':'')+r.dMean.toFixed(2)+'</td>'+
+        '<td style="padding:6px 9px;text-align:right;">'+r.peak.toFixed(2)+'</td>'+
+        '<td style="padding:6px 9px;text-align:right;">'+(r.dLen>=0?'+':'')+r.dLen.toFixed(1)+'</td>'+
+        '<td style="padding:6px 9px;text-align:right;">'+(r.dDia>=0?'+':'')+r.dDia.toFixed(1)+'</td>'+
+        '<td style="padding:6px 9px;text-align:right;">'+(r.dVol>=0?'+':'')+r.dVol.toFixed(1)+'</td></tr>';
+    });
+    $('cad-opt-table').innerHTML=h+'</tbody>';
+
+    $('cad-opt-caveat').textContent='Scope, stated plainly: these numbers are this tool\'s validated PO + first-order PTD prediction on a genuinely deformed mesh — specular and single-edge scattering only. It cannot see multiple bounces, so a deformation that opens a corner or a cavity (an inlet, a nozzle, a step between panels) will be UNDERESTIMATED, and it cannot see creeping or travelling waves, which matter for smooth bodies near a wavelength across. The search is a coordinate descent over '+LEVERS.length+' closed-form deformations, not a free-form shape optimiser, so it finds the best combination of THESE levers, not the global optimum. Treat a winning shape as a candidate to take back into CAD and confirm — with the openEMS cross-check for a small part, or a measurement.';
+    $('cad-opt-revert').style.display = MESH0 ? '' : 'none';
+  }
+
+  // ---- binary STL of the improved mesh, so the winning shape goes back into CAD ---------------
+  function optSTL(){
+    if(!OPT||!OPT.vm){ return; }
+    var vm=OPT.vm, tris=MESH.tris, n=tris.length;
+    var buf=new ArrayBuffer(84+n*50), dv=new DataView(buf);
+    for(var h=0;h<80;h++) dv.setUint8(h,0);
+    dv.setUint32(80,n,true);
+    var off=84;
+    for(var t=0;t<n;t++){
+      var A=vm[tris[t].i], B=vm[tris[t].j], D=vm[tris[t].k];
+      var ux=B[0]-A[0],uy=B[1]-A[1],uz=B[2]-A[2], wx=D[0]-A[0],wy=D[1]-A[1],wz=D[2]-A[2];
+      var nx=uy*wz-uz*wy, ny=uz*wx-ux*wz, nz=ux*wy-uy*wx, L=Math.hypot(nx,ny,nz)||1;
+      // STL is unitless by convention but every CAD tool reads it as mm — the mesh is in metres
+      var S=1000;
+      dv.setFloat32(off,nx/L,true); dv.setFloat32(off+4,ny/L,true); dv.setFloat32(off+8,nz/L,true);
+      dv.setFloat32(off+12,A[0]*S,true); dv.setFloat32(off+16,A[1]*S,true); dv.setFloat32(off+20,A[2]*S,true);
+      dv.setFloat32(off+24,B[0]*S,true); dv.setFloat32(off+28,B[1]*S,true); dv.setFloat32(off+32,B[2]*S,true);
+      dv.setFloat32(off+36,D[0]*S,true); dv.setFloat32(off+40,D[1]*S,true); dv.setFloat32(off+44,D[2]*S,true);
+      dv.setUint16(off+48,0,true); off+=50;
+    }
+    var nm=(MESH.src||'model').replace(/[^A-Za-z0-9_.-]/g,'_').replace(/\.(stl|step|stp)$/i,'');
+    var b=new Blob([buf],{type:'model/stl'}), u=URL.createObjectURL(b), a=document.createElement('a');
+    a.href=u; a.download=nm+'_improved.stl'; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){URL.revokeObjectURL(u);},4000);
+  }
+  function optCSV(){
+    if(!OPT) return;
+    var L=['# Shape-improvement search — '+(MESH.src||'model')];
+    L.push('# threat sector '+OPT.sector.c+' deg +/- '+OPT.sector.w+' deg, step '+OPT.sector.step+' deg, '+OPT.f+' GHz, '+OPT.plane+' sweep, '+OPT.pol+'-pol, PTD '+(OPT.usePTD?'on':'off'));
+    L.push('# baseline sector mean '+OPT.base.mean.toFixed(3)+' dBsm, peak '+OPT.base.peak.toFixed(3)+' dBsm');
+    L.push('# adopted: '+(OPT.chain.length?OPT.chain.map(function(c){return c.name+' ('+c.unit+'='+c.k+')';}).join(' + '):'none'));
+    L.push('# analytical PO + first-order PTD on a deformed mesh; no multiple bounce, no creeping waves');
+    L.push('stage,deformation,setting_unit,setting,sector_mean_dbsm,delta_mean_db,sector_peak_dbsm,delta_length_pct,delta_maxdia_pct,delta_volume_pct,adopted');
+    OPT.rows.forEach(function(r){
+      var inChain=OPT.chain.some(function(c){return c.id===r.id&&c.k===r.k;});
+      L.push([r.stage,'"'+r.name+'"','"'+r.unit+'"',r.k,r.mean.toFixed(3),r.dMean.toFixed(3),r.peak.toFixed(3),
+              r.dLen.toFixed(2),r.dDia.toFixed(2),r.dVol.toFixed(2),(inChain?'yes':'')].join(','));
+    });
+    dl(L.join('\n'),'CAD_shape_improvement_'+safe()+'.csv','text/csv');
+  }
+  function optApply(){
+    if(!OPT||!OPT.vm||!OPT.chain.length) return;
+    if(!MESH0) MESH0={vm:MESH.vm, facets:MESH.facets, edges:MESH.edges, half_m:MESH.half_m, src:MESH.src, file:MESH.file};
+    MESH.vm=OPT.vm;
+    MESH.facets=window.CADRCS.prepMesh(OPT.vm,MESH.tris);
+    MESH.edges=window.CADRCS.buildEdges(OPT.vm,MESH.tris);
+    var mm=meshMetrics(OPT.vm); MESH.half_m=Math.max(mm.len,mm.dia)/2;
+    MESH.nedge=MESH.edges.length;
+    MESH.src=(MESH0.src||'model')+' · improved';
+    // The uploaded file no longer describes this geometry, so the openEMS cross-check (which
+    // re-uploads that file) must not silently validate the ORIGINAL shape against these numbers.
+    MESH.file=null;
+    $('cad-opt-status').textContent='improved shape applied — recomputing the full sweep…';
+    showLoaded(); renderSegList(); compute();
+    $('cad-opt-revert').style.display='';
+    $('cad-runstatus').textContent='Now showing the IMPROVED geometry. “Verify a part on openEMS” is unavailable until you export the STL and re-upload it.';
+  }
+  function optRevert(){
+    if(!MESH0) return;
+    MESH.vm=MESH0.vm; MESH.facets=MESH0.facets; MESH.edges=MESH0.edges;
+    MESH.half_m=MESH0.half_m; MESH.src=MESH0.src; MESH.file=MESH0.file; MESH.nedge=MESH0.edges.length;
+    MESH0=null; $('cad-opt-revert').style.display='none';
+    $('cad-opt-status').textContent='reverted to the original geometry — recomputing…';
+    showLoaded(); renderSegList(); compute();
+  }
+
   window.cadrcsInit=function(){
     if(!inited){ wire(); inited=true; }
+    optLeverBoxes();
     renderLib();                       // pick up anything newly pinned on the Reflection-loss tab
     if(MESH) renderSegList();          // rebuild the per-part dropdowns with the current library
     if(chart){ try{ chart.resize(); chart.update('none'); chart.draw(); }catch(e){} }
