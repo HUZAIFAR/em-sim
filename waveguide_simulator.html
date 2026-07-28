@@ -95,10 +95,20 @@
   .page{position:relative;}
   .pageinfo{position:absolute;top:-4px;right:0;z-index:30;background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:5px 13px;font-family:var(--font-mono);font-size:11px;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:color .15s,border-color .15s;}
   .pageinfo:hover{color:var(--accent);border-color:var(--accent);}
+  /* Ranges are the Analytical Simulator's primary controls, and `outline:none` left a keyboard user
+     with NO way to tell which slider the arrow keys will move. Match the existing .fld input focus. */
+  input[type=range]:focus-visible{box-shadow:0 0 0 3px var(--accent-soft);border-radius:6px;}
+  input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 3px var(--accent-soft);}
+  input[type=range]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 3px var(--accent-soft);}
   .chartinfo{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-left:7px;border:1px solid var(--line);border-radius:50%;background:var(--panel2);color:var(--muted);font-size:11px;font-family:var(--font-mono);cursor:pointer;vertical-align:middle;transition:color .15s,border-color .15s;}
   .chartinfo:hover{color:var(--accent);border-color:var(--accent);}
   /* pages that start with a full-width text block need clearance so the info button never overlaps the first line */
   #page-phys,#page-mat,#page-guide,#page-refs{padding-top:34px;}
+  /* The arrow was a literal ▸ in the summary text, so the app's front-page disclosure always looked
+     collapsed even while open. Same ::before pair the .setup-os widget already uses. */
+  #coatq-panel>summary::before{content:'▸ ';}
+  #coatq-panel[open]>summary::before{content:'▾ ';}
+  #coatq-panel>summary::-webkit-details-marker{display:none;}
   .setup-os{border:1px solid var(--line);border-radius:8px;margin:10px 0;background:var(--panel2);overflow:hidden;}
   .setup-os>summary{cursor:pointer;padding:11px 15px;font-weight:600;font-family:var(--font-body);list-style:none;}
   .setup-os>summary::-webkit-details-marker{display:none;}
@@ -338,7 +348,10 @@
      so the button you press over and over scrolls out of reach. This is a FLOATING button rather
      than position:sticky, because .panel carries overflow-x:auto on mobile and a scroll container
      kills sticky positioning on its descendants — the same trap that clipped the sim picker. */
-  .fab{position:fixed;right:14px;top:42%;z-index:860;display:none;flex-direction:column;gap:8px;align-items:flex-end;}
+  /* .wrap is a 900px centred column, so the pill needs (100vw-900)/2 >= 14+143 = 157px of gutter or
+     it sits ON the content and intercepts its clicks — measured 103px of overlap at 1024px, i.e. most
+     sub-1214px laptop windows. Keep it outside the column, clamped to the viewport edge. */
+  .fab{position:fixed;right:max(14px, calc((100vw - 900px)/2 - 155px));top:42%;z-index:860;display:none;flex-direction:column;gap:8px;align-items:flex-end;}
   .fab.on{display:flex;}
   .fab button{display:flex;align-items:center;gap:7px;background:var(--go);color:#04231a;border:1px solid var(--go-dim);
     border-radius:26px;padding:11px 16px;font-family:var(--font-body);font-size:13px;font-weight:600;cursor:pointer;
@@ -349,7 +362,10 @@
   .fab button.sec:hover{background:var(--panel);}
   @media screen and (max-width:820px){
     /* sit above the bottom tab bar, and shrink so it never covers the content it sits over */
-    .fab{right:10px;top:auto;bottom:calc(12px + var(--mtabs-h,90px));}
+    .fab{right:10px!important;top:auto;bottom:calc(12px + var(--mtabs-h,90px));}
+    @supports (padding: env(safe-area-inset-right)) {
+      .fab{right:calc(10px + env(safe-area-inset-right))!important;}
+    }
     /* min-height 44px: this is the button designed to be easy to hit, so it must clear the
        touch-target minimum — padding alone left it at 37px */
     .fab button{padding:11px 15px;font-size:12.5px;min-height:44px;}
@@ -421,6 +437,47 @@
        the attribute selector is the only hook. */
     div[style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important;}
     div[style*="grid-template-columns:1fr 1fr"]>div{min-width:0;}
+
+    /* These five were stranded at <=700px while the mobile NAV takes over at 820px, so 768px — iPad
+       portrait, a documented install target — got the phone nav with none of the phone layout. */
+
+    /* nav dropdowns: anchor to the nav itself, or the RCS menu opens off the right edge and the
+       More menu off the left (its button has wrapped to row 2) — both unreachable. */
+    nav.tabs{position:relative;}
+    .moredrop{position:static;}
+    .more-menu,.moredrop:last-child .more-menu{
+      left:0;right:0;width:auto;min-width:0;
+      max-height:min(60vh,420px);overflow-y:auto;-webkit-overflow-scrolling:touch;}
+
+    /* one real column. The inline `grid-column:span 2` cells otherwise forge a phantom implicit
+       track, which squeezed the segbars to ~114px and 60px tall. */
+    .oe-grid{grid-template-columns:1fr!important;}
+    .oe-grid>*{grid-column:1/-1!important;min-width:0;}
+
+    /* wide panels scroll internally rather than widening the page */
+    .panel{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    .panel table{min-width:max-content;}
+
+    /* The two "Simulations ▾" tick-box popovers. Written once as div[style*="min-width:330px"], which
+       NEVER MATCHED — the panels are built with element.style.cssText and CSSOM re-serialises that
+       with a space. They carry a real class now. Stranded at 700px, the picker hung 11px past the
+       right edge at 768px, which also gave the whole page a horizontal scrollbar on open. */
+    .simpicker{
+      left:0!important;right:auto!important;min-width:0!important;
+      width:calc(100vw - 40px)!important;max-width:calc(100vw - 40px)!important;
+      max-height:min(60vh,420px)!important;overflow-y:auto!important;
+      -webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+    /* ...and it was CLIPPED regardless, because `.panel{overflow-x:auto}` makes every panel a scroll
+       container, and a scroll container clips absolutely-positioned descendants. Only 1 of 8 sims was
+       visible. Panels hosting a picker opt out; panels with a wide table keep scrolling. */
+    .panel:has(.simpicker){overflow:visible!important;}
+
+    /* The ⓘ pill is absolutely positioned top-right with an OPAQUE background, so it painted over the
+       eyebrow text — measured up to 63px occluded at 390px, and worse with coarse-pointer padding,
+       where it also reached the second wrapped line. It sits BEFORE the eyebrow in the DOM, so static
+       flow puts it cleanly on its own line above the heading. */
+    .pageinfo{position:static!important;display:inline-flex;margin:0 0 10px;}
+    #page-phys,#page-mat,#page-guide,#page-refs{padding-top:0;}
   }
 
   @media screen and (max-width:700px){
@@ -433,47 +490,17 @@
     .masthead h1{font-size:clamp(22px,7vw,30px);}
     .page h1{font-size:clamp(19px,5.6vw,24px)!important;line-height:1.2;}
 
-    /* nav dropdowns: anchor to the nav itself, or the RCS menu opens 62px off the
-       right edge and the More menu 105px off the left — both unreachable. */
-    nav.tabs{position:relative;gap:8px 14px;}
-    .moredrop{position:static;}
-    .more-menu,.moredrop:last-child .more-menu{
-      left:0;right:0;width:auto;min-width:0;
-      max-height:min(60vh,420px);overflow-y:auto;-webkit-overflow-scrolling:touch;}
-
-    /* one real column. The inline `grid-column:span 2` cells otherwise forge a
-       phantom implicit track (measured 160px + 114px), which squeezed the segbars. */
-    .oe-grid{grid-template-columns:1fr!important;gap:14px;}
-    .oe-grid>*{grid-column:1/-1!important;min-width:0;}
+    nav.tabs{gap:8px 14px;}
+    .oe-grid{gap:14px;}
     .ctrls{padding:18px 16px;gap:20px;}
     .statstrip{grid-template-columns:1fr;}
     .bands{grid-template-columns:1fr;}
     .bandbtn{border-right:none;border-bottom:1px solid var(--line);padding:13px 14px;}
     .bandbtn:last-child{border-bottom:none;}
 
-    /* JS-built tick-box dropdowns (inline position:absolute + min-width) */
-    /* The two "Simulations ▾" tick-box popovers. This rule used to be written as
-       div[style*="min-width:330px"] and NEVER MATCHED: the panels are built with
-       element.style.cssText, which CSSOM re-serialises with a space ("min-width: 330px").
-       They carry a real class now. */
-    .simpicker{
-      left:0!important;right:auto!important;min-width:0!important;
-      width:calc(100vw - 40px)!important;max-width:calc(100vw - 40px)!important;
-      max-height:min(60vh,420px)!important;overflow-y:auto!important;
-      -webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
-    /* ...and the popover was CLIPPED regardless, because `.panel{overflow-x:auto}` (added for the
-       wide tables) makes every panel a scroll container, and a scroll container clips its
-       absolutely-positioned descendants. Only 1 of 8 sims was visible and page-scrolling could not
-       reach the rest. Panels that host a picker opt out; panels with a wide table keep scrolling. */
-    .panel:has(.simpicker){overflow:visible!important;}
-
     /* nested scrollers must not own the whole screen */
     #rlc-table-fig .panel,#cad-table-fig,#cad-seg-list{
       max-height:60vh!important;overscroll-behavior:contain;}
-
-    /* wide panels scroll internally rather than widening the page */
-    .panel{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-    .panel table{min-width:max-content;}
 
     /* per-part coating rows wrap instead of overflowing */
     .cad-seg,.rlc-mat{align-items:flex-start;}
@@ -488,7 +515,10 @@
   }
 
   /* ---- touch devices, including the 820px iPad ---- */
-  @media screen and (pointer:coarse){
+  /* Same scope as the 16px-input / slider-hit-area block below, and for the same documented reason:
+     an iPad with a Magic Keyboard or a Pencil reports pointer:fine, so a coarse-only rule misses the
+     very device this is installed on. Measured there: .btn 32px, segbar buttons 29px, .pageinfo 29px. */
+  @media screen and (max-width:820px), screen and (pointer:coarse){
     .tab{padding:10px 2px;} .tab.on::after{bottom:0;}
     .morelink{padding:12px;font-size:15px;min-height:44px;}
     .btn{min-height:44px;padding:11px 16px;}
@@ -635,10 +665,14 @@
       letter-spacing:-.01em;display:block;}
     #mdrawer .dhead small{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.07em;
       color:#8a938d;display:block;margin-top:3px;}
-    #mdrawer-close{background:none;border:none;color:#cdd6d1;font-size:22px;line-height:1;
-      padding:4px 6px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+    #mdrawer-close{display:inline-flex;align-items:center;justify-content:center;background:none;
+      border:none;color:#cdd6d1;font-size:22px;line-height:1;min-width:44px;min-height:44px;
+      padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;}
     #mdrawer-body{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;
       overscroll-behavior:contain;padding:8px 8px 22px;}
+    @supports (padding: env(safe-area-inset-bottom)) {
+      #mdrawer-body{padding-bottom:calc(22px + env(safe-area-inset-bottom));}
+    }
     #mdrawer-body .dgrp{font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;
       text-transform:uppercase;color:var(--faint);padding:14px 10px 6px;}
     #mdrawer-body .dgrp:first-child{padding-top:6px;}
@@ -669,9 +703,12 @@
     body.mast-min .masthead .statstrip,
     body.mast-min .masthead .hero-art{display:none!important;}
     body.mast-min .masthead h1{font-size:19px;margin:0;}
-    #mast-toggle{display:none;}
-    body.mast-min #mast-toggle{display:inline-block;margin-left:8px;background:none;border:1px solid var(--line);
-      border-radius:20px;padding:3px 10px;font-family:var(--font-mono);font-size:10px;color:var(--muted);cursor:pointer;}
+    /* This chip used to be display:none unless .mast-min, so once expanded it vanished and the only
+       way back was to navigate away and return — a full screen of scrolling. It is a real toggle. */
+    #mast-toggle{display:inline-flex;align-items:center;margin-left:8px;background:none;
+      border:1px solid var(--line);border-radius:20px;padding:0 12px;min-height:44px;
+      font-family:var(--font-mono);font-size:11px;color:var(--muted);cursor:pointer;
+      -webkit-tap-highlight-color:transparent;vertical-align:middle;}
 
     /* ---- overlays must live INSIDE the safe area -----------------------------
        `.infomodal`/`.prevmodal` are position:fixed;inset:0 and, with
@@ -695,6 +732,9 @@
       -webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
     .prevbox{position:relative!important;top:0!important;left:auto!important;
       transform:none!important;width:100%!important;max-width:100%;max-height:100%!important;}
+    /* #mtabs is fixed at the bottom and (now) above these overlays, so the box has to stop short of
+       it — otherwise its last ~49px sat under the bar and taps there hit a tab and navigated away. */
+    #cmp-modal{padding-bottom:calc(8px + var(--mtabs-h,90px));}
   }
 
   /* ==========================================================================
@@ -750,7 +790,7 @@
 </style>
 </head>
 <body>
-<div id="splash" role="status" aria-label="Loading EM Waveguide Simulator">
+<div id="splash" role="status" aria-label="Loading Signal to Signature">
   <div class="stars"></div>
   <div class="brand">
     <svg class="sguide" viewBox="0 0 440 150" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -771,8 +811,8 @@
       <g stroke="#3ddc97" stroke-width="2" fill="none"><path d="M12 75h18M22 69l6 6-6 6"/></g>
       <g stroke="#2f9d78" stroke-width="2" fill="none" opacity=".55"><path d="M410 75h18M420 69l6 6-6 6"/></g>
     </svg>
-    <p class="stitle">EM Waveguide Simulator</p>
-    <p class="ssub">MXene-coated waveguides · X · Ku · K</p>
+    <p class="stitle">Signal to Signature</p>
+    <p class="ssub">Lightweight RF materials · antennas · radar signature</p>
     <p class="sku">Khalifa University · جامعة خليفة</p>
     <div class="sbar"><i></i></div>
     <p class="sboot">Initializing field engine…</p>
@@ -914,7 +954,7 @@
     </div>
 
     <details id="coatq-panel" style="margin:0 0 22px;">
-      <summary style="cursor:pointer;font-weight:600;font-family:var(--font-body);list-style:none;padding:12px 16px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--panel);">▸ Coating quality — model a real-world coating (surface roughness &amp; uneven thickness)</summary>
+      <summary style="cursor:pointer;font-weight:600;font-family:var(--font-body);list-style:none;padding:12px 16px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--panel);"> Coating quality — model a real-world coating (surface roughness &amp; uneven thickness)</summary>
       <div style="border:1px solid var(--line);border-top:none;border-radius:0 0 var(--r-md) var(--r-md);padding:16px 18px;background:var(--panel2);">
         <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;cursor:pointer;margin-bottom:14px;flex-wrap:wrap;">
           <input type="checkbox" id="coatq-on"> <strong>Apply real-world coating effects</strong>
@@ -984,7 +1024,7 @@
       <div class="oe-grid">
         <div><div style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Band</div>
           <div class="segbar" data-for="oe-band"></div>
-          <select id="oe-band" class="segselect" style="padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-body);font-size:13px;"><option value="X" data-short="X">X (8–12 GHz)</option><option value="Ku" data-short="Ku">Ku (12–18 GHz)</option><option value="K" data-short="K">K (18–27 GHz)</option></select></div>
+          <select id="oe-band" class="segselect" tabindex="-1" aria-hidden="true" style="padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-body);font-size:13px;"><option value="X" data-short="X">X (8–12 GHz)</option><option value="Ku" data-short="Ku">Ku (12–18 GHz)</option><option value="K" data-short="K">K (18–27 GHz)</option></select></div>
         <div><div style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Material</div>
           <select id="oe-material" style="padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-body);font-size:13px;"><option value="mx-wood">MXene-coated basswood</option></select></div>
         <div><div style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Coats</div>
@@ -997,7 +1037,7 @@
           </select></div>
         <div><div style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Ports</div>
           <div class="segbar" data-for="oe-ports"></div>
-          <select id="oe-ports" class="segselect" style="padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-body);font-size:13px;">
+          <select id="oe-ports" class="segselect" tabindex="-1" aria-hidden="true" style="padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-body);font-size:13px;">
             <option value="2" data-short="2-port">2-port · thru (S11 + S21)</option>
             <option value="1" data-short="1-port">1-port · reflection (S11)</option>
           </select></div>
@@ -1009,7 +1049,7 @@
           </select></div>
         <div><div style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Field view</div>
           <div class="segbar" data-for="oe-fieldview"></div>
-          <select id="oe-fieldview" class="segselect" style="padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-body);font-size:13px;">
+          <select id="oe-fieldview" class="segselect" tabindex="-1" aria-hidden="true" style="padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-body);font-size:13px;">
             <option value="time" selected data-short="Time">Time-domain (animation)</option>
             <option value="freq" data-short="Freq">Frequency-domain (steady |E| at f₀)</option>
           </select></div>
@@ -1058,7 +1098,7 @@
         <button class="btn" id="oe-summary-btn">Summary</button>
         <button class="btn" id="oe-copy-btn">Copy summary</button>
         <button class="btn" id="oe-math-btn">Show math</button>
-        <button class="btn go" id="oe-manifest-btn">Run manifest</button>
+        <button class="btn go" id="oe-manifest-btn">⬇ Run manifest (JSON)</button>
         <button class="btn primary go" id="oe-download-btn">Download results</button>
       </div>
       <p id="oe-be" style="display:none;font-family:var(--font-mono);font-size:12px;color:var(--accent);margin:10px 0 0;"></p>
@@ -1196,7 +1236,7 @@
       <div class="oe-grid">
         <div><div class="oe-lab">Horn type</div>
           <div class="segbar" data-for="hna-type"></div>
-          <select id="hna-type" class="segselect"><option value="pyr" data-short="Pyramidal">Pyramidal</option><option value="con" data-short="Conical">Conical</option></select></div>
+          <select id="hna-type" class="segselect" tabindex="-1" aria-hidden="true"><option value="pyr" data-short="Pyramidal">Pyramidal</option><option value="con" data-short="Conical">Conical</option></select></div>
         <div><div class="oe-lab">Centre frequency f₀ (GHz)</div>
           <input id="hna-f" type="number" value="10" step="0.5" min="1" style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-mono);font-size:13px;"></div>
         <div><div class="oe-lab">Band (gain-vs-f)</div>
@@ -1335,7 +1375,7 @@
           <span id="hrn-fname" style="font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-left:8px;">(default horn)</span></div>
         <div><div style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Band</div>
           <div class="segbar" data-for="hrn-band"></div>
-          <select id="hrn-band" class="segselect" style="padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-body);font-size:13px;"><option value="X" data-short="X">X (8–12 GHz)</option><option value="Ku" data-short="Ku">Ku (12–18 GHz)</option><option value="K" data-short="K">K (18–27 GHz)</option></select></div>
+          <select id="hrn-band" class="segselect" tabindex="-1" aria-hidden="true" style="padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-body);font-size:13px;"><option value="X" data-short="X">X (8–12 GHz)</option><option value="Ku" data-short="Ku">Ku (12–18 GHz)</option><option value="K" data-short="K">K (18–27 GHz)</option></select></div>
         <div><div style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Inner coating</div>
           <select id="hrn-coating" style="padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-body);font-size:13px;">
             <option value="mxene">MXene</option><option value="copper">Copper</option><option value="silver">Silver</option><option value="aluminum">Aluminum</option><option value="pec">PEC (ideal)</option></select></div>
@@ -1347,7 +1387,7 @@
           </select></div>
         <div><div style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Field view</div>
           <div class="segbar" data-for="hrn-fieldview"></div>
-          <select id="hrn-fieldview" class="segselect" style="padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-body);font-size:13px;">
+          <select id="hrn-fieldview" class="segselect" tabindex="-1" aria-hidden="true" style="padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-body);font-size:13px;">
             <option value="freq" selected data-short="Freq">Frequency-domain (steady |E|)</option>
             <option value="time" data-short="Time">Time-domain (animation)</option>
           </select></div>
@@ -1371,7 +1411,7 @@
           <button class="btn go" id="hrn-dl-btn">⬇ Download files (PNG · CSV · text)</button>
           <button class="btn" id="hrn-sum-btn">Summary</button>
           <button class="btn" id="hrn-math-btn">Show math</button>
-          <button class="btn go" id="hrn-manifest-btn">Run manifest</button>
+          <button class="btn go" id="hrn-manifest-btn">⬇ Run manifest (JSON)</button>
         </div>
         <pre id="hrn-summary" style="display:none;white-space:pre-wrap;font-family:var(--font-mono);font-size:11.5px;line-height:1.55;background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;padding:14px 16px;margin:0 0 18px;overflow-x:auto;"></pre>
         <pre id="hrn-math" style="display:none;white-space:pre-wrap;font-family:var(--font-mono);font-size:11.5px;line-height:1.5;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin:0 0 18px;overflow-x:auto;"></pre>
@@ -1462,7 +1502,7 @@
       <div class="oe-grid">
         <div style="grid-column:span 2;"><div class="oe-lab" style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Target shape</div>
           <div class="segbar" data-for="rcs-shape"></div>
-          <select id="rcs-shape" class="segselect"><option value="sphere" data-short="Sphere">Sphere (Mie)</option><option value="plate" data-short="Plate">Flat plate (PO)</option><option value="cylinder" data-short="Cylinder">Cylinder (PO)</option><option value="dihedral" data-short="Dihedral">Dihedral corner (PO)</option><option value="import" data-short="Import">Imported CAD (STL/STEP)</option></select></div>
+          <select id="rcs-shape" class="segselect" tabindex="-1" aria-hidden="true"><option value="sphere" data-short="Sphere">Sphere (Mie)</option><option value="plate" data-short="Plate">Flat plate (PO)</option><option value="cylinder" data-short="Cylinder">Cylinder (PO)</option><option value="dihedral" data-short="Dihedral">Dihedral corner (PO)</option><option value="import" data-short="Import">Imported CAD (STL/STEP)</option></select></div>
         <div id="rcs-size1-wrap"><div class="oe-lab" id="rcs-size1-lab" style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Radius (mm)</div>
           <input id="rcs-size1" type="number" value="15" step="1" min="1" max="200" style="width:80px;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-mono);font-size:13px;"></div>
         <div id="rcs-size2-wrap" style="display:none;"><div class="oe-lab" style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Height (mm)</div>
@@ -1471,7 +1511,7 @@
           <input id="rcs-size3" type="number" value="60" step="5" min="2" max="300" style="width:80px;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-mono);font-size:13px;"></div>
         <div><div class="oe-lab" style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Band</div>
           <div class="segbar" data-for="rcs-band"></div>
-          <select id="rcs-band" class="segselect"><option value="X" data-short="X">X (8–12 GHz)</option><option value="Ku" data-short="Ku">Ku (12–18 GHz)</option><option value="K" data-short="K">K (18–27 GHz)</option><option value="Custom" data-short="Custom">Custom range</option></select></div>
+          <select id="rcs-band" class="segselect" tabindex="-1" aria-hidden="true"><option value="X" data-short="X">X (8–12 GHz)</option><option value="Ku" data-short="Ku">Ku (12–18 GHz)</option><option value="K" data-short="K">K (18–27 GHz)</option><option value="Custom" data-short="Custom">Custom range</option></select></div>
         <div id="rcs-custband-wrap" style="display:none;"><div class="oe-lab" style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">f min – f max (GHz)</div>
           <input id="rcs-fmin" type="number" value="8" step="0.5" min="0.5" max="110" style="width:62px;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-mono);font-size:13px;">
           <input id="rcs-fmax" type="number" value="12" step="0.5" min="0.5" max="110" style="width:62px;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-mono);font-size:13px;"></div>
@@ -1479,10 +1519,10 @@
           <input id="rcs-inc" type="number" value="0" step="5" min="0" max="355" style="width:70px;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-mono);font-size:13px;"></div>
         <div><div class="oe-lab" style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Polarization</div>
           <div class="segbar" data-for="rcs-pol"></div>
-          <select id="rcs-pol" class="segselect"><option value="v" data-short="V (E∥z)">Vertical — E along z</option><option value="h" data-short="H (in-plane)">Horizontal — E in the incidence plane</option></select></div>
+          <select id="rcs-pol" class="segselect" tabindex="-1" aria-hidden="true"><option value="v" data-short="V (E∥z)">Vertical — E along z</option><option value="h" data-short="H (in-plane)">Horizontal — E in the incidence plane</option></select></div>
         <div style="grid-column:span 2;"><div class="oe-lab" style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Construction</div>
           <div class="segbar" data-for="rcs-construct"></div>
-          <select id="rcs-construct" class="segselect"><option value="pec" data-short="Bare metal">Bare metal (PEC)</option><option value="coated" data-short="Coated">Metal + coating</option><option value="solid" data-short="Solid">Solid material</option></select></div>
+          <select id="rcs-construct" class="segselect" tabindex="-1" aria-hidden="true"><option value="pec" data-short="Bare metal">Bare metal (PEC)</option><option value="coated" data-short="Coated">Metal + coating</option><option value="solid" data-short="Solid">Solid material</option></select></div>
         <div id="rcs-mat-wrap" style="display:none;"><div class="oe-lab" id="rcs-mat-lab" style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Material</div>
           <select id="rcs-coat" style="padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-body);font-size:13px;"></select>
           <div id="rcs-coat-note" style="font-family:var(--font-mono);font-size:10.5px;color:var(--faint);margin-top:4px;"></div></div>
@@ -1620,7 +1660,7 @@
       <button class="btn primary go" id="rcs-dl-btn">⬇ Download all (CSV · PNG · text)</button>
       <button class="btn" id="rcs-sum-btn">Summary</button>
       <button class="btn" id="rcs-math-btn">Show math</button>
-      <button class="btn go" id="rcs-manifest-btn">Run manifest</button>
+      <button class="btn go" id="rcs-manifest-btn">⬇ Run manifest (JSON)</button>
     </div>
     <pre id="rcs-summary" style="display:none;white-space:pre-wrap;font-family:var(--font-mono);font-size:11.5px;line-height:1.55;background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;padding:14px 16px;margin:0 0 18px;overflow-x:auto;"></pre>
     <pre id="rcs-math" style="display:none;white-space:pre-wrap;font-family:var(--font-mono);font-size:11.5px;line-height:1.5;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin:0 0 18px;overflow-x:auto;"></pre>
@@ -1698,7 +1738,7 @@
       <div class="oe-grid">
         <div><div class="oe-lab">Band</div>
           <div class="segbar" data-for="invrcs-band"></div>
-          <select id="invrcs-band" class="segselect"><option value="X">X (8–12 GHz)</option><option value="Ku">Ku (12–18 GHz)</option><option value="K">K (18–27 GHz)</option></select></div>
+          <select id="invrcs-band" class="segselect" tabindex="-1" aria-hidden="true"><option value="X">X (8–12 GHz)</option><option value="Ku">Ku (12–18 GHz)</option><option value="K">K (18–27 GHz)</option></select></div>
         <div><div class="oe-lab">Target reduction (dB)</div>
           <input id="invrcs-target" type="number" value="10" step="1" min="1" max="40" style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-mono);font-size:13px;"></div>
         <div><div class="oe-lab">Max thickness (mm)</div>
@@ -1805,13 +1845,13 @@
       <div class="oe-grid">
         <div><div class="oe-lab">Shape</div>
           <div class="segbar" data-for="rcsb-shape"></div>
-          <select id="rcsb-shape" class="segselect"><option value="sphere">Sphere</option><option value="plate">Plate</option><option value="cylinder">Cylinder</option></select></div>
+          <select id="rcsb-shape" class="segselect" tabindex="-1" aria-hidden="true"><option value="sphere">Sphere</option><option value="plate">Plate</option><option value="cylinder">Cylinder</option></select></div>
         <div><div class="oe-lab">Band</div>
           <div class="segbar" data-for="rcsb-band"></div>
-          <select id="rcsb-band" class="segselect"><option value="X">X</option><option value="Ku">Ku</option><option value="K">K</option></select></div>
+          <select id="rcsb-band" class="segselect" tabindex="-1" aria-hidden="true"><option value="X">X</option><option value="Ku">Ku</option><option value="K">K</option></select></div>
         <div><div class="oe-lab">Construction</div>
           <div class="segbar" data-for="rcsb-construct"></div>
-          <select id="rcsb-construct" class="segselect"><option value="coated">Coated</option><option value="solid">Solid material</option><option value="pec">Bare metal</option></select></div>
+          <select id="rcsb-construct" class="segselect" tabindex="-1" aria-hidden="true"><option value="coated">Coated</option><option value="solid">Solid material</option><option value="pec">Bare metal</option></select></div>
         <div style="grid-column:span 2;"><div class="oe-lab">Sweep variable</div>
           <select id="rcsb-var" style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-body);font-size:13px;">
             <option value="thick">Coating thickness (mm)</option>
@@ -1968,6 +2008,7 @@ for t_mm in [0.5, 1, 2, 3, 4]:
           <option value="solid">solid block</option>
         </select></label>
       <button class="btn" id="rlc-pin" title="Save this material's optimal ε/μ + thickness to the shared material library, so you can apply it per part on the CAD-RCS tab and select it on the RCS (openEMS) tab">📌 Pin material to library</button>
+      <span id="rlc-pin-status" style="font-family:var(--font-mono);font-size:11.5px;color:var(--accent);"></span>
     </div>
     <pre id="rlc-math" style="display:none;white-space:pre-wrap;font-family:var(--font-mono);font-size:11.5px;line-height:1.5;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin:0 0 18px;overflow-x:auto;"></pre>
 
@@ -2169,7 +2210,7 @@ for t_mm in [0.5, 1, 2, 3, 4]:
       <button class="btn go" id="cad-csv" type="button" style="font-size:12px;">⬇ RCS-vs-angle (CSV)</button>
       <button class="btn" id="cad-mathbtn" type="button" style="font-size:12px;">Show math</button>
       <button class="btn go" id="cad-gif" type="button" style="font-size:12px;">⬇ Rotating GIF</button>
-      <button class="btn go" id="cad-manifest" type="button" style="font-size:12px;">Run manifest</button>
+      <button class="btn go" id="cad-manifest" type="button" style="font-size:12px;">⬇ Run manifest (JSON)</button>
       <button class="btn" id="cad-verify" type="button" style="font-size:12px;">Verify a part on openEMS</button>
       <span id="cad-verify-status" style="font-family:var(--font-mono);font-size:11.5px;color:#cdd6d1;align-self:center;"></span>
     </div>
@@ -2364,6 +2405,7 @@ for t_mm in [0.5, 1, 2, 3, 4]:
     <p class="charttitle">Top designs (ranked)</p>
     <p class="chartsub">The best combinations for your objective. Download the CSV for the full set.</p>
     <table id="sweep-table" style="width:100%;border-collapse:collapse;font-size:12.5px;"><thead></thead><tbody></tbody></table>
+    <p id="sweep-tnote" style="margin:8px 0 0;font-family:var(--font-mono);font-size:11px;color:var(--amber);"></p>
     </div>
 
     <footer>Every row is the analytical metal-backed reflection loss — the same engine (and the same physics) as the Reflection-loss tab, validated to ~0.01 dB. “Absorbs most” means deepest reflection loss, widest −10 dB bandwidth, or best reflection loss at your target frequency, as selected. The design-space search maps what ε/μ and thickness would perform best — a target to aim material synthesis at; confirm a shortlisted design with a full-wave openEMS run.</footer>
@@ -2518,7 +2560,7 @@ for t_mm in [0.5, 1, 2, 3, 4]:
         <div><div style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Simulations</div>
           <div id="cmp-sims"></div></div>
         <button class="btn go" id="cmp-runall">Run all on openEMS</button>
-        <button class="btn" id="cmp-sum-btn">Generate summary</button>
+        <button class="btn" id="cmp-sum-btn">Summary</button>
         <button class="btn primary go" id="cmp-dl-btn">Download all</button>
       </div>
       <div id="cmp-status" style="font-family:var(--font-mono);font-size:12px;color:var(--muted);margin:12px 0 0;">Analytical metrics shown below. openEMS runs are optional (start the bridge + open via http://localhost:8731).</div>
@@ -2840,7 +2882,7 @@ for t_mm in [0.5, 1, 2, 3, 4]:
     </div>
 
     <div class="btnrow">
-      <button class="btn primary" id="apply-btn">Apply &amp; simulate</button>
+      <button class="btn primary go" id="apply-btn">Apply &amp; simulate</button>
       <button class="btn" id="reset-btn">Reset to MXene defaults</button>
       <button class="btn" id="add-user-btn">＋ Add current material to Compare</button>
     </div>
@@ -2895,7 +2937,7 @@ for t_mm in [0.5, 1, 2, 3, 4]:
 
     <details class="setup-os"><summary>macOS — full setup (if you were handed this folder)</summary><div class="setup-body">
     <ol>
-      <li><strong>Install Python 3</strong> (Anaconda recommended — <a href="https://www.anaconda.com/download">anaconda.com</a> — or <a href="https://www.python.org/downloads/">python.org</a>).</li>
+      <li><strong>Install Python 3</strong> (Anaconda recommended — <a href="https://www.anaconda.com/download" target="_blank" rel="noopener">anaconda.com</a> — or <a href="https://www.python.org/downloads/" target="_blank" rel="noopener">python.org</a>).</li>
       <li><strong>Install the Python libraries</strong> for the bridge + 3-D rendering. In Terminal:<br><code>pip install flask pyvista imageio imageio-ffmpeg numpy</code></li>
       <li><strong>Install openEMS + Octave</strong> (the full-wave solver and the interface that drives it):<br><code>brew install octave</code> then the openEMS Homebrew tap, <em>or</em> <code>sudo port install openEMS</code> (MacPorts). Confirm it imports:<br><code>python3 -c "import openEMS, CSXCAD; print('ok')"</code></li>
       <li><strong>Point the bridge at your binaries</strong> if they differ from the defaults: open <code>openEMS/openems_server.py</code> and set <code>OCTAVE</code> (from <code>which octave</code>) and <code>PYTHON</code> (the one with pyvista, from <code>which python3</code>). If openEMS installed outside <code>/opt/homebrew/Cellar/openems/…</code>, update the two <code>addpath(...)</code> lines at the top of <code>openEMS/wg_run.m</code>, <code>openEMS/wg_farfield.m</code> and <code>openEMS/cad/horn_run.m</code> to your openEMS and CSXCAD <code>matlab</code> folders.</li>
@@ -2907,10 +2949,10 @@ for t_mm in [0.5, 1, 2, 3, 4]:
     <details class="setup-os"><summary>Windows — full setup (if you were handed this folder)</summary><div class="setup-body">
     <p>The analytical two-thirds of the tool needs nothing — just open <code>waveguide_simulator.html</code>. These steps enable the openEMS full-wave runs on Windows.</p>
     <ol>
-      <li><strong>Install Python 3</strong> from <a href="https://www.python.org/downloads/">python.org</a> (tick <em>"Add Python to PATH"</em> during install) or Anaconda.</li>
+      <li><strong>Install Python 3</strong> from <a href="https://www.python.org/downloads/" target="_blank" rel="noopener">python.org</a> (tick <em>"Add Python to PATH"</em> during install) or Anaconda.</li>
       <li><strong>Install the Python libraries.</strong> Open <em>Command Prompt</em> (or PowerShell) and run:<br><code>pip install flask pyvista imageio imageio-ffmpeg numpy</code></li>
-      <li><strong>Install openEMS for Windows</strong> — download the Windows build from <a href="https://www.openems.de/start/">openEMS.de</a> and unzip to e.g. <code>C:\openEMS</code> (it includes the solver plus the Octave/MATLAB interface). Add <code>C:\openEMS</code> to your Windows <em>PATH</em> so the solver is found.</li>
-      <li><strong>Install GNU Octave for Windows</strong> from <a href="https://octave.org/download">octave.org</a> (provides <code>octave-cli.exe</code>, used to drive openEMS).</li>
+      <li><strong>Install openEMS for Windows</strong> — download the Windows build from <a href="https://www.openems.de/start/" target="_blank" rel="noopener">openEMS.de</a> and unzip to e.g. <code>C:\openEMS</code> (it includes the solver plus the Octave/MATLAB interface). Add <code>C:\openEMS</code> to your Windows <em>PATH</em> so the solver is found.</li>
+      <li><strong>Install GNU Octave for Windows</strong> from <a href="https://octave.org/download" target="_blank" rel="noopener">octave.org</a> (provides <code>octave-cli.exe</code>, used to drive openEMS).</li>
       <li><strong>Edit the machine paths</strong> — this folder ships with macOS paths baked in; change them once:
         <ul>
           <li>In <code>openEMS\openems_server.py</code>: set <code>OCTAVE = r"C:\…\octave-cli.exe"</code> and <code>PYTHON = r"C:\…\python.exe"</code> (the Python that has pyvista).</li>
@@ -2962,7 +3004,7 @@ for t_mm in [0.5, 1, 2, 3, 4]:
     <div class="panel" style="padding:16px 18px;margin:0 0 22px;border-left:3px solid var(--accent);">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
         <div><strong style="font-size:15px;">Self-validation</strong><div style="font-size:12.5px;color:var(--muted);">Recompute textbook benchmarks live and confirm the analytical engine reproduces them.</div></div>
-        <div style="display:flex;gap:8px;"><button class="btn primary go" id="val-run">▶ Run validation report</button><button class="btn" id="val-print" style="display:none;">Save as PDF</button></div>
+        <div style="display:flex;gap:8px;"><button class="btn primary go" id="val-run">▶ Run validation report</button><button class="btn go" id="val-print" style="display:none;">⬇ Save as PDF</button></div>
       </div>
       <div id="val-out" style="margin-top:12px;"></div>
     </div>
@@ -3061,56 +3103,56 @@ for t_mm in [0.5, 1, 2, 3, 4]:
 
     <h2>References</h2>
     <ol style="font-size:14px;line-height:1.7;padding-left:22px;">
-      <li>A. Lipatov et al., high electrical conductivity of Ti₃C₂Tₓ MXene films — <a href="https://pubmed.ncbi.nlm.nih.gov/32309891/">"Scalable Manufacturing of Free-Standing, Strong Ti₃C₂Tₓ MXene Films with Outstanding Conductivity" (PubMed 32309891)</a>.</li>
-      <li>Improved-synthesis Ti₃C₂Tₓ reaching ~2.4×10⁴ S/cm — <a href="https://www.researchgate.net/publication/348385234">Mathis et al., "Improved Synthesis of Ti₃C₂Tₓ MXene..." (ResearchGate)</a>.</li>
-      <li>MXene microwave response is dielectric/conductive, not magnetic (μr≈1) — <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9077445/">"Ti₃C₂ MXene: a promising microwave absorbing material" (PMC9077445)</a>; permeability only appears in ferrite composites: <a href="https://www.sciencedirect.com/science/article/abs/pii/S0254058424001561">M-type hexagonal ferrite + Ti₃C₂Tₓ (ScienceDirect)</a>.</li>
-      <li>Dry-wood relative permittivity ≈1.8–2 at 8–12 GHz — <a href="https://link.springer.com/article/10.1007/s00107-017-1203-x">"Microwave testing... dielectric constant of spruce from 8 GHz to 12 GHz", Eur. J. Wood Wood Prod. (2017)</a>.</li>
+      <li>A. Lipatov et al., high electrical conductivity of Ti₃C₂Tₓ MXene films — <a href="https://pubmed.ncbi.nlm.nih.gov/32309891/" target="_blank" rel="noopener">"Scalable Manufacturing of Free-Standing, Strong Ti₃C₂Tₓ MXene Films with Outstanding Conductivity" (PubMed 32309891)</a>.</li>
+      <li>Improved-synthesis Ti₃C₂Tₓ reaching ~2.4×10⁴ S/cm — <a href="https://www.researchgate.net/publication/348385234" target="_blank" rel="noopener">Mathis et al., "Improved Synthesis of Ti₃C₂Tₓ MXene..." (ResearchGate)</a>.</li>
+      <li>MXene microwave response is dielectric/conductive, not magnetic (μr≈1) — <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9077445/" target="_blank" rel="noopener">"Ti₃C₂ MXene: a promising microwave absorbing material" (PMC9077445)</a>; permeability only appears in ferrite composites: <a href="https://www.sciencedirect.com/science/article/abs/pii/S0254058424001561" target="_blank" rel="noopener">M-type hexagonal ferrite + Ti₃C₂Tₓ (ScienceDirect)</a>.</li>
+      <li>Dry-wood relative permittivity ≈1.8–2 at 8–12 GHz — <a href="https://link.springer.com/article/10.1007/s00107-017-1203-x" target="_blank" rel="noopener">"Microwave testing... dielectric constant of spruce from 8 GHz to 12 GHz", Eur. J. Wood Wood Prod. (2017)</a>.</li>
       <li>Metal conductivities &amp; densities (Cu, Al) — CRC Handbook of Chemistry and Physics, CRC Press — <a href="https://hbcp.chemnetbase.com/" target="_blank" rel="noopener">official online edition</a>.</li>
       <li>D. M. Pozar, <em>Microwave Engineering</em>, 4th ed., Wiley, ISBN 978-0-470-63155-3 — TE10 attenuation, waveguide dimensions, transfer-matrix method.</li>
-      <li>MXene production cost — <a href="https://www.sciencedirect.com/science/article/pii/S2666539523001980">"Cost analysis of MXene..." (ScienceDirect)</a>; commercial pricing e.g. Nanografi/Nanochemazone (~$15–40/g).</li>
+      <li>MXene production cost — <a href="https://www.sciencedirect.com/science/article/pii/S2666539523001980" target="_blank" rel="noopener">"Cost analysis of MXene..." (ScienceDirect)</a>; commercial pricing e.g. Nanografi/Nanochemazone (~$15–40/g).</li>
       <li>Rectangular-waveguide WR band designations — EIA RS-261-B / IEC 60153-2 standard rectangular-waveguide sizes (WR designations); the WR-90 / WR-62 / WR-42 dimensions used here are tabulated in Pozar [6].</li>
       <li>Launch cost to LEO — <strong>an input assumption, not a measured constant</strong>: the app exposes it as a slider precisely because published figures span roughly \$2,000–20,000/kg depending on vehicle, orbit and contract, and no single value is authoritative. The default is a representative mid-range figure; set it to your own programme's number before quoting any delivered-cost result.</li>
-      <li>T. Liebig, A. Rennings, S. Held, D. Erni, "openEMS – a free and open source FDTD simulation platform," <em>Int. J. Numer. Modelling</em>, 2012. DOI: <a href="https://doi.org/10.1002/jnm.1875">10.1002/jnm.1875</a>.</li>
-      <li>A. E. Elkaffas <em>et al.</em>, "Microwave synthesis of gram scale millimeter size layered transition metal oxide crystals," <em>NPG Asia Materials</em>, 2026. DOI: <a href="https://doi.org/10.1038/s41427-026-00637-8">10.1038/s41427-026-00637-8</a>. — microwave–matter interaction framework: complex permittivity/permeability, loss tangent, power absorption (Eq. S1), penetration depth (Eq. S2) and heating rate (Eq. S3).</li>
-      <li>Metallized (silver/copper-plated) 3-D-printed polymer waveguides — lightweight, low-loss microwave components for space/satellite: <a href="https://meridian.allenpress.com/ism/article/2017/1/000078/35706/3D-Printed-Metalized-Plastic-Waveguides-for">"3D Printed Metalized Plastic Waveguides for Microwave Components" (Int. Symp. Microelectronics, 2017)</a>; silver-coated polymer hollow waveguide, 0.73 dB/m at 220 GHz: <a href="https://www.sciencedirect.com/science/article/pii/S0264127526001772">"Pd-free activation for low-loss silver-coated polymer waveguides" (Mater. &amp; Design)</a>.</li>
-      <li>Copper/metal-plated carbon-fibre (CFRP) waveguides &amp; antennas for space — lightweight, low-CTE, dimensionally stable: <a href="https://www.sciencedirect.com/science/article/abs/pii/0094576581900369">"A slotted waveguide array antenna from CFRP for the European space SAR" (Acta Astronautica)</a>.</li>
-      <li>Silver-plated aluminium / Invar RF waveguides for space (autocatalytic silver with nickel undercoat; Invar for thermal stability): <a href="https://www.researchgate.net/publication/268157054_Autocatalytic_silver-plating_of_aluminium_radio_frequency_waveguides_with_autocatalytic_nickel_as_the_undercoat_for_space_applications">"Autocatalytic silver-plating of aluminium RF waveguides… for space applications"</a>; <a href="https://pure-oai.bham.ac.uk/ws/portalfiles/portal/164158671/22_IEEE_MTT_Invar_Filter.pdf">3-D-printed Invar filter with high thermal stability (IEEE MTT)</a>.</li>
-      <li>Elemental / alloy electrical conductivity (Ag 6.3×10⁷, Cu 5.8×10⁷, Au 4.1×10⁷, Al 3.5×10⁷, brass ≈1.5×10⁷, Ni 1.43×10⁷ S/m) — <a href="https://www.alfa-chemistry.com/resources/reference-table-of-elemental-electrical-conductivity.html">reference table of elemental electrical conductivity</a> and CRC Handbook; polymer densities &amp; dielectric constants (PLA εr≈2.7, PEEK≈3.2, PTFE≈2.1, PC≈2.9, FR4≈4.4) from standard materials datasheets.</li>
-      <li>Basswood (<em>Tilia</em>) density ≈415 kg/m³ (12% MC) — <a href="https://www.wood-database.com/basswood/">The Wood Database, "Basswood"</a>; dry-wood microwave permittivity εr≈1.8–2 at 8–12 GHz (density-dependent) — <a href="https://link.springer.com/article/10.1007/s00107-017-1203-x">Eur. J. Wood Wood Prod. (2017)</a> and <a href="https://link.springer.com/content/pdf/10.1007/s10086-003-0575-1.pdf">"Dielectric properties of hardwood species at microwave frequencies", J. Wood Sci.</a></li>
-      <li>Complex permittivity &amp; permeability of magnetite (Fe₃O₄) and carbonyl-iron composites at X-band (representative εr′, εr″, μr′, μr″ used here) — <a href="https://www.researchgate.net/publication/251804672_Complex_permittivity_and_permeability_of_carbonyl_iron_powders_at_microwave_frequencies">"Complex permittivity and permeability of carbonyl iron powders at microwave frequencies"</a>; <a href="https://www.researchgate.net/publication/338477045_Permittivity_and_permeability_of_epoxy-magnetite_powder_composites_at_microwave_frequencies">"Permittivity and permeability of epoxy–magnetite powder composites at microwave frequencies"</a>. Values vary strongly with filler fraction — treat as typical, not exact.</li>
+      <li>T. Liebig, A. Rennings, S. Held, D. Erni, "openEMS – a free and open source FDTD simulation platform," <em>Int. J. Numer. Modelling</em>, 2012. DOI: <a href="https://doi.org/10.1002/jnm.1875" target="_blank" rel="noopener">10.1002/jnm.1875</a>.</li>
+      <li>A. E. Elkaffas <em>et al.</em>, "Microwave synthesis of gram scale millimeter size layered transition metal oxide crystals," <em>NPG Asia Materials</em>, 2026. DOI: <a href="https://doi.org/10.1038/s41427-026-00637-8" target="_blank" rel="noopener">10.1038/s41427-026-00637-8</a>. — microwave–matter interaction framework: complex permittivity/permeability, loss tangent, power absorption (Eq. S1), penetration depth (Eq. S2) and heating rate (Eq. S3).</li>
+      <li>Metallized (silver/copper-plated) 3-D-printed polymer waveguides — lightweight, low-loss microwave components for space/satellite: <a href="https://meridian.allenpress.com/ism/article/2017/1/000078/35706/3D-Printed-Metalized-Plastic-Waveguides-for" target="_blank" rel="noopener">"3D Printed Metalized Plastic Waveguides for Microwave Components" (Int. Symp. Microelectronics, 2017)</a>; silver-coated polymer hollow waveguide, 0.73 dB/m at 220 GHz: <a href="https://www.sciencedirect.com/science/article/pii/S0264127526001772" target="_blank" rel="noopener">"Pd-free activation for low-loss silver-coated polymer waveguides" (Mater. &amp; Design)</a>.</li>
+      <li>Copper/metal-plated carbon-fibre (CFRP) waveguides &amp; antennas for space — lightweight, low-CTE, dimensionally stable: <a href="https://www.sciencedirect.com/science/article/abs/pii/0094576581900369" target="_blank" rel="noopener">"A slotted waveguide array antenna from CFRP for the European space SAR" (Acta Astronautica)</a>.</li>
+      <li>Silver-plated aluminium / Invar RF waveguides for space (autocatalytic silver with nickel undercoat; Invar for thermal stability): <a href="https://www.researchgate.net/publication/268157054_Autocatalytic_silver-plating_of_aluminium_radio_frequency_waveguides_with_autocatalytic_nickel_as_the_undercoat_for_space_applications" target="_blank" rel="noopener">"Autocatalytic silver-plating of aluminium RF waveguides… for space applications"</a>; <a href="https://pure-oai.bham.ac.uk/ws/portalfiles/portal/164158671/22_IEEE_MTT_Invar_Filter.pdf" target="_blank" rel="noopener">3-D-printed Invar filter with high thermal stability (IEEE MTT)</a>.</li>
+      <li>Elemental / alloy electrical conductivity (Ag 6.3×10⁷, Cu 5.8×10⁷, Au 4.1×10⁷, Al 3.5×10⁷, brass ≈1.5×10⁷, Ni 1.43×10⁷ S/m) — <a href="https://www.alfa-chemistry.com/resources/reference-table-of-elemental-electrical-conductivity.html" target="_blank" rel="noopener">reference table of elemental electrical conductivity</a> and CRC Handbook; polymer densities &amp; dielectric constants (PLA εr≈2.7, PEEK≈3.2, PTFE≈2.1, PC≈2.9, FR4≈4.4) from standard materials datasheets.</li>
+      <li>Basswood (<em>Tilia</em>) density ≈415 kg/m³ (12% MC) — <a href="https://www.wood-database.com/basswood/" target="_blank" rel="noopener">The Wood Database, "Basswood"</a>; dry-wood microwave permittivity εr≈1.8–2 at 8–12 GHz (density-dependent) — <a href="https://link.springer.com/article/10.1007/s00107-017-1203-x" target="_blank" rel="noopener">Eur. J. Wood Wood Prod. (2017)</a> and <a href="https://link.springer.com/content/pdf/10.1007/s10086-003-0575-1.pdf" target="_blank" rel="noopener">"Dielectric properties of hardwood species at microwave frequencies", J. Wood Sci.</a></li>
+      <li>Complex permittivity &amp; permeability of magnetite (Fe₃O₄) and carbonyl-iron composites at X-band (representative εr′, εr″, μr′, μr″ used here) — <a href="https://www.researchgate.net/publication/251804672_Complex_permittivity_and_permeability_of_carbonyl_iron_powders_at_microwave_frequencies" target="_blank" rel="noopener">"Complex permittivity and permeability of carbonyl iron powders at microwave frequencies"</a>; <a href="https://www.researchgate.net/publication/338477045_Permittivity_and_permeability_of_epoxy-magnetite_powder_composites_at_microwave_frequencies" target="_blank" rel="noopener">"Permittivity and permeability of epoxy–magnetite powder composites at microwave frequencies"</a>. Values vary strongly with filler fraction — treat as typical, not exact.</li>
       <li>Polyurethane microwave permittivity εr≈2.5–3.5 (low loss, common absorber matrix) and density ≈1100–1200 kg/m³ — supplier datasheets for cast polyurethane resins and the standard dielectric-materials tables in von Hippel, <em>Dielectric Materials and Applications</em> (Artech House, ISBN 978-1-58053-123-6). Treated as a <strong>range</strong> throughout, not a single value.</li>
       <li>Embodied carbon (CO₂e per kg): timber ≈0.4–0.5, copper ≈3.5, aluminium ≈9 (primary), silver ≈150, gold ≈35,000, PLA ≈2, PEEK/PTFE/CFRP higher — representative cradle-to-gate figures from the <a href="https://circularecology.com/embodied-carbon-footprint-database.html" target="_blank" rel="noopener">ICE (Inventory of Carbon &amp; Energy) database</a> and life-cycle-assessment literature. MXene CO₂ is not well established; the ≈15 used here is an order-of-magnitude estimate. Treat all CO₂/kg values as ballpark.</li>
-      <li>Graphene-film electrical conductivity — CVD monolayer measured at ≈1.46×10⁶ S/m by conductive-AFM: <a href="https://www.mdpi.com/2079-4991/11/10/2575">"Measurements of the Electrical Conductivity of Monolayer Graphene Flakes…", Nanomaterials (2021)</a>; high-quality multilayer/graphitic films span ≈10⁶–10⁸ S/m (<a href="https://www.nature.com/articles/s41598-020-59851-1">"Towards standardisation of… electrical measurements of CVD graphene", Sci. Rep. (2020)</a>). The ≈1×10⁷ S/m used here is a good-film value.</li>
-      <li>Graphite in-plane electrical conductivity ≈10⁵ S/m — <a href="https://www.sciencedirect.com/science/article/abs/pii/S0032591012000277">"Electrical conductivity of compacts of graphene, multi-wall carbon nanotubes, carbon black, and graphite powder", Powder Technology (2012)</a>; rolled/pressed graphite foils ≈5×10⁴–1.7×10⁵ S/m in-plane (<a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11676233/">"Electrical Conductivity in Graphite Foils Produced by Rolling and Pressing" (2024)</a>).</li>
-      <li>Silver conductive paint/coating conductivity ≈10⁵–10⁶ S/m (from datasheet volume resistivity) — <a href="https://www.mgchemicals.com/downloads/tds/tds-842-l.pdf">MG Chemicals "Super Shield 842" silver conductive coating technical datasheet</a>.</li>
-      <li>ABS microwave relative permittivity εr≈2.7–2.9 — <a href="https://www.researchgate.net/publication/317135983">"Characterization of Acrylonitrile Butadiene Styrene for 3D Printed Patch Antenna" (εr≈2.74)</a>; complex permittivity of common plastics at ~10 GHz (<a href="https://www.researchgate.net/publication/3130152_Complex_permittivity_measurements_of_common_plastics_over_variable_temperatures">"Complex permittivity measurements of common plastics…"</a>).</li>
-      <li>CFRP (carbon-fibre-reinforced polymer) X-band relative permittivity (representative εr′≈5, anisotropic and fibre-fraction dependent) — <a href="https://www.sciencedirect.com/science/article/abs/pii/S0263822318324899">"X-band microwave characterisation and analysis of carbon fibre-reinforced polymer composites", Composite Structures (2019)</a>; <a href="https://www.nature.com/articles/srep14927">"Microwave axial dielectric properties of carbon fiber", Sci. Rep. (2015)</a>.</li>
+      <li>Graphene-film electrical conductivity — CVD monolayer measured at ≈1.46×10⁶ S/m by conductive-AFM: <a href="https://www.mdpi.com/2079-4991/11/10/2575" target="_blank" rel="noopener">"Measurements of the Electrical Conductivity of Monolayer Graphene Flakes…", Nanomaterials (2021)</a>; high-quality multilayer/graphitic films span ≈10⁶–10⁸ S/m (<a href="https://www.nature.com/articles/s41598-020-59851-1" target="_blank" rel="noopener">"Towards standardisation of… electrical measurements of CVD graphene", Sci. Rep. (2020)</a>). The ≈1×10⁷ S/m used here is a good-film value.</li>
+      <li>Graphite in-plane electrical conductivity ≈10⁵ S/m — <a href="https://www.sciencedirect.com/science/article/abs/pii/S0032591012000277" target="_blank" rel="noopener">"Electrical conductivity of compacts of graphene, multi-wall carbon nanotubes, carbon black, and graphite powder", Powder Technology (2012)</a>; rolled/pressed graphite foils ≈5×10⁴–1.7×10⁵ S/m in-plane (<a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11676233/" target="_blank" rel="noopener">"Electrical Conductivity in Graphite Foils Produced by Rolling and Pressing" (2024)</a>).</li>
+      <li>Silver conductive paint/coating conductivity ≈10⁵–10⁶ S/m (from datasheet volume resistivity) — <a href="https://www.mgchemicals.com/downloads/tds/tds-842-l.pdf" target="_blank" rel="noopener">MG Chemicals "Super Shield 842" silver conductive coating technical datasheet</a>.</li>
+      <li>ABS microwave relative permittivity εr≈2.7–2.9 — <a href="https://www.researchgate.net/publication/317135983" target="_blank" rel="noopener">"Characterization of Acrylonitrile Butadiene Styrene for 3D Printed Patch Antenna" (εr≈2.74)</a>; complex permittivity of common plastics at ~10 GHz (<a href="https://www.researchgate.net/publication/3130152_Complex_permittivity_measurements_of_common_plastics_over_variable_temperatures" target="_blank" rel="noopener">"Complex permittivity measurements of common plastics…"</a>).</li>
+      <li>CFRP (carbon-fibre-reinforced polymer) X-band relative permittivity (representative εr′≈5, anisotropic and fibre-fraction dependent) — <a href="https://www.sciencedirect.com/science/article/abs/pii/S0263822318324899" target="_blank" rel="noopener">"X-band microwave characterisation and analysis of carbon fibre-reinforced polymer composites", Composite Structures (2019)</a>; <a href="https://www.nature.com/articles/srep14927" target="_blank" rel="noopener">"Microwave axial dielectric properties of carbon fiber", Sci. Rep. (2015)</a>.</li>
       <li>Antenna figures of merit — directivity, gain, aperture efficiency, HPBW, sidelobe level, front-to-back, VSWR, input impedance, realized gain and co-/cross-polarization (the horn-antenna equations in the Physics tab): C. A. Balanis, <em>Antenna Theory: Analysis and Design</em>, 4th ed., Wiley, ISBN 978-1-118-64206-1 (standard reference).</li>
-      <li>Z. Sarpanah Sourkouhi, J. Alhourani, Y. Gogotsi, M. H. Zarifi, "MXene-Coated 3D Printed Horn Antennas for Ku Frequency Band," <em>Advanced Materials Technologies</em>, 2026. DOI: <a href="https://doi.org/10.1002/admt.202502239">10.1002/admt.202502239</a> — the horn-antenna metric set (S11, gain, radiation pattern, efficiency) mirrored by the Horn tab.</li>
-      <li>Horn validation reference — Pasternack <strong>PE9856B-15</strong>, WR-90 waveguide standard-gain horn, 8.2–12.4 GHz, nominal 15 dBi gain (the rated part the full-wave directivity is checked against): <a href="https://www.pasternack.com/wr-90-waveguide-gain-horn-antenna-15db-ug-135-square-flange-pe9856b-15-p.aspx">product page / datasheet</a>.</li>
-      <li>Multi-objective (Pareto) optimization for engineering design — the dominance test and Pareto frontier used by the Inverse-design tab: R. T. Marler and J. S. Arora, "Survey of multi-objective optimization methods for engineering," <em>Structural and Multidisciplinary Optimization</em>, 26:369–395, 2004. DOI: <a href="https://doi.org/10.1007/s00158-003-0368-6">10.1007/s00158-003-0368-6</a>.</li>
-      <li>Touchstone® file format (<code>.s2p</code>), parsed by the Measurement-fit tab — Touchstone® File Format Specification v2.0, IBIS Open Forum (ratified 24 Apr 2009): <a href="https://ibis.org/touchstone_ver2.0/touchstone_ver2_0.pdf">specification PDF</a>.</li>
-      <li>Monte-Carlo uncertainty quantification (propagation of distributions) — basis of the Physics-tab UQ section: JCGM 101:2008, <em>Evaluation of measurement data — Supplement 1 to the GUM: Propagation of distributions using a Monte Carlo method</em>, BIPM/JCGM: <a href="https://www.bipm.org/documents/20126/2071204/JCGM_101_2008_E.pdf">document PDF</a>.</li>
-      <li>Golden-section search — the 1-D minimizer used to invert the loss model for effective conductivity (Measurement-fit tab): J. Kiefer, "Sequential minimax search for a maximum," <em>Proc. Amer. Math. Soc.</em>, 4(3):502–506, 1953. DOI: <a href="https://doi.org/10.2307/2032161">10.2307/2032161</a>.</li>
-      <li>Multipaction (multipactor) design/test for vacuum RF hardware — the frequency×gap susceptibility framework behind the Space-survival multipaction screen: <em>ECSS-E-ST-20-01C, "Space engineering — Multipactor design and test"</em>, ECSS/ESA, 15 June 2020: <a href="https://ecss.nl/wp-content/uploads/2020/07/ECSS-E-ST-20-01C(15June2020).pdf">standard PDF</a>.</li>
-      <li>Ti₃C₂Tₓ MXene thermal stability — oxidation onset ≈ 322–360 °C in air, structurally stable to ≈ 600 °C in inert/vacuum (the coating's safe-temperature limit in the vacuum-thermal screen): S. Gao <em>et al.</em>, "Thermal Stability of MXene: Current Status and Future Perspectives," <em>Small</em> (2025) <a href="https://onlinelibrary.wiley.com/doi/full/10.1002/smll.202505881">link</a>; high-temperature-stable Ti₃C₂Tₓ, <em>Nature Communications</em> (2022) <a href="https://www.nature.com/articles/s41467-022-33280-2">link</a>.</li>
+      <li>Z. Sarpanah Sourkouhi, J. Alhourani, Y. Gogotsi, M. H. Zarifi, "MXene-Coated 3D Printed Horn Antennas for Ku Frequency Band," <em>Advanced Materials Technologies</em>, 2026. DOI: <a href="https://doi.org/10.1002/admt.202502239" target="_blank" rel="noopener">10.1002/admt.202502239</a> — the horn-antenna metric set (S11, gain, radiation pattern, efficiency) mirrored by the Horn tab.</li>
+      <li>Horn validation reference — Pasternack <strong>PE9856B-15</strong>, WR-90 waveguide standard-gain horn, 8.2–12.4 GHz, nominal 15 dBi gain (the rated part the full-wave directivity is checked against): <a href="https://www.pasternack.com/wr-90-waveguide-gain-horn-antenna-15db-ug-135-square-flange-pe9856b-15-p.aspx" target="_blank" rel="noopener">product page / datasheet</a>.</li>
+      <li>Multi-objective (Pareto) optimization for engineering design — the dominance test and Pareto frontier used by the Inverse-design tab: R. T. Marler and J. S. Arora, "Survey of multi-objective optimization methods for engineering," <em>Structural and Multidisciplinary Optimization</em>, 26:369–395, 2004. DOI: <a href="https://doi.org/10.1007/s00158-003-0368-6" target="_blank" rel="noopener">10.1007/s00158-003-0368-6</a>.</li>
+      <li>Touchstone® file format (<code>.s2p</code>), parsed by the Measurement-fit tab — Touchstone® File Format Specification v2.0, IBIS Open Forum (ratified 24 Apr 2009): <a href="https://ibis.org/touchstone_ver2.0/touchstone_ver2_0.pdf" target="_blank" rel="noopener">specification PDF</a>.</li>
+      <li>Monte-Carlo uncertainty quantification (propagation of distributions) — basis of the Physics-tab UQ section: JCGM 101:2008, <em>Evaluation of measurement data — Supplement 1 to the GUM: Propagation of distributions using a Monte Carlo method</em>, BIPM/JCGM: <a href="https://www.bipm.org/documents/20126/2071204/JCGM_101_2008_E.pdf" target="_blank" rel="noopener">document PDF</a>.</li>
+      <li>Golden-section search — the 1-D minimizer used to invert the loss model for effective conductivity (Measurement-fit tab): J. Kiefer, "Sequential minimax search for a maximum," <em>Proc. Amer. Math. Soc.</em>, 4(3):502–506, 1953. DOI: <a href="https://doi.org/10.2307/2032161" target="_blank" rel="noopener">10.2307/2032161</a>.</li>
+      <li>Multipaction (multipactor) design/test for vacuum RF hardware — the frequency×gap susceptibility framework behind the Space-survival multipaction screen: <em>ECSS-E-ST-20-01C, "Space engineering — Multipactor design and test"</em>, ECSS/ESA, 15 June 2020: <a href="https://ecss.nl/wp-content/uploads/2020/07/ECSS-E-ST-20-01C(15June2020).pdf" target="_blank" rel="noopener">standard PDF</a>.</li>
+      <li>Ti₃C₂Tₓ MXene thermal stability — oxidation onset ≈ 322–360 °C in air, structurally stable to ≈ 600 °C in inert/vacuum (the coating's safe-temperature limit in the vacuum-thermal screen): S. Gao <em>et al.</em>, "Thermal Stability of MXene: Current Status and Future Perspectives," <em>Small</em> (2025) <a href="https://onlinelibrary.wiley.com/doi/full/10.1002/smll.202505881" target="_blank" rel="noopener">link</a>; high-temperature-stable Ti₃C₂Tₓ, <em>Nature Communications</em> (2022) <a href="https://www.nature.com/articles/s41467-022-33280-2" target="_blank" rel="noopener">link</a>.</li>
       <li>Radiative heat transfer in vacuum — Stefan–Boltzmann law $P=\varepsilon\sigma_{SB}A(T^4-T_{\text{env}}^4)$ used for the vacuum power-handling screen: T. L. Bergman &amp; A. S. Lavine, <em>Fundamentals of Heat and Mass Transfer</em>, 8th ed., Wiley, ISBN 978-1-119-32042-5, 8th ed., Wiley (standard reference).</li>
       <li>Full-wave method — the finite-difference time-domain (FDTD) solver and the running-DFT extraction of frequency-domain fields and spectra from a single time-domain run (the basis of the openEMS solve, the S-parameter/far-field results, and the Field-view time/frequency toggle): A. Taflove &amp; S. C. Hagness, 3rd ed., Artech House, ISBN 978-1-58053-832-9<em>Computational Electrodynamics: The Finite-Difference Time-Domain Method</em>, 3rd ed., Artech House, 2005.</li>
-      <li>Conductor surface-roughness loss — the Hammerstad–Jensen correction factor applied to the surface resistance in the Coating-quality (real-world coating) panel: E. O. Hammerstad and Ø. Jensen, "Accurate Models for Microstrip Computer-Aided Design," <em>IEEE MTT-S International Microwave Symposium Digest</em>, 1980, pp. 407–409. DOI: <a href="https://doi.org/10.1109/TMTT.1980.1130118">10.1109/TMTT.1980.1130118</a>.</li>
-      <li>Mie scattering — the exact series solution for a plane wave scattered by a sphere, used as the analytical anchor on the RCS tab (openEMS is validated against it): G. Mie, "Beiträge zur Optik trüber Medien, speziell kolloidaler Metallösungen," <em>Annalen der Physik</em>, 330(3):377–445, 1908. DOI: <a href="https://onlinelibrary.wiley.com/doi/10.1002/andp.19083300302">10.1002/andp.19083300302</a>. Perfectly-conducting-sphere backscatter and the resonance/optical regimes follow the standard Riccati-Bessel formulation (e.g. Balanis <a href="#">[25]</a>, Bohren &amp; Huffman).</li>
-      <li>Physical optics &amp; radar cross section — the flat-plate PO estimate (broadside σ = 4πA²/λ²) and RCS conventions used on the RCS tab: E. F. Knott, J. F. Shaeffer, M. T. Tuley, <em>Radar Cross Section</em>, 2nd ed., SciTech/Artech House (standard reference). <a href="https://us.artechhouse.com/Radar-Cross-Section-Second-Edition-P279.aspx">publisher page</a>. openEMS RCS follows the plane-wave (TF/SF) + near-field-to-far-field method of its own RCS-sphere tutorial (Taflove &amp; Hagness FDTD <a href="#">[35]</a>).</li>
-      <li>Method of Moments (MoM) — the surface integral-equation method (mesh the conductor surface, solve the induced surface currents) that underlies the exact full-wave regime described on the RCS tab: R. F. Harrington, <em>Field Computation by Moment Methods</em>, IEEE Press, 1993 (reissue of the 1968 Macmillan edition). DOI: <a href="https://doi.org/10.1109/9780470544631">10.1109/9780470544631</a>.</li>
-      <li>Physical Theory of Diffraction (PTD) — the edge-wave correction that adds edge line-currents to physical optics, used to explain the high-frequency asymptotic regime on the RCS tab: P. Ya. Ufimtsev, <em>Fundamentals of the Physical Theory of Diffraction</em>, 2nd ed., Wiley–IEEE Press, 2014. DOI: <a href="https://doi.org/10.1002/9781118753767">10.1002/9781118753767</a>.</li>
-      <li>Shooting and Bouncing Rays (SBR) — the multi-bounce ray-tracing method for electrically large targets and cavities cited on the RCS tab: H. Ling, R.-C. Chou and S.-W. Lee, "Shooting and bouncing rays: calculating the RCS of an arbitrarily shaped cavity," <em>IEEE Transactions on Antennas and Propagation</em>, 37(2):194–205, 1989. DOI: <a href="https://doi.org/10.1109/8.18706">10.1109/8.18706</a>.</li>
-      <li>Standard CEM validation targets (NASA/EMCC benchmark suite) — the canonical smooth-target family (almond, ogive, cone-sphere) used to validate computational-electromagnetics RCS codes, referenced by the "Standard RCS benchmarks" panel on the RCS tab: A. C. Woo, H. T. G. Wang, M. J. Schuh and M. L. Sanders, "Benchmark radar targets for the validation of computational electromagnetics programs," <em>IEEE Antennas and Propagation Magazine</em>, 35(1):84–89, 1993. DOI: <a href="https://doi.org/10.1109/74.210840">10.1109/74.210840</a>. (Almond: two-segment parametric surface, overall length L = 9.936 in = 252.37 mm; canonical monostatic test frequencies 1.19 and 7 GHz.)</li>
+      <li>Conductor surface-roughness loss — the Hammerstad–Jensen correction factor applied to the surface resistance in the Coating-quality (real-world coating) panel: E. O. Hammerstad and Ø. Jensen, "Accurate Models for Microstrip Computer-Aided Design," <em>IEEE MTT-S International Microwave Symposium Digest</em>, 1980, pp. 407–409. DOI: <a href="https://doi.org/10.1109/TMTT.1980.1130118" target="_blank" rel="noopener">10.1109/TMTT.1980.1130118</a>.</li>
+      <li>Mie scattering — the exact series solution for a plane wave scattered by a sphere, used as the analytical anchor on the RCS tab (openEMS is validated against it): G. Mie, "Beiträge zur Optik trüber Medien, speziell kolloidaler Metallösungen," <em>Annalen der Physik</em>, 330(3):377–445, 1908. DOI: <a href="https://onlinelibrary.wiley.com/doi/10.1002/andp.19083300302" target="_blank" rel="noopener">10.1002/andp.19083300302</a>. Perfectly-conducting-sphere backscatter and the resonance/optical regimes follow the standard Riccati-Bessel formulation (e.g. Balanis <a href="#">[25]</a>, Bohren &amp; Huffman).</li>
+      <li>Physical optics &amp; radar cross section — the flat-plate PO estimate (broadside σ = 4πA²/λ²) and RCS conventions used on the RCS tab: E. F. Knott, J. F. Shaeffer, M. T. Tuley, <em>Radar Cross Section</em>, 2nd ed., SciTech/Artech House (standard reference). <a href="https://us.artechhouse.com/Radar-Cross-Section-Second-Edition-P279.aspx" target="_blank" rel="noopener">publisher page</a>. openEMS RCS follows the plane-wave (TF/SF) + near-field-to-far-field method of its own RCS-sphere tutorial (Taflove &amp; Hagness FDTD <a href="#">[35]</a>).</li>
+      <li>Method of Moments (MoM) — the surface integral-equation method (mesh the conductor surface, solve the induced surface currents) that underlies the exact full-wave regime described on the RCS tab: R. F. Harrington, <em>Field Computation by Moment Methods</em>, IEEE Press, 1993 (reissue of the 1968 Macmillan edition). DOI: <a href="https://doi.org/10.1109/9780470544631" target="_blank" rel="noopener">10.1109/9780470544631</a>.</li>
+      <li>Physical Theory of Diffraction (PTD) — the edge-wave correction that adds edge line-currents to physical optics, used to explain the high-frequency asymptotic regime on the RCS tab: P. Ya. Ufimtsev, <em>Fundamentals of the Physical Theory of Diffraction</em>, 2nd ed., Wiley–IEEE Press, 2014. DOI: <a href="https://doi.org/10.1002/9781118753767" target="_blank" rel="noopener">10.1002/9781118753767</a>.</li>
+      <li>Shooting and Bouncing Rays (SBR) — the multi-bounce ray-tracing method for electrically large targets and cavities cited on the RCS tab: H. Ling, R.-C. Chou and S.-W. Lee, "Shooting and bouncing rays: calculating the RCS of an arbitrarily shaped cavity," <em>IEEE Transactions on Antennas and Propagation</em>, 37(2):194–205, 1989. DOI: <a href="https://doi.org/10.1109/8.18706" target="_blank" rel="noopener">10.1109/8.18706</a>.</li>
+      <li>Standard CEM validation targets (NASA/EMCC benchmark suite) — the canonical smooth-target family (almond, ogive, cone-sphere) used to validate computational-electromagnetics RCS codes, referenced by the "Standard RCS benchmarks" panel on the RCS tab: A. C. Woo, H. T. G. Wang, M. J. Schuh and M. L. Sanders, "Benchmark radar targets for the validation of computational electromagnetics programs," <em>IEEE Antennas and Propagation Magazine</em>, 35(1):84–89, 1993. DOI: <a href="https://doi.org/10.1109/74.210840" target="_blank" rel="noopener">10.1109/74.210840</a>. (Almond: two-segment parametric surface, overall length L = 9.936 in = 252.37 mm; canonical monostatic test frequencies 1.19 and 7 GHz.)</li>
       <li>Radar range equation — the detection-range relation used by the "Radar range / detectability" calculator on the RCS tab, R = [P<sub>t</sub> G<sub>t</sub> G<sub>r</sub> λ² σ / ((4π)³ P<sub>min</sub> L)]<sup>1/4</sup>: M. I. Skolnik, <em>Introduction to Radar Systems</em>, 3rd ed., McGraw-Hill, ISBN 978-0-07-288138-7, 3rd ed., McGraw-Hill, 2001 (§1.2, the radar equation). ISBN 0-07-288138-0.</li>
-      <li>Radar-absorbing-material thickness bound — the physical limit relating a magnetic absorber's total thickness to the bandwidth over which it can suppress reflection, used by the Inverse RAM design tab's "Rozanov bound": K. N. Rozanov, "Ultimate thickness to bandwidth ratio of radar absorbers," <em>IEEE Transactions on Antennas and Propagation</em>, 48(8):1230–1234, 2000. DOI: <a href="https://doi.org/10.1109/8.884491">10.1109/8.884491</a>. The Salisbury screen (resistive sheet a quarter-wave above a ground plane) and Dallenbach/Jaumann lossy-layer absorbers are standard: R. L. Fante and M. T. McCormack, "Reflection properties of the Salisbury screen," <em>IEEE Trans. Antennas Propag.</em>, 36(10):1443–1454, 1988, DOI: <a href="https://doi.org/10.1109/8.8632">10.1109/8.8632</a>; and Knott/Shaeffer/Tuley, <em>Radar Cross Section</em> <a class="cref" href="https://us.artechhouse.com/Radar-Cross-Section-Second-Edition-P279.aspx" target="_blank" rel="noopener">[38]</a> (Ch. on RAM). Metal-backed reflection is the transmission-line/transfer-matrix input-impedance recursion (Pozar, <em>Microwave Engineering</em> <a class="cref" href="https://www.wiley.com/en-us/Microwave+Engineering%2C+4th+Edition-p-9780470631553" target="_blank" rel="noopener">[9]</a>).</li>
-      <li>Detection probability &amp; target fluctuation — the P<sub>d</sub>-vs-range curves on the RCS radar panel: the non-fluctuating (Swerling 0) single-pulse detection uses the North/Albersheim approximation, and the fluctuating case uses the closed-form Swerling&nbsp;1 result P<sub>d</sub> = P<sub>fa</sub><sup>1/(1+SNR)</sup>. P. Swerling, "Probability of detection for fluctuating targets," <em>IRE Trans. Information Theory</em>, 6(2):269–308, 1960, DOI: <a href="https://doi.org/10.1109/TIT.1960.1057561">10.1109/TIT.1960.1057561</a>; D. O. North, "An analysis of the factors which determine signal/noise discrimination in pulsed-carrier systems," <em>Proc. IEEE</em>, 51(7):1016–1027, 1963 (reprint), DOI: <a href="https://doi.org/10.1109/PROC.1963.2383">10.1109/PROC.1963.2383</a>.</li>
-      <li>Polarimetric decomposition — the 2×2 Sinclair scattering matrix and the Pauli (odd-/even-/volume-bounce) decomposition on the RCS polarimetric panel: S. R. Cloude and E. Pottier, "A review of target decomposition theorems in radar polarimetry," <em>IEEE Trans. Geoscience and Remote Sensing</em>, 34(2):498–518, 1996. DOI: <a href="https://doi.org/10.1109/36.485127">10.1109/36.485127</a>. The down-range profile is the standard inverse-DFT of the stepped-frequency backscatter (synthetic range profiling / ISAR), Mensa, <em>High Resolution Radar Cross-Section Imaging</em>, Artech House, 1991.</li>
-      <li>Reflection-loss / RCS reference paper (dielectric absorber, CuS/ZnS) replicated on the Reflection-loss (RL) tab: S. B. Jamali, T. H. Qamar, S. ul Hassan, <em>et al.</em>, "3D CuS/ZnS snowflakes as multi-waveband microwave absorbers," <em>Materials Chemistry and Physics</em> 340 (2025) 130821. DOI: <a href="https://doi.org/10.1016/j.matchemphys.2025.130821">10.1016/j.matchemphys.2025.130821</a>. Source of the metal-backed reflection-loss workflow, RL-vs-thickness maps and CST plate-RCS comparison.</li>
-      <li>RL / RCS reference paper (magnetic FeCu/MWCNT): F. Zare-Nazari, M. Dehghani-Dashtabi, M. Mohebbi, H. Hekmatara, "FeCu/MWCNT nanocomposite with a broad microwave absorption band and highly reduced radar cross section," <em>Advanced Electronic Materials</em> 11 (2025) e00965. DOI: <a href="https://doi.org/10.1002/aelm.202400965">10.1002/aelm.202400965</a>.</li>
-      <li>RL / RCS reference paper (magnetic carbon foam, MFNC): J. Yu, H. Luo, Z. Wang, <em>et al.</em>, "Surface morphology of magnetic carbon foam regulated electromagnetic properties for microwave absorption," <em>Journal of Alloys and Compounds</em> 971 (2024) 172757. DOI: <a href="https://doi.org/10.1016/j.jallcom.2023.172757">10.1016/j.jallcom.2023.172757</a>. Uses a 200 mm PEC-backed plate for its RCS study.</li>
-      <li>RL / RCS reference paper (CoFe@C@PPy fibers; 180 mm plate, θ −90…+90°): T. Sun, Z. Dong, Z. Yan, <em>et al.</em>, "Dual-shelled CoFe@C@PPy hybrid fibers toward efficient microwave absorption, wide-angle RCS suppression and hydrophobic performance," <em>Carbon</em> 258 (2026) 121775. DOI: <a href="https://doi.org/10.1016/j.carbon.2026.121775">10.1016/j.carbon.2026.121775</a>. Source of the bare-PEC 180 mm plate RCS anchor (+14.1 dBsm at 13.2 GHz, matching 4πA²/λ²).</li>
+      <li>Radar-absorbing-material thickness bound — the physical limit relating a magnetic absorber's total thickness to the bandwidth over which it can suppress reflection, used by the Inverse RAM design tab's "Rozanov bound": K. N. Rozanov, "Ultimate thickness to bandwidth ratio of radar absorbers," <em>IEEE Transactions on Antennas and Propagation</em>, 48(8):1230–1234, 2000. DOI: <a href="https://doi.org/10.1109/8.884491" target="_blank" rel="noopener">10.1109/8.884491</a>. The Salisbury screen (resistive sheet a quarter-wave above a ground plane) and Dallenbach/Jaumann lossy-layer absorbers are standard: R. L. Fante and M. T. McCormack, "Reflection properties of the Salisbury screen," <em>IEEE Trans. Antennas Propag.</em>, 36(10):1443–1454, 1988, DOI: <a href="https://doi.org/10.1109/8.8632" target="_blank" rel="noopener">10.1109/8.8632</a>; and Knott/Shaeffer/Tuley, <em>Radar Cross Section</em> <a class="cref" href="https://us.artechhouse.com/Radar-Cross-Section-Second-Edition-P279.aspx" target="_blank" rel="noopener">[38]</a> (Ch. on RAM). Metal-backed reflection is the transmission-line/transfer-matrix input-impedance recursion (Pozar, <em>Microwave Engineering</em> <a class="cref" href="https://www.wiley.com/en-us/Microwave+Engineering%2C+4th+Edition-p-9780470631553" target="_blank" rel="noopener">[9]</a>).</li>
+      <li>Detection probability &amp; target fluctuation — the P<sub>d</sub>-vs-range curves on the RCS radar panel: the non-fluctuating (Swerling 0) single-pulse detection uses the North/Albersheim approximation, and the fluctuating case uses the closed-form Swerling&nbsp;1 result P<sub>d</sub> = P<sub>fa</sub><sup>1/(1+SNR)</sup>. P. Swerling, "Probability of detection for fluctuating targets," <em>IRE Trans. Information Theory</em>, 6(2):269–308, 1960, DOI: <a href="https://doi.org/10.1109/TIT.1960.1057561" target="_blank" rel="noopener">10.1109/TIT.1960.1057561</a>; D. O. North, "An analysis of the factors which determine signal/noise discrimination in pulsed-carrier systems," <em>Proc. IEEE</em>, 51(7):1016–1027, 1963 (reprint), DOI: <a href="https://doi.org/10.1109/PROC.1963.2383" target="_blank" rel="noopener">10.1109/PROC.1963.2383</a>.</li>
+      <li>Polarimetric decomposition — the 2×2 Sinclair scattering matrix and the Pauli (odd-/even-/volume-bounce) decomposition on the RCS polarimetric panel: S. R. Cloude and E. Pottier, "A review of target decomposition theorems in radar polarimetry," <em>IEEE Trans. Geoscience and Remote Sensing</em>, 34(2):498–518, 1996. DOI: <a href="https://doi.org/10.1109/36.485127" target="_blank" rel="noopener">10.1109/36.485127</a>. The down-range profile is the standard inverse-DFT of the stepped-frequency backscatter (synthetic range profiling / ISAR), Mensa, <em>High Resolution Radar Cross-Section Imaging</em>, Artech House, 1991.</li>
+      <li>Reflection-loss / RCS reference paper (dielectric absorber, CuS/ZnS) replicated on the Reflection-loss (RL) tab: S. B. Jamali, T. H. Qamar, S. ul Hassan, <em>et al.</em>, "3D CuS/ZnS snowflakes as multi-waveband microwave absorbers," <em>Materials Chemistry and Physics</em> 340 (2025) 130821. DOI: <a href="https://doi.org/10.1016/j.matchemphys.2025.130821" target="_blank" rel="noopener">10.1016/j.matchemphys.2025.130821</a>. Source of the metal-backed reflection-loss workflow, RL-vs-thickness maps and CST plate-RCS comparison.</li>
+      <li>RL / RCS reference paper (magnetic FeCu/MWCNT): F. Zare-Nazari, M. Dehghani-Dashtabi, M. Mohebbi, H. Hekmatara, "FeCu/MWCNT nanocomposite with a broad microwave absorption band and highly reduced radar cross section," <em>Advanced Electronic Materials</em> 11 (2025) e00965. DOI: <a href="https://doi.org/10.1002/aelm.202400965" target="_blank" rel="noopener">10.1002/aelm.202400965</a>.</li>
+      <li>RL / RCS reference paper (magnetic carbon foam, MFNC): J. Yu, H. Luo, Z. Wang, <em>et al.</em>, "Surface morphology of magnetic carbon foam regulated electromagnetic properties for microwave absorption," <em>Journal of Alloys and Compounds</em> 971 (2024) 172757. DOI: <a href="https://doi.org/10.1016/j.jallcom.2023.172757" target="_blank" rel="noopener">10.1016/j.jallcom.2023.172757</a>. Uses a 200 mm PEC-backed plate for its RCS study.</li>
+      <li>RL / RCS reference paper (CoFe@C@PPy fibers; 180 mm plate, θ −90…+90°): T. Sun, Z. Dong, Z. Yan, <em>et al.</em>, "Dual-shelled CoFe@C@PPy hybrid fibers toward efficient microwave absorption, wide-angle RCS suppression and hydrophobic performance," <em>Carbon</em> 258 (2026) 121775. DOI: <a href="https://doi.org/10.1016/j.carbon.2026.121775" target="_blank" rel="noopener">10.1016/j.carbon.2026.121775</a>. Source of the bare-PEC 180 mm plate RCS anchor (+14.1 dBsm at 13.2 GHz, matching 4πA²/λ²).</li>
       <li>RL / RCS reference paper (CB/FeCo dual-loss fibers; 180 mm plate, θ −90…+90° at φ=90°): Y. Li, W. Zhou, S. Zhou, <em>et al.</em>, "Flexible electromagnetic functional fibers with synergistic dual-loss mechanisms," <em>Journal of Materials Chemistry A</em> (submitted 2026), manuscript TA-ART-02-2026-001662. Source of the advisor's coated-plate RCS geometry (θ −90…+90°, φ=90°).</li>
     </ol>
     <p style="font-size:12px;color:var(--faint);">Commodity prices (Cu, Al) and MXene prices move over time — treat $/kg figures as ballpark. The material-properties file <code>material_properties.txt</code> in the project folder lists the same values.</p>
@@ -3119,7 +3161,7 @@ for t_mm in [0.5, 1, 2, 3, 4]:
 </div>
 
 <!-- ============ COMPARE DETAIL MODAL ============ -->
-<div id="cmp-modal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(10,14,12,.55);">
+<div id="cmp-modal" style="display:none;position:fixed;inset:0;z-index:1300;background:rgba(10,14,12,.55);">
   <div style="max-width:840px;margin:4vh auto;max-height:92vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 24px 70px rgba(0,0,0,.35);">
     <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 22px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:2;">
       <h3 id="cmp-modal-title" style="margin:0;font-family:var(--font-head);font-size:17px;">Material detail</h3>
@@ -3610,14 +3652,54 @@ function build(){
  * position, so its 420px box can run past the bottom of the screen and under the fixed tab bar,
  * where its last rows cannot be tapped. Clamp it to the space actually available above the bar
  * (and flip it above the button when there is more room up there). Desktop never calls this. */
+/* Chart.js canvases keep the pixel width they were last laid out at. Inside the horn pages' inline
+   `grid-template-columns:1fr 1fr` grids that is self-reinforcing: `1fr` is `minmax(auto,1fr)`, whose
+   auto minimum is the canvas's own min-content, so once a canvas has been sized wide in a 1-column
+   mobile layout it FLOORS the desktop track at that width and the page scrolls sideways. Measured:
+   loading at 1280 gives a clean `415px 415px`, but 1280 -> 390 -> 1280 left two 701px tracks and
+   349px of page overflow. Chart.js's own `responsive` cannot shrink out of that loop, so re-fit every
+   live chart after a viewport change. Debounced, and `resize()` is cheap when nothing changed. */
+(function(){
+  var t=null;
+  function refitCharts(){
+    if(!window.Chart) return;
+    var list=[];
+    try{
+      if(Chart.instances) for(var k in Chart.instances) list.push(Chart.instances[k]);
+      else document.querySelectorAll('canvas').forEach(function(c){ var ch=Chart.getChart&&Chart.getChart(c); if(ch) list.push(ch); });
+    }catch(e){ return; }
+    list.forEach(function(ch){
+      try{ if(ch&&ch.canvas&&ch.canvas.offsetParent!==null){ ch.resize(); ch.draw(); } }catch(e){}
+    });
+  }
+  window.refitCharts=refitCharts;
+  function sched(){ if(t) clearTimeout(t); t=setTimeout(function(){ t=null; refitCharts(); },160); }
+  window.addEventListener('resize',sched);
+  window.addEventListener('orientationchange',function(){ setTimeout(refitCharts,260); });
+})();
+
 window.clampPicker=function(dd){
   if(!dd) return;
   // Always clear first, THEN bail on desktop — an early return would have left a clamp applied on
   // a narrow layout stuck on the element after a resize to desktop width.
   dd.style.removeProperty('max-height'); dd.style.top=''; dd.style.bottom='';
+  dd.style.removeProperty('width'); dd.style.removeProperty('left');
   if(window.innerWidth>820) return;
   // NB setProperty(..., 'important'): the .simpicker rule sets max-height with !important, which a
   // plain inline style would lose to.
+  // HORIZONTAL clamp. The CSS can only say `width:calc(100vw - 40px); left:0`, and `left:0` is
+  // relative to the positioned wrapper — which is itself inset from the viewport (measured 48px at
+  // 768px), so the panel still hung 8px past the right edge and that alone gave the whole page a
+  // horizontal scrollbar. Only a measurement knows the wrapper's offset, so clamp it here.
+  var host=dd.offsetParent||dd.parentNode;
+  var hostLeft=host&&host.getBoundingClientRect?host.getBoundingClientRect().left:0;
+  var avail=Math.max(200, Math.floor(window.innerWidth - 12 - Math.max(0,hostLeft)));
+  dd.style.setProperty('width', avail+'px', 'important');
+  // and if the wrapper itself sits so far right that even that is cramped, pull the panel left
+  var r0=dd.getBoundingClientRect();
+  if(r0.right > window.innerWidth-6){
+    dd.style.setProperty('left', Math.floor(window.innerWidth-6-r0.width-hostLeft)+'px', 'important');
+  }
   var barH=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mtabs-h'))||0;
   var r=dd.getBoundingClientRect(), floor=window.innerHeight-barH-8;
   var below=floor-r.top, above=r.top-8;                 // r.top is where it opened, below the button
@@ -3735,6 +3817,30 @@ window.animFig=(function(){
   return {set:set, clear:clear, show:show, live:live};
 })();
 
+// ---------------------------------------------------------------------------------------------
+// SOLVE GATE — one openEMS solve at a time, across every tab.
+window.SolveGate=(function(){
+  var SELS='#oe-run,#hrn-run,#hrn-runall,#cmp-runall,.cmp-run,#rcs-run,#rcsb-run,#cad-verify';
+  function paint(){
+    var busy=!!window.__solveBusy;
+    document.querySelectorAll(SELS).forEach(function(b){
+      if(busy){ if(!b.disabled){ b.dataset.gated='1'; b.disabled=true; } }
+      else if(b.dataset.gated==='1'){ delete b.dataset.gated; b.disabled=false; }
+    });
+  }
+  return {
+    busy:function(){ return !!window.__solveBusy; },
+    claim:function(statusEl){
+      if(window.__solveBusy){
+        if(statusEl){ statusEl.textContent='Another openEMS solve is already running — the bridge writes to fixed scratch and result files, so runs cannot overlap. Wait for it to finish.'; statusEl.style.color='#9a6a16'; }
+        return false;
+      }
+      window.__solveBusy=true; paint(); return true;
+    },
+    release:function(){ window.__solveBusy=false; paint(); }
+  };
+})();
+
 // tab GROUPS: which pages light up which group button in the nav bar
 // NB 'mat' is deliberately in BOTH wg and horngrp: it is ONE page listed in two menus, which is
 // what keeps the two "copies" in sync by construction (there is only ever one).
@@ -3767,12 +3873,17 @@ function activateTab(page){
   { const fb=document.getElementById('cad-fab');
     if(fb) fb.classList.toggle('on', page==='cadrcs' && fb.dataset.ready==='1'); }
   if(window.mnavSync) window.mnavSync(page);      // mobile app bar + tab bar + drawer
+  // Land at the TOP of the new page. Without this the scroll offset carried over, so switching tabs
+  // from far down a long page dropped you into the middle of the next one — no title, no config
+  // panel, no Run button in view, which reads as a broken tab. The [data-goto] cross-tab links and
+  // the mobile go() already did this; the main nav path was the one that missed it.
+  window.scrollTo(0,0);
 }
 document.querySelectorAll('.tab[data-page]').forEach(t=>t.addEventListener('click',()=>activateTab(t.dataset.page)));
 document.querySelectorAll('.morelink').forEach(t=>t.addEventListener('click',()=>activateTab(t.dataset.page)));
 // in-content cross-tab links (e.g. RCS page → The physics tab)
-document.querySelectorAll('[data-goto]').forEach(t=>t.addEventListener('click',e=>{e.preventDefault();activateTab(t.getAttribute('data-goto'));window.scrollTo(0,0);}));
-(function(){ var gp=document.getElementById('rcs-gotophys'); if(gp) gp.addEventListener('click',function(e){e.preventDefault();activateTab('phys');window.scrollTo(0,0);}); })();
+document.querySelectorAll('[data-goto]').forEach(t=>t.addEventListener('click',e=>{e.preventDefault();activateTab(t.getAttribute('data-goto'));}));
+(function(){ var gp=document.getElementById('rcs-gotophys'); if(gp) gp.addEventListener('click',function(e){e.preventDefault();activateTab('phys');}); })();
 (function(){ var cb=document.getElementById('cite-copy'); if(cb) cb.addEventListener('click',function(){ var t=(document.getElementById('cite-text')||{}).textContent||''; navigator.clipboard.writeText(t).then(function(){ cb.textContent='Copied!'; setTimeout(function(){cb.textContent='Copy citation';},1500); },function(){ cb.textContent='Select + copy manually'; setTimeout(function(){cb.textContent='Copy citation';},2000); }); }); })();
 (function(){
   // generic dropdown wiring: every .moredrop's group button toggles ITS menu; opening one closes the rest
@@ -4365,6 +4476,33 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
   ['oe-band','oe-length','oe-cells'].forEach(id=>{ const el=$(id); if(el) el.addEventListener('input',updateWgMesh); });
   updateWgMesh();
   const oeProg=window.makeProgress?window.makeProgress($('oe-progress')):{start(){},done(){},fail(){}};
+  // Everything the previous run put on screen. Called at the start of a run AND whenever a control
+  // that defines the run changes — otherwise the finished result stayed visible, and got read under
+  // the NEW material/band: status still naming the old material, the break-even line still quoting
+  // it, and Download all / Run manifest still live, so the export carried the old solve under the new
+  // selections. The Horn, RCS and CAD tabs already invalidate on change; this one did not.
+  function oeTeardown(){
+    ['oe-result','oe-actions','oe-be'].forEach(function(id){ const e=$(id); if(e) e.style.display='none'; });
+    const su=$('oe-summary'), ma=$('oe-math');
+    if(su){ su.style.display='none'; su.textContent=''; }
+    if(ma){ ma.style.display='none'; ma.textContent=''; }
+    const sbn=$('oe-summary-btn'); if(sbn) sbn.textContent='Summary';
+    const mbn=$('oe-math-btn');    if(mbn) mbn.textContent='Show math';
+  }
+  ['oe-band','oe-material','oe-coats','oe-length','oe-shape'].forEach(function(id){
+    const e=$(id); if(!e) return;
+    e.addEventListener('change',function(){
+      const r=$('oe-result');
+      if(r && r.style.display!=='none'){
+        oeTeardown();
+        animFig.clear($('oe-field-guide')); animFig.clear($('oe-field-reflector'));
+        window.__lastRun=null; window.__ilOverride=null;
+        if(window.cstShow) try{ window.cstShow(); }catch(e2){}
+        const st=$('oe-status');
+        if(st){ st.textContent='Settings changed — the previous full-wave result no longer describes this configuration. Press Run to solve it.'; st.style.color='var(--muted)'; }
+      }
+    });
+  });
   btn.addEventListener('click',async()=>{
     // Drop the previous run's field figures NOW. Otherwise they sit there for the whole solve and
     // then linger while the new (multi-megabyte) media downloads, which reads as "it didn't update".
@@ -4374,12 +4512,7 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
     // handlers, so an open Summary kept showing the previous material's numbers a few centimetres
     // above the new results — and #oe-math doubles as the error log, so a failure's log survived the
     // next successful run.
-    ['oe-result','oe-actions','oe-be'].forEach(function(id){ const e=$(id); if(e) e.style.display='none'; });
-    { const su=$('oe-summary'), ma=$('oe-math');
-      if(su){ su.style.display='none'; su.textContent=''; }
-      if(ma){ ma.style.display='none'; ma.textContent=''; }
-      const sbn=$('oe-summary-btn'); if(sbn) sbn.textContent='Summary';
-      const mbn=$('oe-math-btn');    if(mbn) mbn.textContent='Show math'; }
+    oeTeardown();
     const length=Math.max(40, parseFloat($('oe-length').value)||200);   // floor: the fixed Octave port z-indices need ~40mm of guide, else the run errors
     const sims=window.getSims?window.getSims():['guided','reflection'];
     const stackOn = $('oe-stack-on') && $('oe-stack-on').checked;
@@ -4409,6 +4542,7 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
     cfg.ports = parseInt(($('oe-ports')||{}).value)||2;
     cfg.cells = parseInt(($('oe-cells')||{}).value)||20;
     cfg.field_mode = (($('oe-fieldview')||{}).value)||'time';
+    if(!window.SolveGate.claim($('oe-status'))) return;
     btn.disabled=true;
     $('oe-status').style.color='';   // clear any red left by a prior validation/bridge error
     $('oe-status').textContent='Running openEMS — '+cfg.ports+'-port · '+sims.length+' simulation(s): '+sims.join(', ')+'. This can take a few minutes…';
@@ -4422,7 +4556,7 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
         $('oe-status').textContent='Error during '+(data.stage||'run')+'. Log tail below (full log in console):';
         const me=$('oe-math'); me.style.display='block';
         me.textContent='openEMS RUN ERROR — stage: '+(data.stage||'run')+'\n'+'='.repeat(50)+'\n'+(tail||'(no log captured)');
-        console.log(data.log||data); oeProg.fail('Error during '+(data.stage||'run')+' — see log.'); btn.disabled=false; return;
+        console.log(data.log||data); oeProg.fail('Error during '+(data.stage||'run')+' — see log.'); btn.disabled=false; window.SolveGate.release(); return;
       }
       const results=data.results||{}, errs=data.errors||{};
       const ranKeys=Object.keys(results), errKeys=Object.keys(errs);
@@ -4517,7 +4651,7 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
       oeProg.fail('Could not reach the openEMS bridge.');
       console.log(err);
     }
-    btn.disabled=false;
+    btn.disabled=false; window.SolveGate.release();
   });
 
   function buildSummary(){
@@ -4769,7 +4903,7 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
       const struct=spec.mode==='coating'?('coating on '+(spec.subName||'substrate')):'solid block';
       const be=e.be===null?'n/a':(e.be<=0?'$0':'$'+Math.round(e.be).toLocaleString());
       const tag=m.user?' <span style="color:#2b6cb0;font-family:var(--font-mono);font-size:10px;">(mine)</span>':'';
-      html+=`<tr data-key="${m.key}"><td>${spec.display}${tag}</td><td>${struct}</td><td>${e.loss.toFixed(3)}</td><td>${Math.round(e.massPerM*1000).toLocaleString()}</td><td>$${Math.round(e.deliveredPerM).toLocaleString()}</td><td>${be}</td><td class="oe-cell">${oeCell(cmpData[m.key])}</td><td style="white-space:nowrap;"><button class="btn cmp-run" data-key="${m.key}" style="padding:6px 11px;font-size:12px;">Run</button> <button class="btn cmp-exp" data-key="${m.key}" style="padding:6px 11px;font-size:12px;">Expand</button></td></tr>`;
+      html+=`<tr data-key="${m.key}"><td>${spec.display}${tag}</td><td>${struct}</td><td>${e.loss.toFixed(3)}</td><td>${Math.round(e.massPerM*1000).toLocaleString()}</td><td>$${Math.round(e.deliveredPerM).toLocaleString()}</td><td>${be}</td><td class="oe-cell">${oeCell(cmpData[m.key])}</td><td style="white-space:nowrap;"><button class="btn go cmp-run" data-key="${m.key}" style="padding:6px 11px;font-size:12px;">Run</button> <button class="btn cmp-exp" data-key="${m.key}" style="padding:6px 11px;font-size:12px;">Expand</button></td></tr>`;
     });
     html+='</tbody>';
     table.innerHTML=html;
@@ -4781,6 +4915,7 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
     const rec=findMat(key); if(!rec) return; const spec=rec.spec;
     const cell=table.querySelector(`tr[data-key="${key}"] .oe-cell`);
     const btn=table.querySelector(`tr[data-key="${key}"] .cmp-run`);
+    if(!window.__cmpAllRunning && !window.SolveGate.claim($('cmp-status'))){ if(cell) cell.textContent='—'; return; }
     if(cell) cell.textContent='running…'; if(btn) btn.disabled=true;
     const sims=window.getSims?window.getSims():['guided','reflection'];
     cmpProg.start(window.estSeconds(sims), spec.display);
@@ -4800,7 +4935,7 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
       cmpData[key]={spec, ilTxt, rtaTxt, angTxt, results:R, sims:data.sims||[],
         il:data.csv, rta:data.rta, sparamsCsv:(R.sparams&&R.sparams.csv)||null, angleCsv:(R.angle&&R.angle.csv)||null,
         fieldmap:(R.fieldmap&&R.fieldmap.loss)||null,
-        s21, pwr, ildbm, R:Rv, label:data.label, band:cmpBand.value, length:len,
+        s21, pwr, ildbm, R:Rv, label:data.label, band:cmpBand.value, length:len, coats:coats,
         guide_gif:data.guide_gif, guide_still:data.guide_still, reflector_gif:data.reflector_gif, reflector_still:data.reflector_still};
       if(cell) cell.innerHTML=oeCell(cmpData[key]);
       cmpProg.done(spec.display+' done in '+data.seconds+' s');
@@ -4808,13 +4943,18 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
     }catch(err){ if(cell) cell.textContent='no bridge'; console.log(err);
       cmpProg.fail('Could not reach the openEMS bridge.');
       if(window.bridgeErr)window.bridgeErr($('cmp-status')); else $('cmp-status').textContent='Could not reach the openEMS bridge — start openems_server.py and open via http://localhost:8731.'; }
+    if(!window.__cmpAllRunning) window.SolveGate.release();
     if(btn) btn.disabled=false;
   }
 
   async function runAll(){
+    // hold the gate for the WHOLE sweep, like the batch driver, so nothing squeezes in between rows
+    if(!window.SolveGate.claim($('cmp-status'))) return;
+    window.__cmpAllRunning=true;
     const b=$('cmp-runall'); b.disabled=true; b.textContent='Running…';
-    for(const m of allMats()){ if(!cmpData[m.key]) await runRow(m.key); }
-    b.disabled=false; b.textContent='Run all on openEMS';
+    try{ for(const m of allMats()){ if(!cmpData[m.key]) await runRow(m.key); } }
+    finally{ window.__cmpAllRunning=false; window.SolveGate.release();
+             b.disabled=false; b.textContent='Run all on openEMS'; }
   }
 
   // ---- Expand: detail pop-up with images + graphs ----
@@ -4987,7 +5127,23 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
     }catch(e){alert('Download failed: '+e);}
     b.disabled=false; b.textContent='Download all';
   });
-  [cmpBand,cmpCoats].forEach(el=>el.addEventListener('change',buildTable));
+  // A cached openEMS cell belongs to the band/coats/length it was solved at. cmpData was never
+  // cleared, so switching band left the old numbers in the column (relabelled by the new band in the
+  // summary and the radar PNG) and runAll's `if(!cmpData[key])` then skipped every row, so "Run all"
+  // appeared to do nothing. Drop the entries that no longer match, then rebuild.
+  function cmpDropStale(){
+    const bd=cmpBand.value, co=+cmpCoats.value||20, ln=+cmpLen.value||200;
+    let n=0;
+    Object.keys(cmpData).forEach(function(k){
+      const d=cmpData[k];
+      if(!d) return;
+      if(d.band!==bd || (d.coats!=null && d.coats!==co) || (d.length!=null && d.length!==ln)){ delete cmpData[k]; n++; }
+    });
+    if(n && $('cmp-status')) $('cmp-status').textContent='Band / coats / length changed — cleared '+n+
+      ' openEMS result'+(n===1?'':'s')+' solved at the old settings. Press Run on a row (or Run all) to re-solve.';
+    return n;
+  }
+  [cmpBand,cmpCoats,cmpLen].forEach(el=>{ if(el) el.addEventListener('change',function(){ cmpDropStale(); buildTable(); }); });
   if(window.makeSimPicker) window.makeSimPicker($('cmp-sims'));
   window.cmpRefresh=()=>{ if(built) buildTable(); };
   window.cmpShow=()=>{ if(!built){buildTable(); built=true;} };
@@ -5271,6 +5427,7 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
   });
 
   async function runHorn(){
+    if(!window.SolveGate.claim(status)) return;
     runB.disabled=true; if(runAllB)runAllB.disabled=true; result.style.display='none'; startProg();
     try{
       const fd=new FormData();
@@ -5283,8 +5440,12 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
       if(fileI.files[0]) fd.append('step',fileI.files[0]);
       const res=await fetch('/run_horn',{method:'POST',body:fd});
       const j=await res.json();
-      if(!j.ok){ stopProg(false); status.textContent='Error at '+(j.stage||'run')+': '+String(j.log||'').split('\n').slice(-3).join(' ').slice(0,300); status.style.color='#c0392b'; runB.disabled=false; if(runAllB)runAllB.disabled=false; return; }
+      if(!j.ok){ stopProg(false); status.textContent='Error at '+(j.stage||'run')+': '+String(j.log||'').split('\n').slice(-3).join(' ').slice(0,300); status.style.color='#c0392b'; window.SolveGate.release(); runB.disabled=false; if(runAllB)runAllB.disabled=false; return; }
       stopProg(true);
+      // From here on the solve HAS succeeded and the bytes are in hand. Anything that throws below is
+      // a rendering fault, not a transport fault — telling the user to start a server that is already
+      // running (and silently discarding both the exception and j.errors) cost them the whole solve.
+      window.__hrnRendering=true;
       // the four post-solve python steps used to have their return codes logged and ignored, so a
       // failed wall-loss step republished the PREVIOUS run's coating table as ok:true
       var _pe=j.errors&&Object.keys(j.errors).length?Object.keys(j.errors):null;
@@ -5356,8 +5517,18 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
       drawCharts(j);
     }catch(e){
       stopProg(false);
-      if(window.bridgeErr)window.bridgeErr(status); else { status.textContent='Could not reach the openEMS bridge. Start openEMS/openems_server.py and open this page at http://localhost:8731.'; status.style.color='#c0392b'; }
+      console.log('horn run failed', e);
+      if(window.__hrnRendering){
+        status.textContent='The solve finished, but the results could not be displayed: '+
+          (e&&e.message||e)+(lastJ&&lastJ.errors&&Object.keys(lastJ.errors).length
+            ? '  ·  the solver also reported: '+Object.keys(lastJ.errors).join(', ') : '')+
+          '  (full detail in the browser console — the solve itself is not lost, press Run again once fixed)';
+      } else if(window.bridgeErr){ window.bridgeErr(status); }
+      else { status.textContent='Could not reach the openEMS bridge. Start openEMS/openems_server.py and open this page at http://localhost:8731.'; }
+      status.style.color='#c0392b';
     }
+    window.__hrnRendering=false;
+    window.SolveGate.release();
     runB.disabled=false; if(runAllB)runAllB.disabled=false;
   }
   runB.addEventListener('click', runHorn);
@@ -6567,6 +6738,60 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
 })();
 </script>
 
+
+<!-- ===================== OVERLAY ACCESSIBILITY (shared by all three modals) ===================== -->
+<script>
+/* The three overlays (#info-modal, #prev-modal, #cmp-modal) are opened and closed from three separate
+   IIFEs, so rather than patch each one, this watches their display state. On open it marks the
+   overlay as a real dialog, moves focus into it and traps Tab inside; on close it puts focus back
+   where it came from. Before this, focus stayed on the trigger behind an opaque backdrop, every
+   control on the page underneath stayed tabbable, and Page-Down/arrow keys scrolled the page BEHIND
+   the panel — so a keyboard user could not read past the first screen of a long info panel. The
+   mobile sheet and drawer already did this properly; the pattern just was not back-ported. */
+(function(){
+  var SPEC=[{id:'info-modal', box:'.infobox',  close:'info-close'},
+            {id:'prev-modal', box:'.prevbox',  close:'prev-close'},
+            {id:'cmp-modal',  box:':scope>div', close:'cmp-modal-close'}];
+  var FOCUSABLE='a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),'+
+                'textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+  function trapFor(box){
+    return function(e){
+      if(e.key!=='Tab') return;
+      var f=[].filter.call(box.querySelectorAll(FOCUSABLE), function(el){
+        return el.offsetParent!==null || el===document.activeElement; });
+      if(!f.length) return;
+      var first=f[0], last=f[f.length-1];
+      if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }
+      else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
+    };
+  }
+  SPEC.forEach(function(sp){
+    var ov=document.getElementById(sp.id); if(!ov) return;
+    var box=ov.querySelector(sp.box)||ov;
+    ov.setAttribute('role','dialog');
+    ov.setAttribute('aria-modal','true');
+    var trap=trapFor(box), prev=null, open=false;
+    function sync(){
+      var vis=getComputedStyle(ov).display!=='none';
+      if(vis===open) return;
+      open=vis;
+      if(vis){
+        prev=document.activeElement;
+        document.addEventListener('keydown',trap,true);
+        var c=document.getElementById(sp.close)||box.querySelector(FOCUSABLE);
+        if(c) try{ c.focus(); }catch(e){}
+      } else {
+        document.removeEventListener('keydown',trap,true);
+        if(prev && prev.isConnected) try{ prev.focus(); }catch(e){}
+        prev=null;
+      }
+    }
+    new MutationObserver(sync).observe(ov,{attributes:true,attributeFilter:['style','class']});
+    sync();
+  });
+})();
+</script>
+
 <!-- ===================== SHARED LAB CALIBRATION (self-calibrating loop) ===================== -->
 <script>
 // Persistent store of conductivities the user has EXTRACTED from their own measurements
@@ -6729,7 +6954,7 @@ window.LabCal = (function(){
     let h='<div class="panel" style="padding:14px 16px;border-left:3px solid var(--accent);"><div style="font-family:var(--font-mono);font-size:11px;color:var(--muted);letter-spacing:.08em;">TRADE-SPACE — best design per band (min '+O.lbl.toLowerCase()+', '+targetLbl(target)+', launch $'+launch+'/kg)</div>'+
       '<table style="width:100%;border-collapse:collapse;font-size:13px;margin:8px 0;"><thead><tr>'+['Band','Best design','Coats','Loss (dB/m)','Mass (g/m)','Delivered $/m','CO₂ (kg/m)'].map(x=>'<th style="text-align:left;padding:5px 8px;border-bottom:1px solid var(--line);color:var(--muted);font-weight:600;">'+x+'</th>').join('')+'</tr></thead><tbody>';
     bands.forEach(bk=>{const c=per[bk]; h+='<tr style="border-bottom:1px solid var(--line);"><td style="padding:5px 8px;">'+bk+'</td><td style="padding:5px 8px;font-weight:600;">'+c.desc+'</td><td style="padding:5px 8px;">'+(c.type==='coat'?c.coats:'—')+'</td><td style="padding:5px 8px;">'+c.loss.toFixed(3)+'</td><td style="padding:5px 8px;">'+(c.mass*1000).toFixed(1)+'</td><td style="padding:5px 8px;">$'+c.deliv.toFixed(0)+'</td><td style="padding:5px 8px;">'+c.co2.toFixed(2)+'</td></tr>';});
-    h+='</tbody></table><div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="btn go" id="invdes-trade-csv">Download frontier CSV</button><button class="btn" id="invdes-trade-print">Save report as PDF</button></div>'+
+    h+='</tbody></table><div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="btn go" id="invdes-trade-csv">⬇ Download frontier CSV</button><button class="btn go" id="invdes-trade-print">⬇ Save report as PDF</button></div>'+
       '<p style="font-size:11px;color:var(--muted);margin:8px 0 0;">'+frontAll.length+' Pareto-optimal designs across the three bands. Screening result (analytical, band centre) — confirm a chosen design in the Full-wave tab.</p></div>';
     $('invdes-trade-out').innerHTML=h;
     $('invdes-trade-csv').addEventListener('click',()=>{
@@ -6835,7 +7060,26 @@ window.LabCal = (function(){
   }
   $('fit-mode').addEventListener('change',()=>{const c=$('fit-mode').value==='coat';
     $('fit-sub-wrap').style.display=c?'':'none'; $('fit-coats-wrap').style.display=c?'':'none';});
+  // A fit belongs to ONE sample at ONE band/length/model. Loading another file, or changing any input
+  // the fit depends on, invalidates it — the extracted σ used to survive, so a metal sample could be
+  // read under the previous lossy sample's σ (two orders of magnitude out) with "Save as
+  // lab-calibration sample" still live, and that σ feeds Inverse design and Send-to-Full-wave.
+  function fitInvalidate(why){
+    const b=$('fit-best'), it=$('fit-interp');
+    if(b){ b.style.display='none'; b.innerHTML=''; }
+    if(it) it.innerHTML='';
+    if(chart){ chart.destroy(); chart=null; }
+    if(why && $('fit-status')) $('fit-status').textContent=why;
+  }
+  ['fit-band','fit-len','fit-mode','fit-sub','fit-coats'].forEach(function(id){
+    const e=$(id); if(!e) return;
+    e.addEventListener('change',function(){
+      if($('fit-best') && $('fit-best').style.display!=='none')
+        fitInvalidate('Inputs changed — the previous fit no longer applies. Press Fit ▸ again.');
+    });
+  });
   $('fit-file').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;fileName=f.name;
+    fitInvalidate();
     const rd=new FileReader();rd.onload=()=>{measured=parseData(rd.result,f.name);
       $('fit-run').disabled=!measured.length;
       $('fit-status').textContent=measured.length?('Loaded '+measured.length+' points from '+f.name+'. Set band/length and press Fit.'):'No usable (freq, S21) rows found in '+f.name+'.';
@@ -6896,7 +7140,7 @@ window.LabCal = (function(){
   function print(){
     const rows=last||checks(), nP=rows.filter(r=>r.pass).length, w=window.open('','_blank');
     if(!w){alert('Allow pop-ups to export the report.');return;}
-    let b='<h1>EM Waveguide Simulator — Validation Report</h1><p>Generated '+new Date().toLocaleString()+' · v4.0</p><p>'+nP+' / '+rows.length+' textbook benchmarks reproduced by the analytical engine.</p>'+
+    let b='<h1>Signal to Signature — Validation Report</h1><p>Generated '+new Date().toLocaleString()+' · v4.0</p><p>'+nP+' / '+rows.length+' textbook benchmarks reproduced by the analytical engine.</p>'+
       '<table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;font-family:sans-serif;font-size:13px;"><tr><th align="left">Benchmark</th><th>Expected</th><th>Computed</th><th>Unit</th><th>Result</th></tr>';
     rows.forEach(r=>{b+='<tr><td>'+r.name+'</td><td align="right">'+r.exp+'</td><td align="right">'+r.got.toFixed(3)+'</td><td>'+r.unit+'</td><td>'+(r.pass?'PASS':'CHECK')+'</td></tr>';});
     b+='</table><p style="font-family:sans-serif;font-size:12px;color:#555;margin-top:14px;">Benchmarks from Pozar, <i>Microwave Engineering</i> (waveguide loss, cutoff, skin depth), standard physical constants, and the tool’s mass model. Tolerances are absolute. This validates the fast analytical engine; the full-wave openEMS solver is validated separately against the analytical loss and the rated 15 dBi standard-gain horn.</p>';
@@ -7031,6 +7275,13 @@ window.LabCal = (function(){
     const d=new THREE.DirectionalLight(0xffffff,0.55); d.position.set(1,1,2); scene.add(d);
     group=new THREE.Group(); scene.add(group);
   }
+  function fitPrev(){
+    const w=wrap(); if(!w||!renderer||!camera) return;
+    const W=w.clientWidth||900, H=w.clientHeight||420;
+    renderer.setSize(W,H); camera.aspect=W/H; camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize',fitPrev);
+  window.addEventListener('orientationchange',function(){ setTimeout(fitPrev,220); });
   function loop(){ raf=requestAnimationFrame(loop); if(renderer&&scene&&camera&&group){ group.rotation.x=rotX; group.rotation.y=rotY; renderer.render(scene,camera); } }
   function open(kind){
     curKind=kind;
@@ -7050,8 +7301,22 @@ window.LabCal = (function(){
     window.addEventListener('mouseup',()=>{drag=false;const ww=wrap();if(ww)ww.classList.remove('dragging');});
     window.addEventListener('mousemove',e=>{ if(!drag)return; rotY+=(e.clientX-px)*0.01; rotX+=(e.clientY-py)*0.01; rotX=Math.max(-1.5,Math.min(1.5,rotX)); px=e.clientX;py=e.clientY; });
     w.addEventListener('wheel',e=>{ e.preventDefault(); dist*=(e.deltaY>0?1.1:0.9); dist=Math.max(0.3,Math.min(4,dist)); if(camera) camera.position.set(0,0,baseDist*dist); },{passive:false});
-    w.addEventListener('touchstart',e=>{ if(e.touches.length===1){drag=true;px=e.touches[0].clientX;py=e.touches[0].clientY;} },{passive:true});
-    w.addEventListener('touchmove',e=>{ if(drag&&e.touches.length===1){ rotY+=(e.touches[0].clientX-px)*0.01; rotX+=(e.touches[0].clientY-py)*0.01; rotX=Math.max(-1.5,Math.min(1.5,rotX)); px=e.touches[0].clientX;py=e.touches[0].clientY; } },{passive:true});
+    // one finger rotates, two fingers pinch to zoom. NOT passive: the container has
+    // touch-action:none, so without preventDefault a drag both rotated and scrolled.
+    let pinchD=0;
+    w.addEventListener('touchstart',e=>{
+      if(e.touches.length===1){drag=true;px=e.touches[0].clientX;py=e.touches[0].clientY;pinchD=0;}
+      else if(e.touches.length===2){drag=false;pinchD=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}
+    },{passive:true});
+    w.addEventListener('touchmove',e=>{
+      if(drag&&e.touches.length===1){ rotY+=(e.touches[0].clientX-px)*0.01; rotX+=(e.touches[0].clientY-py)*0.01; rotX=Math.max(-1.5,Math.min(1.5,rotX)); px=e.touches[0].clientX;py=e.touches[0].clientY; e.preventDefault(); }
+      else if(e.touches.length===2){
+        const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+        if(pinchD>0){ const k=pinchD/d; dist*=k; dist=Math.max(0.3,Math.min(4,dist)); if(camera) camera.position.set(0,0,baseDist*dist); }
+        pinchD=d; e.preventDefault();
+      }
+    },{passive:false});
+    w.addEventListener('touchend',e=>{ if(!e.touches||e.touches.length<2) pinchD=0; if(!e.touches||!e.touches.length) drag=false; },{passive:true});
     w.addEventListener('touchend',()=>{drag=false;});
   })();
   $('prev-reset').addEventListener('click',()=>{ rotX=-0.35; rotY=0.6; dist=1; if(camera) camera.position.set(0,0,baseDist); });
@@ -7081,16 +7346,25 @@ window.LabCal = (function(){
   function shortLabel(opt){ return (opt.getAttribute('data-short')||opt.textContent||'').trim(); }
   function syncSeg(bar,sel){
     var bs=bar.querySelectorAll('button');
-    for(var i=0;i<bs.length;i++){ bs[i].classList.toggle('on', bs[i].getAttribute('data-val')===sel.value); }
+    for(var i=0;i<bs.length;i++){
+      var on=bs[i].getAttribute('data-val')===sel.value;
+      bs[i].classList.toggle('on', on);
+      bs[i].setAttribute('aria-checked', on?'true':'false');
+    }
   }
   function buildSeg(bar){
     var sel=document.getElementById(bar.getAttribute('data-for'));
     if(!sel || bar.__built) return;
     bar.__built=true; bar.innerHTML='';
+    // the bar IS the control (its <select> is visually hidden and out of the tab order)
+    bar.setAttribute('role','radiogroup');
+    if(!bar.getAttribute('aria-label')) bar.setAttribute('aria-label',(sel.getAttribute('aria-label')||sel.id||'options').replace(/-/g,' '));
     Array.prototype.forEach.call(sel.options,function(opt){
       var b=document.createElement('button');
       b.type='button'; b.textContent=shortLabel(opt);
       b.setAttribute('data-val',opt.value); b.title=(opt.textContent||'').trim();
+      b.setAttribute('role','radio');
+      b.setAttribute('aria-checked', opt.value===sel.value ? 'true' : 'false');
       if(opt.value===sel.value) b.classList.add('on');
       b.addEventListener('click',function(){
         if(sel.value===opt.value) return;
@@ -7161,8 +7435,23 @@ window.LabCal = (function(){
   window.addEventListener('mouseup',function(){drag=false;C.style.cursor='grab';});
   window.addEventListener('mousemove',function(e){ if(!drag)return; rotY+=(e.clientX-px)*0.01; rotX+=(e.clientY-py)*0.01; rotX=Math.max(-1.5,Math.min(1.5,rotX)); px=e.clientX;py=e.clientY; });
   C.addEventListener('wheel',function(e){ e.preventDefault(); dist*=(e.deltaY>0?1.1:0.9); dist=Math.max(0.3,Math.min(4,dist)); if(camera) camera.position.set(0,0,baseDist*dist); },{passive:false});
-  C.addEventListener('touchstart',function(e){ if(e.touches.length===1){drag=true;px=e.touches[0].clientX;py=e.touches[0].clientY;} },{passive:true});
-  C.addEventListener('touchmove',function(e){ if(drag&&e.touches.length===1){ rotY+=(e.touches[0].clientX-px)*0.01; rotX+=(e.touches[0].clientY-py)*0.01; rotX=Math.max(-1.5,Math.min(1.5,rotX)); px=e.touches[0].clientX;py=e.touches[0].clientY; } },{passive:true});
+  // one finger rotates, two fingers pinch to zoom. NOT passive: the container has
+  // touch-action:none, so a passive handler could not stop the page scrolling under the drag,
+  // and two fingers previously did nothing at all — no zoom AND no scroll.
+  var pinchD=0;
+  C.addEventListener('touchstart',function(e){
+    if(e.touches.length===1){drag=true;px=e.touches[0].clientX;py=e.touches[0].clientY;pinchD=0;}
+    else if(e.touches.length===2){drag=false;pinchD=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}
+  },{passive:true});
+  C.addEventListener('touchmove',function(e){
+    if(drag&&e.touches.length===1){ rotY+=(e.touches[0].clientX-px)*0.01; rotX+=(e.touches[0].clientY-py)*0.01; rotX=Math.max(-1.5,Math.min(1.5,rotX)); px=e.touches[0].clientX;py=e.touches[0].clientY; e.preventDefault(); }
+    else if(e.touches.length===2){
+      var d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+      if(pinchD>0){ var k=pinchD/d; dist*=k; dist=Math.max(0.3,Math.min(4,dist)); if(camera) camera.position.set(0,0,baseDist*dist); }
+      pinchD=d; e.preventDefault();
+    }
+  },{passive:false});
+  C.addEventListener('touchend',function(e){ if(!e.touches||e.touches.length<2) pinchD=0; if(!e.touches||!e.touches.length) drag=false; },{passive:true});
   C.addEventListener('touchend',function(){drag=false;});
   var rb=document.getElementById('hrn-geo3d-reset'); if(rb) rb.addEventListener('click',function(){ rotX=-0.32; rotY=0.6; dist=1; if(camera) camera.position.set(0,0,baseDist); });
   window.addEventListener('resize',fit);
@@ -7233,8 +7522,23 @@ window.LabCal = (function(){
     window.addEventListener('mouseup',function(){drag=false;C.style.cursor='grab';});
     window.addEventListener('mousemove',function(e){ if(!drag)return; rotY+=(e.clientX-px)*0.01; rotX+=(e.clientY-py)*0.01; rotX=Math.max(-1.5,Math.min(1.5,rotX)); px=e.clientX;py=e.clientY; });
     C.addEventListener('wheel',function(e){ e.preventDefault(); dist*=(e.deltaY>0?1.1:0.9); dist=Math.max(0.3,Math.min(4,dist)); if(camera) camera.position.set(0,0,baseDist*dist); },{passive:false});
-    C.addEventListener('touchstart',function(e){ if(e.touches.length===1){drag=true;px=e.touches[0].clientX;py=e.touches[0].clientY;} },{passive:true});
-    C.addEventListener('touchmove',function(e){ if(drag&&e.touches.length===1){ rotY+=(e.touches[0].clientX-px)*0.01; rotX+=(e.touches[0].clientY-py)*0.01; rotX=Math.max(-1.5,Math.min(1.5,rotX)); px=e.touches[0].clientX;py=e.touches[0].clientY; } },{passive:true});
+    // one finger rotates, two fingers pinch to zoom. NOT passive: the container has
+    // touch-action:none, so a passive handler could not stop the page scrolling under the drag,
+    // and two fingers previously did nothing at all — no zoom AND no scroll.
+    var pinchD=0;
+    C.addEventListener('touchstart',function(e){
+      if(e.touches.length===1){drag=true;px=e.touches[0].clientX;py=e.touches[0].clientY;pinchD=0;}
+      else if(e.touches.length===2){drag=false;pinchD=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}
+    },{passive:true});
+    C.addEventListener('touchmove',function(e){
+      if(drag&&e.touches.length===1){ rotY+=(e.touches[0].clientX-px)*0.01; rotX+=(e.touches[0].clientY-py)*0.01; rotX=Math.max(-1.5,Math.min(1.5,rotX)); px=e.touches[0].clientX;py=e.touches[0].clientY; e.preventDefault(); }
+      else if(e.touches.length===2){
+        var d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+        if(pinchD>0){ var k=pinchD/d; dist*=k; dist=Math.max(0.3,Math.min(4,dist)); if(camera) camera.position.set(0,0,baseDist*dist); }
+        pinchD=d; e.preventDefault();
+      }
+    },{passive:false});
+    C.addEventListener('touchend',function(e){ if(!e.touches||e.touches.length<2) pinchD=0; if(!e.touches||!e.touches.length) drag=false; },{passive:true});
     C.addEventListener('touchend',function(){drag=false;});
     (function loop(){ raf=requestAnimationFrame(loop); if(renderer&&group){ group.rotation.x=rotX; group.rotation.y=rotY; renderer.render(scene,camera); } })();
     return true;
@@ -8002,8 +8306,7 @@ window.LabCal = (function(){
       est += n*((S.shape==='sphere')?40:75);
     }
     // same shared lock as the CAD verify and the batch driver — /run_rcs uses fixed scratch paths
-    if(window.__solveBusy){ $('rcs-status').textContent='Another openEMS solve is already running — wait for it to finish.'; return; }
-    window.__solveBusy=true;
+    if(!window.SolveGate.claim($('rcs-status'))) return;
     runBtn.disabled=true;
     $('rcs-status').style.color='';
     $('rcs-status').textContent='Running openEMS RCS'+(cp.construct!=='pec'?' (bare reference + material)':'')+(sims.indexOf('aspect')>=0?' + aspect sweep':'')+' — estimated ~'+Math.max(1,Math.round(est/60))+' min…';
@@ -8011,7 +8314,7 @@ window.LabCal = (function(){
     fetch('/run_rcs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cfg)})
       .then(function(res){return res.json();})
       .then(function(d){
-        if(!d.ok){ var tail=String(d.log||JSON.stringify(d)).split(/\r?\n/).filter(Boolean).slice(-8).join(' '); $('rcs-status').style.color='#c0392b'; $('rcs-status').textContent='Error at '+(d.stage||'run')+': '+tail.slice(0,300); rcsProg.fail('Error during the RCS solve.'); window.__solveBusy=false; runBtn.disabled=false; return; }
+        if(!d.ok){ var tail=String(d.log||JSON.stringify(d)).split(/\r?\n/).filter(Boolean).slice(-8).join(' '); $('rcs-status').style.color='#c0392b'; $('rcs-status').textContent='Error at '+(d.stage||'run')+': '+tail.slice(0,300); rcsProg.fail('Error during the RCS solve.'); window.SolveGate.release(); runBtn.disabled=false; return; }
         d.label=cp.label;
         // Stamp the SUBMITTED solver settings onto the response, the way the Full-wave tab does via
         // __lastRun. Reading these live from the DOM meant changing Mesh after a run produced a
@@ -8036,16 +8339,28 @@ window.LabCal = (function(){
         // reset the top toggles to their default (collapsed) state on each fresh run
         if($('rcs-summary')){ $('rcs-summary').style.display='none'; } if($('rcs-sum-btn')) $('rcs-sum-btn').textContent='Summary';
         if($('rcs-math')){ $('rcs-math').style.display='none'; } if($('rcs-math-btn')) $('rcs-math-btn').textContent='Show math';
-        // reflect the freshly solved target in the radar-range calculator (σ at band centre + f0)
-        var hv=$('rcs-hl-rcs')?parseFloat($('rcs-hl-rcs').textContent):NaN; if(!isNaN(hv)&&$('rr-rcs')) $('rr-rcs').value=hv.toFixed(1);
         if($('rr-freq')&&d.f0_ghz!=null) $('rr-freq').value=(+d.f0_ghz).toFixed(2);
-        redraw(); radarRange(); forceRepaint(); requestAnimationFrame(forceRepaint); window.__solveBusy=false; runBtn.disabled=false;
+        redraw();
+        // σ MUST be read AFTER redraw() — headline() runs inside it, so reading #rcs-hl-rcs first
+        // auto-filled the calculator with the PREVIOUS run's value while the page claimed it came
+        // from this solve, understating the detection range by whatever the two differ by.
+        var hv=$('rcs-hl-rcs')?parseFloat($('rcs-hl-rcs').textContent):NaN;
+        if(!isNaN(hv)&&$('rr-rcs')) $('rr-rcs').value=hv.toFixed(1);
+        radarRange(); forceRepaint(); requestAnimationFrame(forceRepaint); window.SolveGate.release(); runBtn.disabled=false;
       })
-      .catch(function(err){ if(window.bridgeErr)window.bridgeErr($('rcs-status')); else $('rcs-status').textContent='Could not reach the bridge. Start openEMS/openems_server.py and open this page at http://localhost:8731.'; rcsProg.fail('Could not reach the openEMS bridge.'); console.log(err); window.__solveBusy=false; runBtn.disabled=false; });
+      .catch(function(err){ if(window.bridgeErr)window.bridgeErr($('rcs-status')); else $('rcs-status').textContent='Could not reach the bridge. Start openEMS/openems_server.py and open this page at http://localhost:8731.'; rcsProg.fail('Could not reach the openEMS bridge.'); console.log(err); window.SolveGate.release(); runBtn.disabled=false; });
   });
 
   // control listeners: analytical curves recompute instantly; changing the target clears stale openEMS data
-  ['rcs-shape','rcs-band','rcs-size1','rcs-size2','rcs-size3','rcs-inc','rcs-pol','rcs-fmin','rcs-fmax'].forEach(function(id){ var e=$(id); if(e) e.addEventListener('input',function(){ window.__rcsRun=null; syncShape(); redraw(); }); });
+  // #rcs-summary / #rcs-math live OUTSIDE #rcs-actions, so hiding the actions row took their toggle
+  // buttons off screen and left the panels stranded — a sphere's summary sitting under a plate's
+  // headline with no way to dismiss it. Same class as the #oe-summary fix; clear them here.
+  function dropStalePanels(){
+    ['rcs-summary','rcs-math'].forEach(function(id){ var e=$(id); if(e){ e.style.display='none'; e.textContent=''; } });
+    var sb=$('rcs-sum-btn'); if(sb) sb.textContent='Summary';
+    var mb=$('rcs-math-btn'); if(mb) mb.textContent='Show math';
+  }
+  ['rcs-shape','rcs-band','rcs-size1','rcs-size2','rcs-size3','rcs-inc','rcs-pol','rcs-fmin','rcs-fmax'].forEach(function(id){ var e=$(id); if(e) e.addEventListener('input',function(){ window.__rcsRun=null; dropStalePanels(); syncShape(); redraw(); }); });
   // dropping the stale material result: null the coated overlay + reduction AND its download files
   // so nothing (curves, summary, CSV links) is mislabeled against a material that wasn't solved
   function dropStaleMaterial(){
@@ -8484,8 +8799,7 @@ window.LabCal = (function(){
     if(batchRunning) return; var vals=batchValues(); if(!vals.length){ $('rcsb-status').textContent='Enter a valid From/To range.'; return; }
     // the batch driver issues many /run_rcs calls in sequence — hold the shared lock for the whole
     // sweep so a CAD verify or an RCS-tab Run cannot interleave onto the same fixed scratch paths
-    if(window.__solveBusy){ $('rcsb-status').textContent='Another openEMS solve is already running — wait for it to finish.'; return; }
-    window.__solveBusy=true;
+    if(!window.SolveGate.claim($('rcsb-status'))) return;
     batchRunning=true; batchStop=false; batchRows=[];
     var v=$('rcsb-var').value, shape=$('rcsb-shape').value, band=$('rcsb-band').value, construct=$('rcsb-construct').value, cells=parseInt($('rcsb-cells').value)||18;
     var mp=rcsbMatProps(), size1=parseFloat($('rcsb-size1').value)||15, thick=parseFloat($('rcsb-thick').value)||2, inc=0;
@@ -8536,7 +8850,7 @@ window.LabCal = (function(){
     } else {
       st.style.color=''; st.textContent='Done: '+batchRows.length+' of '+vals.length+' solves complete.';
     }
-    window.__solveBusy=false;
+    window.SolveGate.release();
     $('rcsb-run').disabled=false; $('rcsb-stop').style.display='none'; batchRunning=false;
   }
 
@@ -9044,9 +9358,11 @@ window.LabCal = (function(){
     var pec=angs.map(function(a){ return {x:a,y:+db(poPlate(w,h,fpec*1e9,a)).toFixed(2)}; });
     var pec0=poPlate(w,h,fpec*1e9,0);
     var ds=[{label:'bare PEC ('+fpec.toFixed(1)+' GHz)',data:pec,borderColor:'#b4471f',borderWidth:2.4,pointRadius:0,tension:.15}];
-    var rows=[], best=null;
+    var rows=[], best=null, skipped=[];
     rcsReadMats().forEach(function(m,i){
-      if(!rcsMatValid(m)) return;
+      // A blank ε″/μ″/thickness used to make the box vanish from the chart AND both tables with no
+      // word said — the box still looked fully populated on screen. Name it, as the CAD tab does.
+      if(!rcsMatValid(m)){ skipped.push(m.name||('coating '+(i+1))); return; }
       var gmag=gammaAt({f:m.f,ep:m.ep,epp:m.epp,mup:m.mup,mupp:m.mupp}, m.d/1000).mag, g2=gmag*gmag;
       var coat=angs.map(function(a){ return {x:a,y:+db(poPlate(w,h,m.f*1e9,a)*g2).toFixed(2)}; });
       var red=-20*Math.log10(Math.max(gmag,1e-9)), c0=db(poPlate(w,h,m.f*1e9,0)*g2);
@@ -9070,7 +9386,8 @@ window.LabCal = (function(){
     if(rcsChart){rcsChart.data.datasets=ds;rcsChart.options=opt;rcsChart.update('none');try{rcsChart.draw();}catch(e){}}
     else if(window.Chart&&$('rlc-rcs-chart')) rcsChart=new Chart($('rlc-rcs-chart'),{type:'line',data:{datasets:ds},options:opt});
     repaintRL();
-    $('rlc-rcs-note').textContent='Bare PEC boresight = 4π·A²/λ² = '+db(pec0).toFixed(2)+' dBsm at '+fpec.toFixed(1)+' GHz.'+(best?(' Best coating: '+best.name+' → '+best.red.toFixed(1)+' dB reduction (= its reflection loss).'):'')+' PO envelope keeps the reduction ~flat with angle; openEMS gives the true angular reduction.';
+    $('rlc-rcs-note').textContent=(skipped.length?('⚠ SKIPPED (incomplete ε/μ, frequency or thickness): '+skipped.join(', ')+'.  '):'')
+      +'Bare PEC boresight = 4π·A²/λ² = '+db(pec0).toFixed(2)+' dBsm at '+fpec.toFixed(1)+' GHz.'+(best?(' Best coating: '+best.name+' → '+best.red.toFixed(1)+' dB reduction (= its reflection loss).'):'')+' PO envelope keeps the reduction ~flat with angle; openEMS gives the true angular reduction.';
     drawShrink(rows, w, h, pec0);
   }
 
@@ -9229,7 +9546,7 @@ window.LabCal = (function(){
       var x=t.getContext('2d'); x.fillStyle='#ffffff'; x.fillRect(0,0,t.width,t.height); x.drawImage(c,0,0); t.toBlob(function(b){res(b);},'image/png'); }); }
   function rlManifest(){
     var b=RL_LAST.best, mm=RL_MEAS_META||{}, mode=($('rlc-mode')||{}).value||'constant';
-    return { tool:'EM Waveguide & RCS Simulator', module:'Reflection loss (RL)', version:'v4.0',
+    return { tool:'Signal to Signature', module:'Reflection loss (RL)', version:'v4.0',
       material:$('rlc-name').value||'material',
       source: mode==='constant'?'constant ε/μ (typed)':(mm.src||'uploaded file'),
       detected_layout: mode==='constant'?null:(mm.layout||null),
@@ -9432,8 +9749,9 @@ window.LabCal = (function(){
       if(!Array.isArray(a)) a=[];
       m.id='m'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
       a.push(m); localStorage.setItem(KEY, JSON.stringify(a));
-      var st=$('rlc-parse');
-      if(st) st.textContent='📌 pinned “'+m.name+'” ('+m.note+', '+m.thick+' mm) — now selectable per part on the CAD-RCS tab.';
+      var st=$('rlc-pin-status')||$('rlc-parse');
+      if(st){ st.style.color='var(--accent)';
+        st.textContent='📌 pinned “'+m.name+'” ('+m.note+', '+m.thick+' mm) — now selectable per part on the CAD-RCS tab and on RCS (openEMS).'; }
     }catch(e){ alert('Could not save to the material library: '+(e&&e.message||e)); }
   }
 
@@ -9523,7 +9841,9 @@ window.LabCal = (function(){
     if(target<=a.f)r={f:target,ep:a.ep,epp:a.epp,mup:a.mup,mupp:a.mupp,extrap:true};
     else if(target>=b.f)r={f:target,ep:b.ep,epp:b.epp,mup:b.mup,mupp:b.mupp,extrap:true};
     else{ for(var j=1;j<rows.length;j++){ if(rows[j].f>=target){ var p=rows[j-1],q=rows[j],w=(target-p.f)/((q.f-p.f)||1); r={f:target,ep:p.ep+w*(q.ep-p.ep),epp:p.epp+w*(q.epp-p.epp),mup:p.mup+w*(q.mup-p.mup),mupp:p.mupp+w*(q.mupp-p.mupp)}; break; } } }
-    return {minRL:minRL,fm:fm,eab:eab,rlTarget:r?RLcore.rlAt(r,dm):NaN};
+    // carry the extrapolation flag through: the value is a model outside the measured span, and the
+    // RL tab's own optimal-thickness panel already says so — the sweep dropped it and printed it plain
+    return {minRL:minRL,fm:fm,eab:eab,rlTarget:r?RLcore.rlAt(r,dm):NaN,tExtrap:!!(r&&r.extrap)};
   }
 
   function runSweep(){
@@ -9595,11 +9915,16 @@ window.LabCal = (function(){
                     : ['#','ε′','ε″','μ′','μ″','t (mm)','min RL (dB)','@ f (GHz)','EAB (GHz)','RL@target (dB)'];
     head.innerHTML='<tr>'+cols.map(function(c){return '<th style="text-align:left;padding:6px 10px;border-bottom:2px solid var(--line);font-family:var(--font-mono);font-size:10.5px;text-transform:uppercase;color:var(--muted);">'+c+'</th>';}).join('')+'</tr>';
     var rows=RESULTS.slice(0,50).map(function(r,i){
-      var cells = meas ? [i+1,r.t.toFixed(2),r.minRL.toFixed(2),r.fm!=null?r.fm.toFixed(2):'–',r.eab.toFixed(2),isFinite(r.rlTarget)?r.rlTarget.toFixed(2):'–']
-                       : [i+1,r.ep.toFixed(1),r.epp.toFixed(2),r.mup.toFixed(2),r.mupp.toFixed(2),r.t.toFixed(2),r.minRL.toFixed(2),r.fm!=null?r.fm.toFixed(2):'–',r.eab.toFixed(2),isFinite(r.rlTarget)?r.rlTarget.toFixed(2):'–'];
+      var tgt = isFinite(r.rlTarget) ? (r.rlTarget.toFixed(2)+(r.tExtrap?' *':'')) : '–';
+      var cells = meas ? [i+1,r.t.toFixed(2),r.minRL.toFixed(2),r.fm!=null?r.fm.toFixed(2):'–',r.eab.toFixed(2),tgt]
+                       : [i+1,r.ep.toFixed(1),r.epp.toFixed(2),r.mup.toFixed(2),r.mupp.toFixed(2),r.t.toFixed(2),r.minRL.toFixed(2),r.fm!=null?r.fm.toFixed(2):'–',r.eab.toFixed(2),tgt];
       return '<tr'+(i===0?' style="background:var(--line-soft,#f0efe9);font-weight:600;"':'')+'>'+cells.map(function(c){return '<td style="padding:5px 10px;border-bottom:1px solid var(--line);font-family:var(--font-mono);">'+c+'</td>';}).join('')+'</tr>';
     });
     body.innerHTML=rows.join('');
+    var lg=$('sweep-tnote');
+    if(lg) lg.textContent = RESULTS.some(function(r){return r.tExtrap;})
+      ? '* RL@target is outside the loaded measured band — ε/μ held at the band edge, so that column is a model, not data.'
+      : '';
   }
   function csv(){
     if(!RESULTS||!RESULTS.length) return;
@@ -10392,7 +10717,9 @@ window.CADRCS = {
       var m=o.m;
       if(o.bad){
         h+='<tr style="border-top:1px solid var(--line);"><td style="padding:6px 9px;">'+m.name+'</td>'+
-           '<td colspan="11" style="padding:6px 9px;color:#c0392b;">invalid ε/μ or thickness — remove and re-pin</td>'+
+           '<td colspan="11" style="padding:6px 9px;color:#c0392b;">'+
+             (o.why ? String(o.why).replace(/[<>&]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c];})
+                    : 'invalid ε/μ or thickness — remove and re-pin')+'</td>'+
            '<td style="padding:6px 9px;"><button class="btn mlb-del" data-id="'+m.id+'" style="padding:2px 8px;font-size:10.5px;">✕</button></td></tr>';
         return;
       }
@@ -10474,10 +10801,22 @@ window.CADRCS = {
     if(!LAST) return '';
     var good=LAST.items.filter(function(o){return !o.bad;});
     if(!good.length) return '';
+    // Align by FREQUENCY, not array index. A measured material only contributes points inside its own
+    // measured span, so its pts[] is shorter and offset — indexing them in parallel printed one
+    // material's RL under another's frequency labels and silently dropped the tail.
     var L=[['freq_ghz'].concat(good.map(function(o){return '"'+o.m.name+' RL_dB"';})).join(',')];
-    for(var i=0;i<good[0].pts.length;i++){
-      L.push([good[0].pts[i].x].concat(good.map(function(o){ return (o.pts[i]?o.pts[i].y:''); })).join(','));
-    }
+    var byF=good.map(function(o){
+      var mp={};
+      (o.pts||[]).forEach(function(pt){ mp[(+pt.x).toFixed(4)]=pt.y; });
+      (o.xpts||[]).forEach(function(pt){ mp[(+pt.x).toFixed(4)]=pt.y; });   // extrapolated tail, if drawn
+      return mp;
+    });
+    var grid={};
+    good.forEach(function(o){ (o.pts||[]).concat(o.xpts||[]).forEach(function(pt){ grid[(+pt.x).toFixed(4)]=+pt.x; }); });
+    Object.keys(grid).map(function(k){return grid[k];}).sort(function(a,b){return a-b;}).forEach(function(f){
+      var key=f.toFixed(4);
+      L.push([f].concat(byF.map(function(mp){ return (mp[key]!=null)?mp[key]:''; })).join(','));
+    });
     return L.join('\n');
   }
   function dl(text,name){
@@ -10775,6 +11114,31 @@ window.CADRCS = {
     return { kh:[-ca,-sa,0], ep:(pol==='h')?[sa,-ca,0]:[0,0,1] };
   }
 
+  // compute() is one synchronous block — measured at ~0.5 s on the rocket demo but ~15 s on an
+  // 11-part model at a 0.5 deg step. It used to run straight off the click with no status, no spinner
+  // and both Compute buttons still live, so the page simply froze while the status line still showed
+  // whatever the PREVIOUS action had said (often about a different model), and repeat taps queued more
+  // 15 s blocks. Disable, say what is happening, yield one turn so that paints, then run.
+  var COMPUTING=false;
+  function computeUI(after){
+    if(COMPUTING) return;
+    if(!MESH){ $('cad-runstatus').textContent='Upload a model first.'; return; }
+    COMPUTING=true;
+    var btns=['cad-run','cad-fab-run'].map(function(id){return $(id);}).filter(Boolean);
+    btns.forEach(function(b){ b.disabled=true; });
+    var st=$('cad-runstatus');
+    var step=Math.max(0.5,Math.min(parseFloat($('cad-step').value)||2,10));
+    if(st) st.textContent='solving '+Math.round(360/step)+' look-angles over '+
+      (MESH.ntri||0).toLocaleString()+' triangles — the page will be busy for a moment…';
+    setTimeout(function(){
+      try{ compute(); }
+      catch(e){ if(st) st.textContent='the sweep failed: '+(e&&e.message||e); console.log('cad compute failed',e); }
+      finally{
+        COMPUTING=false; btns.forEach(function(b){ b.disabled=false; });
+        if(typeof after==='function') try{ after(); }catch(e){}
+      }
+    },0);
+  }
   // ---------- compute the sweep ----------
   function compute(){
     if(!MESH){ $('cad-runstatus').textContent='Upload a model first.'; return; }
@@ -11079,7 +11443,7 @@ window.CADRCS = {
     return lines.join('\n');
   }
   function manifest(){
-    return { tool:'EM Waveguide Simulator', module:'CAD-RCS (analytical PO + PTD)', version:'v4.0',
+    return { tool:'Signal to Signature', module:'CAD-RCS (analytical PO + PTD)', version:'v4.0',
       model:MESH?MESH.src:null, parts:MESH?MESH.segs.map(function(s){return {name:s.name,ntri:s.ntri,area_cm2:+s.area_cm2.toFixed(1)};}):null,
       triangles:MESH?MESH.ntri:null, edges:MESH?MESH.nedge:null, half_extent_mm:MESH?+(MESH.half_m*1000).toFixed(1):null,
       frequency_GHz:LAST?LAST.f:null, sweep_plane:LAST?LAST.plane:null, polarization:LAST?LAST.pol:null, ptd:LAST?LAST.usePTD:null,
@@ -11151,20 +11515,25 @@ window.CADRCS = {
   // SS7: the on-screen per-part table, as data
   function partsCSV(){
     if(!LAST) return '';
+    // segBare/segCoat are LINEAR sigma in m^2 (cadrcs_engine: segRCS[s] = pref*(re^2+im^2)) — the
+    // on-screen table reads them that way. This export used to run them through 10^(v/10) as if they
+    // were already dB and then label the raw linear numbers "dbsm", which inverted the conclusion: a
+    // part contributing nothing read as ~9% of the total. Same arithmetic as renderTable() now.
     var tot=0, sb=LAST.segBare||{};
-    (MESH.segs||[]).forEach(function(s){ var v=sb[s.id]; if(isFinite(v)) tot+=Math.pow(10,v/10); });
+    (MESH.segs||[]).forEach(function(s){ var v=sb[s.id]; if(isFinite(v)) tot+=v; });
+    var dbm=function(v){ return (isFinite(v)&&v>0)?(10*Math.log10(v)).toFixed(2):''; };
     var L=['# CAD-RCS per-part breakdown — '+MESH.src+', f='+LAST.f+' GHz, '+LAST.plane+' sweep, '+LAST.pol+'-pol, at the peak look-angle '+LAST.pkAng+' deg',
            '# Contribution = share of the total coherent PO backscatter there. Reduction = bare-minus-coated at that angle.',
            '# Edge diffraction is added GLOBALLY, not per part, so this is an approximate attribution of a coherent sum.',
            'part,triangles,area_cm2,size_mm,contribution_pct,bare_dbsm,coated_dbsm,reduction_db,coating'];
     (MESH.segs||[]).forEach(function(s){
       var b=sb[s.id], c=(LAST.segCoat||{})[s.id];
-      var pct=(isFinite(b)&&tot>0)?(100*Math.pow(10,b/10)/tot):NaN;
+      var pct=(isFinite(b)&&tot>0)?(100*b/tot):NaN;
       var mats=readSegMats(), m=mats[s.id]||{};
       L.push(['"'+String(s.name).replace(/"/g,'')+'"', s.ntri, s.area_cm2.toFixed(1),
               '"'+(s.size_mm?s.size_mm.map(function(x){return (+x).toFixed(0);}).join('x'):'')+'"',
-              isFinite(pct)?pct.toFixed(2):'', isFinite(b)?b.toFixed(3):'',
-              isFinite(c)?c.toFixed(3):'', (isFinite(b)&&isFinite(c))?(b-c).toFixed(2):'',
+              isFinite(pct)?pct.toFixed(2):'', dbm(b), dbm(c),
+              (isFinite(b)&&isFinite(c)&&b>0&&c>0)?(10*Math.log10(b/c)).toFixed(2):'',
               '"'+(m.label||(m.mode==='pec'?'PEC':'custom'))+'"'].join(','));
     });
     return L.join('\n');
@@ -11279,6 +11648,18 @@ window.CADRCS = {
       if(slider&&savedAng!=null) slider.value=savedAng;       // put the viewer back as the user had it
       if(coatBox) coatBox.checked=savedCoat;
       try{ viewerDraw(parseFloat(savedAng!=null?savedAng:pk), savedCoat); }catch(e){}
+      // The README is written up front, before the chart / STL / snapshot / rotating steps — each of
+      // which can be skipped (no canvas, a failed encode, no coating). Reconcile the two so the file
+      // never describes something that is not in the archive.
+      try{
+        var promised=['RCS_vs_angle.csv','parts_table.csv','model.stl','manifest.json','RCS_vs_angle.png',
+                      'model_3D_facets_bare.png','model_3D_rotating.html','model_3D_rotating.gif']
+          .concat(LAST.coat!=null?['model_3D_facets_coated.png']:[]);
+        var missing=promised.filter(function(f){ return !zip.file(f); });
+        if(missing.length) zip.file('README.txt', (zip.file('README.txt')?'':'')+
+          'NOTE — the following could not be generated for this export and are NOT in this archive:\n  '+
+          missing.join('\n  ')+'\n(most often because the 3-D view was not on screen when the export ran.)\n\n');
+      }catch(e){}
       return zip.generateAsync({type:'blob'});
     }).then(function(blob){
       var u=URL.createObjectURL(blob); var a=document.createElement('a'); a.href=u;
@@ -11321,11 +11702,10 @@ window.CADRCS = {
     // Serialize against every other solve: /run_rcs writes to fixed scratch paths and fixed
     // result CSVs, so a second run started while this one is in flight corrupts both. One SHARED
     // flag, because three independent local flags cannot see each other.
-    if(window.__solveBusy){ st.textContent='Another openEMS solve is already running — wait for it to finish.'; return; }
-    window.__solveBusy=true;
+    if(!window.SolveGate.claim(st)) return;
     var lbl0=btn?btn.textContent:'';
     if(btn){ btn.disabled=true; btn.textContent='Solving on openEMS…'; }
-    var release=function(){ window.__solveBusy=false; if(btn){ btn.disabled=false; btn.textContent=lbl0; } };
+    var release=function(){ window.SolveGate.release(); if(btn){ btn.disabled=false; btn.textContent=lbl0; } };
     st.textContent='openEMS: uploading + solving at '+LAST.pkAng+'° (this takes a minute)…';
     var fd=new FormData(); fd.append('file', MESH.file);
     fetch('/upload_rcs',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){
@@ -11468,7 +11848,7 @@ window.CADRCS = {
     var ar=$('cad-all-reset'); if(ar) ar.addEventListener('click',allEditFill);
     var fi=$('cad-file'); if(fi) fi.addEventListener('change',function(e){ onFile(e.target.files[0]); e.target.value=''; });
     buildExamples();
-    var run=$('cad-run'); if(run) run.addEventListener('click',compute);
+    var run=$('cad-run'); if(run) run.addEventListener('click',computeUI);
     // both viewer toggles explain themselves RIGHT HERE (a message up by the Compute
     // button is invisible when you are looking at the 3-D view)
     var vnote=function(msg){ var n=$('cad-view-note'); if(!n) return; n.textContent=msg||''; n.style.display=msg?'':'none'; };
@@ -11506,8 +11886,8 @@ window.CADRCS = {
     if((b=$('cad-dlall'))) b.addEventListener('click',dlAll);
     // ---- floating Compute (the results page is several screens long) ----
     var fr=$('cad-fab-run');
-    if(fr) fr.addEventListener('click', function(){ compute(); var h=$('cad-headline');
-      if(h && h.style.display!=='none') try{ h.scrollIntoView({behavior:'smooth',block:'center'}); }catch(e){} });
+    if(fr) fr.addEventListener('click', function(){ computeUI(function(){ var h=$('cad-headline');
+      if(h && h.style.display!=='none') try{ h.scrollIntoView({behavior:'smooth',block:'center'}); }catch(e){} }); });
     var fo=$('cad-fab-opt');
     if(fo) fo.addEventListener('click', function(){ var w=$('cad-opt-wrap');
       if(w && w.style.display!=='none') try{ w.scrollIntoView({behavior:'smooth',block:'start'}); }catch(e){} });
@@ -12041,12 +12421,22 @@ window.CADRCS = {
     var rjBox=$('cad-opt-rejects');
     if(rjBox){
       if(!rj.length) rjBox.innerHTML='';
-      else rjBox.innerHTML='<details style="margin:0 0 10px;"><summary style="cursor:pointer;color:var(--muted);'+
+      else {
+      // If the volume budget is what is doing most of the rejecting, say so and point at the control —
+      // otherwise the user sees "12 rejected" with no idea which knob would open the search up.
+      var volRej=rj.filter(function(x){ return /enclosed volume/.test(String(x)); }).length;
+      var hint=(volRej>=Math.max(2,Math.ceil(rj.length*0.4)))
+        ? '<div style="margin:6px 0 0;font-family:var(--font-mono);font-size:11px;color:var(--amber);">'+
+          '↑ '+volRej+' of those were your volume budget ('+OPT.maxVol+'%). Raise <strong>“Volume you can afford '+
+          'to lose”</strong> above if your design really can give up more internal space — the search will then '+
+          'reach further.</div>' : '';
+      rjBox.innerHTML='<details style="margin:0 0 10px;"><summary style="cursor:pointer;color:var(--muted);'+
         'font-family:var(--font-mono);font-size:11.5px;">'+rj.length+' candidate'+(rj.length===1?'':'s')+
         ' rejected as invalid geometry — show why</summary>'+
         '<ul style="margin:8px 0 0 4px;padding-left:18px;font-family:var(--font-mono);font-size:11px;color:var(--faint);line-height:1.75;">'+
         rj.map(function(x){ return '<li>'+String(x).replace(/[<>&]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c];})+'</li>'; }).join('')+
-        '</ul></details>';
+        '</ul>'+hint+'</details>';
+      }
     }
     $('cad-opt-caveat').textContent=
       'Every candidate is checked for geometric validity BEFORE it is scored, and rejected if it folds the '+
@@ -12297,7 +12687,11 @@ window.CADRCS = {
     document.body.classList.add('mast-min');
   }
   var mtg=document.getElementById('mast-toggle');
-  if(mtg) mtg.addEventListener('click', function(){ document.body.classList.remove('mast-min'); });
+  if(mtg) mtg.addEventListener('click', function(){
+    var min=document.body.classList.toggle('mast-min');
+    mtg.textContent = min ? 'what is this?' : 'hide';
+    mtg.title = min ? 'Show the full introduction' : 'Collapse the introduction';
+  });
 
   window.mnavSync = function(page){
     mastSync();

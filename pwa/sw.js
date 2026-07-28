@@ -31,7 +31,9 @@ const NEVER_CACHE = [
 ];
 
 const SHELL = ['/', '/manifest.webmanifest', '/icons/icon-192-sq.png', '/icons/icon-512-sq.png',
-               '/icons/apple-touch-icon.png', '/icons/apple-touch-icon-180.png'];
+               '/icons/apple-touch-icon.png', '/icons/apple-touch-icon-180.png',
+               '/icons/apple-touch-icon-167.png', '/icons/apple-touch-icon-152.png',
+               '/icons/apple-touch-icon-120.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
@@ -73,23 +75,30 @@ self.addEventListener('fetch', (event) => {
   const wantsHTML = req.mode === 'navigate' ||
                     (req.headers.get('accept') || '').includes('text/html');
   if (sameOrigin && wantsHTML) {
+    const HTML_TIMEOUT_MS = 3500;
+    const shellFallback = () => caches.match('/', { ignoreSearch: true });
+    const timedOut = new Promise((resolve) => setTimeout(() => resolve(null), HTML_TIMEOUT_MS));
     event.respondWith(
-      fetch(req)
-        .then((res) => {
-          if (res && res.ok) {
-            const copy = res.clone();
-            caches.open(SHELL_CACHE).then((c) => c.put('/', copy)).catch(() => {});
-          }
-          return res;
-        })
-        .catch(() => caches.match('/', { ignoreSearch: true })
-                          .then((hit) => hit || new Response(
-                            '<h1 style="font-family:sans-serif">Offline</h1><p>Open this once while connected to the bridge, then it will work offline for the analytical tabs.</p>',
-                            { headers: { 'Content-Type': 'text/html' } })))
+      Promise.race([
+        fetch(req)
+          .then((res) => {
+            if (res && res.ok) {
+              const copy = res.clone();
+              caches.open(SHELL_CACHE).then((c) => c.put('/', copy)).catch(() => {});
+            }
+            return res;
+          })
+          .catch(() => null),
+        timedOut
+      ])
+      .then((res) => res || shellFallback().then((hit) => hit || fetch(req)))
+      .catch(() => shellFallback())
+      .then((res) => res || new Response(
+        '<h1 style="font-family:sans-serif">Offline</h1><p>Open this once while connected to the bridge, then it will work offline for the analytical tabs.</p>',
+        { headers: { 'Content-Type': 'text/html' } }))
     );
     return;
   }
-
   // 3. immutable third-party libs (cdnjs) + our icons/manifest: cache-first
   const isLib  = !sameOrigin;
   const isIcon = sameOrigin && (url.pathname.startsWith('/icons/') || url.pathname === '/manifest.webmanifest');

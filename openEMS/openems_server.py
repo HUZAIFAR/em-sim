@@ -102,6 +102,21 @@ app = Flask(__name__)
 import threading, re as _re
 _PROG_LOGS = {"wg": "last_run.log", "horn": "last_horn_run.log", "rcs": "last_rcs_run.log"}
 
+# All three solves write FIXED paths -- wg_params.m / rcs_params.m, the shared results/*.csv, and the
+# scratch dirs -- so two overlapping runs corrupt each other and one reports the other's material.
+# The client cooperates via window.__solveBusy, but that only guards the tabs that opt in and cannot
+# guard a second browser (the Funnel link is shared with a remote tester) or a scripted POST. This is
+# the real interlock: one solve at a time, server-wide. threaded=True is left on so /progress can
+# still be polled during a run -- only the solve bodies serialise.
+_SOLVE_LOCK = threading.Lock()
+
+def _busy_json(kind):
+    label = {"run": "waveguide", "run_horn": "horn", "run_rcs": "RCS"}.get(kind, kind)
+    return jsonify(ok=False, stage="busy", busy=True,
+                   log=("A %s solve is already running on this bridge. openEMS writes to fixed scratch "
+                        "and result paths, so runs cannot overlap -- wait for it to finish, then try "
+                        "again." % label)), 409
+
 def stream_run(args, logfile, timeout_s, tag):
     """Run args, streaming merged stdout/stderr into logfile live. Returns an object with
     .returncode/.stdout/.stderr so callers behave exactly as with subprocess.run(). Raises
@@ -211,6 +226,14 @@ def cadfiles(fn):
 
 @app.route("/run", methods=["POST"])
 def run():
+    if not _SOLVE_LOCK.acquire(blocking=False):
+        return _busy_json('run')
+    try:
+        return _run_locked()
+    finally:
+        _SOLVE_LOCK.release()
+
+def _run_locked():
     cfg = request.get_json(force=True)
     band = cfg.get("band", "X")
     if band not in BANDS:
@@ -494,6 +517,14 @@ def _csv_dicts(path):
 
 @app.route("/run_horn", methods=["POST"])
 def run_horn():
+    if not _SOLVE_LOCK.acquire(blocking=False):
+        return _busy_json('run_horn')
+    try:
+        return _run_horn_locked()
+    finally:
+        _SOLVE_LOCK.release()
+
+def _run_horn_locked():
     """Horn-antenna pipeline: (optional) STEP upload -> STL -> derive dims ->
     openEMS full-wave solve (gain, S11, interior field) -> conductor-loss for
     every coating from that one field. Returns an image + numbers for a new tab."""
@@ -790,6 +821,14 @@ def upload_cad():
 
 @app.route("/run_rcs", methods=["POST"])
 def run_rcs():
+    if not _SOLVE_LOCK.acquire(blocking=False):
+        return _busy_json('run_rcs')
+    try:
+        return _run_rcs_locked()
+    finally:
+        _SOLVE_LOCK.release()
+
+def _run_rcs_locked():
     # Radar cross section via a plane-wave (TF/SF) solve + NF2FF (see rcs_run.m).
     # Always runs the bare (PEC) target; if a coating is selected, also runs the coated target
     # and reports the RCS reduction in dB. Sphere -> Mie anchor, plate -> physical-optics anchor.
