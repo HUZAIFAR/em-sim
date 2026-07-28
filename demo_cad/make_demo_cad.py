@@ -125,8 +125,66 @@ def calib_sphere_100mm(occ):
     return [("sphere_r50mm", occ.addSphere(0, 0, 0, 50))]
 
 
+def stealth_ucav(occ):
+    """Flying-wing UCAV: a chined, highly swept blended body with canted tails and a shielded
+    inlet lip. This is the classic low-observable planform, so the shape-improvement search has
+    something to work WITH rather than against: the levers that matter here are planform sweep
+    and tail cant, not body taper."""
+    parts = []
+    # blended centre body: a shallow wedge, wide at the back
+    parts.append(("centrebody", occ.addBox(-90, -260, -35, 180, 520, 70)))
+    # two highly swept wing panels, built as thin canted boxes and swept by a rotation
+    for i, sx in enumerate((1, -1)):
+        w = occ.addBox(0, -240, -14, 430, 300, 28)
+        occ.rotate([(3, w)], 0, 0, 0, 0, 0, 1, math.radians(-38 * sx))
+        if sx < 0:
+            occ.mirror([(3, w)], 1, 0, 0, 0)
+        parts.append((f"wing_{i+1}", w))
+    # canted vertical tails (the single biggest specular lever on this shape)
+    for i, sx in enumerate((1, -1)):
+        t = occ.addBox(-14, 120, 0, 28, 190, 150)
+        occ.rotate([(3, t)], 0, 0, 0, 0, 1, 0, math.radians(30 * sx))
+        occ.translate([(3, t)], 150 * sx, 0, 20)
+        parts.append((f"tail_{i+1}", t))
+    # a shielded dorsal inlet lip: a serrated-looking blocky duct mouth
+    parts.append(("inlet_lip", occ.addBox(-55, -140, 30, 110, 120, 26)))
+    return parts
+
+
+def missile_seeker(occ):
+    """Air-to-air missile: ogive radome, body, four cruciform mid-body strakes and four tail fins.
+    Cruciform fins are a textbook broadside/45-degree specular problem, so the fin-cant lever has
+    a large, physically real effect here."""
+    parts = [("radome", occ.addCone(0, 0, 0, 0, 0, 260, 0.5, 88)),
+             ("body", occ.addCylinder(0, 0, 260, 0, 0, 1900, 88)),
+             ("nozzle", occ.addCone(0, 0, 2160, 0, 0, 120, 88, 62))]
+    for i in range(4):
+        a = math.radians(90 * i)
+        st = occ.addBox(-6, 0, 900, 12, 130, 260)
+        occ.rotate([(3, st)], 0, 0, 0, 0, 0, 1, a)
+        parts.append((f"strake_{i+1}", st))
+    for i in range(4):
+        a = math.radians(90 * i + 45)
+        fn = occ.addBox(-7, 0, 1880, 14, 210, 300)
+        occ.rotate([(3, fn)], 0, 0, 0, 0, 0, 1, a)
+        parts.append((f"tailfin_{i+1}", fn))
+    return parts
+
+
+def corner_test_dihedral(occ):
+    """Two plates meeting at 90 degrees - a deliberate WORST CASE, and an honesty exhibit.
+    A dihedral retroreflects: real measured RCS is enormous over a wide sector. This tool's
+    PO+PTD engine has no multiple-bounce term, so it will UNDER-report this shape badly. It ships
+    as a demo precisely so that limitation is something you can see rather than just read."""
+    return [("plate_vertical", occ.addBox(0, -150, 0, 6, 300, 300)),
+            ("plate_horizontal", occ.addBox(0, -150, 0, 300, 300, 6))]
+
+
 MODELS = [
     ("cone_tube", cone_tube),
+    ("stealth_ucav", stealth_ucav),
+    ("missile_seeker", missile_seeker),
+    ("corner_test_dihedral", corner_test_dihedral),
     ("water_bottle", water_bottle),
     ("rocket", rocket),
     ("satellite", satellite),

@@ -43,3 +43,11 @@ radar are enormous reflectors, which is exactly what the 3-D facet view shows in
 - Regenerate or edit them with `python demo_cad/make_demo_cad.py` (needs `pip install gmsh`).
   Add your own model by writing a `parts_fn` that returns `(label, solid_tag)` pairs —
   keep the solids **separate** (never boolean-fused) so they stay individually coatable.
+
+## Defence-oriented models (added for the shape-improvement search)
+
+| File | Parts | Size (mm) | What it is for |
+|---|---|---|---|
+| `stealth_ucav.step` | 6 | 862 × 766 × 192 | A flying-wing UCAV: chined blended body, 38°-swept wing panels, canted vertical tails, shielded dorsal inlet lip. This is the shape low-observable design actually produces, so the shape-improvement search has to work *with* it — the levers that move the needle here are planform sweep and tail cant, not body taper. |
+| `missile_seeker.step` | 11 | 307 × 307 × 2280 | Air-to-air missile: ogive radome, cylindrical body, four cruciform mid-body strakes, four tail fins at 45°. Cruciform fins are the textbook broadside/45° specular problem, so the fin-cant lever has a large and physically real effect. |
+| `corner_test_dihedral.step` | 2 | 300 cube | **A deliberate worst case and an honesty exhibit.** Two plates meeting at 90° retroreflect, so the real measured RCS is enormous over a wide sector. This tool's PO + first-order PTD engine carries no multiple-bounce term and will therefore **under-report this shape badly**. It ships as a demo precisely so that limitation is something you can see rather than only read about. |
