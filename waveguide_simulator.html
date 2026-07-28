@@ -808,7 +808,7 @@
 
 <div class="topbar"><div class="in">
   <span>KHALIFA UNIVERSITY · <span dir="rtl" lang="ar">جامعة خليفة</span></span>
-  <span class="dim">SIGNAL TO SIGNATURE — v3.9</span>
+  <span class="dim">SIGNAL TO SIGNATURE — v4.0</span>
 </div></div>
 
 <div class="wrap">
@@ -2168,6 +2168,7 @@ for t_mm in [0.5, 1, 2, 3, 4]:
       <button class="btn go" id="cad-dlall" type="button" style="font-size:12px;">⬇ Download all (ZIP)</button>
       <button class="btn go" id="cad-csv" type="button" style="font-size:12px;">⬇ RCS-vs-angle (CSV)</button>
       <button class="btn" id="cad-mathbtn" type="button" style="font-size:12px;">Show math</button>
+      <button class="btn go" id="cad-gif" type="button" style="font-size:12px;">⬇ Rotating GIF</button>
       <button class="btn go" id="cad-manifest" type="button" style="font-size:12px;">Run manifest</button>
       <button class="btn" id="cad-verify" type="button" style="font-size:12px;">Verify a part on openEMS</button>
       <span id="cad-verify-status" style="font-family:var(--font-mono);font-size:11.5px;color:#cdd6d1;align-self:center;"></span>
@@ -2218,7 +2219,7 @@ for t_mm in [0.5, 1, 2, 3, 4]:
 
     <!-- ===================== 4 · SHAPE IMPROVEMENT (analytical) ===================== -->
     <div class="panel" id="cad-opt-wrap" style="display:none;padding:18px 20px;margin-bottom:16px;border:2px solid var(--accent);">
-      <div class="oe-head">4 · Shape improvement — lower the signature by changing the geometry</div>
+      <div class="oe-head">4 · Shape improvement — lower the signature by changing the geometry <button class="chartinfo" data-info="cad-opt" title="How the shape search works, and what it does not check">ⓘ</button></div>
       <p style="font-size:13.5px;color:var(--muted);margin:0 0 14px;">
         Coatings suppress the specular flash; <strong>shape decides where the flash goes in the first place</strong>, which is
         why low-observable design is mostly geometry. This searches real deformations of <em>your</em> mesh — sharpening the
@@ -2242,6 +2243,8 @@ for t_mm in [0.5, 1, 2, 3, 4]:
           <input id="cad-opt-w" type="number" value="30" step="5" min="5" max="180" style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-mono);font-size:13px;"></div>
         <div class="oe-f"><div class="oe-lab">Sector angle step (°)</div>
           <input id="cad-opt-step" type="number" value="5" step="1" min="1" max="15" style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-mono);font-size:13px;"></div>
+        <div class="oe-f"><div class="oe-lab">Max volume loss allowed (%)</div>
+          <input id="cad-opt-vol" type="number" value="15" step="5" min="0" max="60" style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-mono);font-size:13px;"></div>
         <div class="oe-f"><div class="oe-lab">Combine best levers (rounds)</div>
           <select id="cad-opt-rounds" style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-body);font-size:13px;">
             <option value="1">1 — one change only</option>
@@ -2272,6 +2275,7 @@ for t_mm in [0.5, 1, 2, 3, 4]:
           <button class="btn go" id="cad-opt-csv" type="button">⬇ Search results (CSV)</button>
           <button class="btn" id="cad-opt-revert" type="button" style="display:none;">Revert to the original shape</button>
         </div>
+        <div id="cad-opt-rejects"></div>
         <p id="cad-opt-caveat" style="font-family:var(--font-mono);font-size:11px;color:var(--amber);background:var(--amber-soft);border:1px solid #ecd7ad;border-radius:8px;padding:11px 13px;margin:0;"></p>
       </div>
     </div>
@@ -2952,7 +2956,7 @@ for t_mm in [0.5, 1, 2, 3, 4]:
         <button class="btn" id="cite-copy" type="button">Copy citation</button>
       </div>
       <pre id="cite-text" style="margin:0;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);font-family:var(--font-mono);font-size:12px;line-height:1.6;white-space:pre-wrap;color:var(--ink);">Rangwala, H. T. (2026). EM Waveguide &amp; RCS Simulator (Version 3.8) [Computer software]. Khalifa University, Abu Dhabi. Full-wave results computed with openEMS (Liebig, doi:10.1002/jnm.1875).</pre>
-      <p style="margin:8px 0 0;font-size:11px;color:var(--faint);">BibTeX: <code>@software{rangwala_em_waveguide_rcs_2026, author={Rangwala, Huzaifa Taha}, title={{EM Waveguide \&amp; RCS Simulator}}, version={3.8}, year={2026}, organization={Khalifa University}}</code></p>
+      <p style="margin:8px 0 0;font-size:11px;color:var(--faint);">BibTeX: <code>@software{rangwala_em_waveguide_rcs_2026, author={Rangwala, Huzaifa Taha}, title={{EM Waveguide \&amp; RCS Simulator}}, version={4.0}, year={2026}, organization={Khalifa University}}</code></p>
     </div>
 
     <div class="panel" style="padding:16px 18px;margin:0 0 22px;border-left:3px solid var(--accent);">
@@ -5429,6 +5433,42 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
 <p><strong>Same shape shrunk to</strong> — how small an <em>uncoated copy of this exact geometry</em> would have to be to scatter as weakly as your coated one. This is not assumed from a formula: it is solved numerically against your own mesh using exact electromagnetic scaling, σ(s·mesh, λ) = s²·σ(mesh, λ/s), so it follows whatever law your shape actually obeys — flat panels behave as size⁴, curved bodies as size², and a real assembly is somewhere between. Tick <strong>Show apparent size</strong> under the 3-D view to see the model at that size against a translucent ghost of its real size.</p>
 <h4>Honest limits</h4>
 <p>Values are taken at the peak look-angle (the worst case for being seen). If the equivalent shrunken object comes out smaller than about two wavelengths, the panel says so — at that size the asymptotic PO+PTD model is outside its comfortable range and only that one figure becomes indicative; the echo, sphere and range numbers are closed-form and unaffected. And as everywhere on this tab, the underlying RCS is specular + first-order edge scattering only.</p>`},
+    'cad-opt':{title:'Shape improvement — how it works and what to trust', html:`
+<h4>What this does</h4>
+<p>A coating attacks the <em>reflectivity</em> of a surface. Shape attacks something more fundamental: <strong>where the reflection goes at all</strong>. A flat panel square-on to a radar throws almost everything straight back; tilt that same panel and the energy leaves in a direction the radar never hears. That is why low-observable aircraft look the way they do, and it is why reshaping usually beats coating by a wide margin.</p>
+<p>This panel takes <em>your</em> uploaded model and tries a catalogue of real, buildable deformations on it — sharpening the nose, tapering the aft body, flattening the cross-section into an ellipse, sweeping and canting appendages, tilting or slimming whichever part dominates the return. Each candidate is a genuinely different mesh, and each one is put back through the <strong>same full PO+PTD solve</strong> as the baseline. Nothing here is a rule of thumb.</p>
+<h4>What it optimises</h4>
+<p>You choose the <strong>threat sector</strong> — the range of look-angles you actually care about (nose-on for something inbound, broadside for something being tracked from the side, all-round if you don't know). The score is the <strong>mean RCS over that sector</strong>, because a design that is quiet at one angle and blinding 5° later is not quiet. It then does a <strong>coordinate descent</strong>: it finds the single best change, keeps it, and searches again from there, so later changes compound on earlier ones instead of being judged in isolation.</p>
+<h4>The validity gate — why it won't hand you a broken shape</h4>
+<p>A deformation strong enough to help can also be strong enough to wreck the geometry, so every candidate is <strong>audited before it is allowed to score</strong>. It is rejected outright, with the reason printed, if it:</p>
+<ul>
+<li><strong>folds the surface</strong> — more than 0.5 % of facets end up inside-out, which means the skin has passed through itself;</li>
+<li><strong>collapses facets into slivers</strong> — over 2 % of triangles lose their area, so their normals become meaningless and the physics stops being trustworthy;</li>
+<li><strong>loses too much enclosed volume</strong> — you set the budget (default 15 %); a fuel tank, payload bay or warhead still has to fit;</li>
+<li><strong>inflates</strong> past 1.5× the original volume, or changes the wetted area by more than the allowed band;</li>
+<li><strong>flattens a part</strong> to under 35 % of its original extent in any direction — a wing squashed to a plate is not a wing;</li>
+<li><strong>drives a part into the body</strong> — appendages that intersect the fuselage instead of attaching to it.</li>
+</ul>
+<p>The status line reports how many candidates were thrown out this way, and the reject list names them. That is deliberate: a search that reports "18 tried, 6 rejected as invalid geometry" is telling you the truth about how tight your constraints are.</p>
+<h4>What the gate does NOT check — read this</h4>
+<p>Everything above is <strong>geometry only</strong>. The gate is a sanity check on the mesh, not an engineering review. It says nothing about <strong>aerodynamics</strong> (lift, drag, trim, stability), <strong>structures</strong> (loads, stiffness, buckling), <strong>internal packaging</strong> beyond a crude volume number, <strong>control authority</strong>, <strong>thermal</strong> behaviour, <strong>propulsion integration</strong>, or <strong>manufacturability</strong>. A shape that passes here can still be unflyable. Treat the output as <em>"this direction is worth exploring with your aero and structures people"</em>, never as a finished design.</p>
+<h4>Reading the results</h4>
+<p>The table lists every change tried, in order, with the sector mean it achieved and <em>why</em> that change helps physically. The chart overlays the improved shape on the baseline across the full angle sweep, so you can see whether you genuinely lowered the signature or merely pushed the spike to a different angle — a very common outcome, and one worth catching. <strong>Apply the improved shape</strong> replaces the working mesh so every other panel (per-part table, 3-D view, apparent size, exports) re-runs on it; <strong>Revert</strong> restores your original. You can also download the improved geometry as an <strong>STL</strong> and the whole search as a <strong>CSV</strong>.</p>
+<h4>Honest limits of the physics underneath</h4>
+<p>The solver is asymptotic PO + first-order PTD: specular reflection plus single edge diffraction. It does not model multiple bounces, cavities (inlets, nozzles, corner reflectors), creeping or travelling waves, or ray shadowing beyond a per-facet normal test. If the winning design's advantage comes from a deep cavity or a re-entrant corner, this engine will not see it. Use the <strong>openEMS cross-check</strong> on the dominant part to confirm anything that matters.</p>`},
+    'mlb-chart':{title:'Reflection loss of every saved material, overlaid', html:`
+<h4>What you're seeing</h4>
+<p>One curve per material on your shelf: how much radar power that material <strong>absorbs</strong> when it is applied as a coating on metal, plotted across frequency. Lower on the chart is better absorption. The <strong>−10 dB guide line</strong> is the usual engineering threshold — at −10 dB the material is sending back 10 % of what hit it (90 % absorbed), and that is the level most work calls "absorbing".</p>
+<h4>How to read it</h4>
+<ul>
+<li>The <strong>dip</strong> is the material's tuned frequency. It comes from thickness, not chemistry alone: at roughly a quarter of a wavelength inside the material the reflection off the front face cancels the reflection off the metal behind it.</li>
+<li><strong>How deep</strong> the dip goes is the peak absorption; <strong>how wide</strong> it is (the effective absorption bandwidth, ≤ −10 dB) is usually the more valuable number, because a real radar isn't obliged to sit on your best frequency.</li>
+<li>Edit any thickness in the table and the curve moves immediately — that is the single most effective knob, and it re-tunes the dip.</li>
+</ul>
+<h4>Measured vs constant materials</h4>
+<p>A material pinned from an uploaded lab file carries its real ε/μ dispersion, so its curve is drawn only across the band that was actually measured; beyond that it continues as a <strong>dashed "extrapolated, ε/μ held" line</strong> and is excluded from the scoring. A material entered as constant ε/μ legitimately holds those values across the band, so it is drawn solid throughout. The <strong>Data</strong> column tells you which is which — never read a dashed tail as measurement.</p>
+<h4>Why this page exists</h4>
+<p>These are the same materials the CAD-RCS part dropdowns offer, read from the same shelf. Pin a material once on the Reflection-loss tab and you can assign it to any part of any imported model. This page is where you compare them side by side before deciding which one to spend mass on.</p>`},
     'cad-view':{title:'3-D model — what the colours mean', html:`
 <h4>The short version</h4>
 <p><strong>Red = this piece of surface is throwing a lot of radar energy straight back at the radar. Blue = it is throwing back very little. Dark grey = it is facing away, so it contributes nothing.</strong> Red areas are what make you visible — those are the ones worth coating or reshaping.</p>
@@ -5441,7 +5481,9 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
 <h4>"Apply coating to this view"</h4>
 <p>Ticking it recolours the <em>same</em> view with each part's assigned coating applied — every triangle's contribution is multiplied by |Γ|² from the reflection-loss physics of the material you gave that part. So it answers "is my coating actually killing the hot-spots?": the red areas should visibly dim toward yellow/blue. If a red area <em>doesn't</em> dim, that part is still bare metal (set to PEC) or its coating is poorly matched at this frequency. Untick to compare against bare metal. Note that edges keep diffracting either way — a coating suppresses the flat-surface flash, not the edge return.</p>
 <h4>Controls</h4>
-<p>Drag to rotate the model, scroll to zoom, and use the <strong>look angle</strong> slider to fly the radar around it. Both views (bare and coated) are saved into the Download-all ZIP.</p>`},
+<p>Drag to rotate the model, scroll to zoom, and use the <strong>look angle</strong> slider to fly the radar around it. On a touch screen, one finger rotates and two fingers pinch to zoom.</p>
+<h4>Taking it with you</h4>
+<p><strong>⬇ Rotating GIF</strong> records a full turn of the shaded model as an animated GIF you can drop straight into a slide deck or a report — it plays anywhere, with nothing to install. The Download-all ZIP additionally contains <strong>model_3D_rotating.html</strong>, a self-contained page that spins on its own and lets you <em>drag it left and right to turn the model by hand</em> (or pause it), plus still PNGs of both the bare and the coated view. All of it is embedded, so the ZIP works offline.</p>`},
     'cad-chart':{title:'RCS vs look-angle', html:`
 <h4>What you're seeing</h4>
 <p>Monostatic RCS (dBsm) as the radar circles the model. <strong>Solid white</strong> = PO+PTD, bare metal; <strong>green</strong> = coated; <strong>dashed grey</strong> = PO only (no edges) — watch it plunge in the deep nulls that PTD fills back in. If you ran the openEMS cross-check, the full-wave result appears as an orange marker.</p>`},
@@ -5702,6 +5744,14 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
 <ul><li>A plane wave (total-field/scattered-field) hits the target; a near-field-to-far-field box captures the scattered field. <strong>RCS = 4π · scattered power density / incident power density.</strong></li>
 <li><strong>Monostatic</strong> = the radar looks straight back (backscatter). <strong>Bistatic</strong> = transmitter and receiver at different angles.</li>
 <li>Dashed = the exact analytical answer (<strong>Mie series</strong> for a sphere, <strong>physical optics</strong> for a plate); solid = the openEMS full-wave solve. The full-wave magnitude is mesh-limited to a few dB — trust the shape.</li></ul>
+<h4>Construction: bare, coated, or solid</h4>
+<p>These are three physically different targets, and the solver builds three different geometries:</p>
+<ul>
+<li><strong>Bare metal (PEC)</strong> — a perfect conductor. The reference case. No material needed.</li>
+<li><strong>Metal + coating</strong> — a metal body wearing a thin lossy film of the thickness you set. This is the radar-absorbing-material case, and it is the arrangement a material's <em>reflection loss</em> describes: the film only absorbs the way it does <em>because</em> there is metal behind it reflecting the wave back through it a second time.</li>
+<li><strong>Solid material</strong> — the whole body is made of the material, with no metal inside at all. The wave enters, and whatever isn't absorbed can leave out the far side.</li>
+</ul>
+<p>Because of that, the <strong>material list is filtered by construction</strong>. When you pin a material on the Reflection-loss tab you say whether it is a coating or a solid; "Metal + coating" then offers only the coatings and "Solid material" only the solids. If a list looks empty, nothing has been pinned for that construction yet — pin one there, or enter it under <strong>Custom material</strong>. This is deliberate: offering a thin film as a solid block would quietly ask the solver a different question than the one the material was characterised for.</p>
 <h4>Why coatings matter</h4>
 <p>A bare metal target reflects strongly. Coat it with a lossy absorber (magnetite, carbonyl iron — the "(Mag)" materials) and the wave is absorbed instead of reflected, dropping the RCS. The <strong>reduction in dB</strong> is the point of radar-absorbing materials and stealth. A purely conductive coating (silver, copper, MXene-as-conductor) barely helps — it still reflects — which the tool will honestly show.</p>`},
     'rlcalc':{title:'Reflection loss (RL) & RCS from measured ε/μ', html:`
@@ -5968,6 +6018,42 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
 <p><strong>نفس الشكل يصغر إلى</strong> — كم يجب أن تكون نسخة <em>غير مطلية من نفس هذا الشكل</em> صغيرة حتى تبعثر بنفس ضعف المطلي. وهذا ليس مفترضًا من صيغة: يُحلّ عدديًا على شبكتك نفسها بتحجيم كهرومغناطيسي مضبوط، σ(s·mesh, λ) = s²·σ(mesh, λ/s)، فيتبع القانون اللي يطيعه شكلك فعلًا — الألواح المستوية كالحجم⁴، والأجسام المنحنية كالحجم²، والتجميعة الحقيقية بينهما. أشّر <strong>Show apparent size</strong> تحت العرض الثلاثي الأبعاد لتشوف الموديل بذاك الحجم مقابل طيف شفّاف لحجمه الحقيقي.</p>
 <h4>الحدود بصراحة</h4>
 <p>القيم عند زاوية النظر الأعظم (الأسوأ من ناحية الظهور). وإذا طلع الجسم المكافئ المصغّر أصغر من موجتين تقريبًا، تنبّهك اللوحة — عند ذاك الحجم يكون موديل PO+PTD خارج نطاقه المريح فيصير ذاك الرقم إرشاديًا فقط؛ أما أرقام الصدى والكرة والمدى فهي صيغ مغلقة وغير متأثرة. وكما في كل هذا التبويب، الـRCS الأساسي انعكاس مرآوي + حيود حواف من الدرجة الأولى فقط.</p>`},
+    'cad-opt':{title:'تحسين الشكل — كيف يعمل وما الذي يُعتمد عليه', html:`
+<h4>ماذا يفعل</h4>
+<p>الطلاء يهاجم <em>انعكاسية</em> السطح. الشكل يهاجم شيئاً أعمق: <strong>إلى أين يذهب الانعكاس أساساً</strong>. لوح مسطّح مواجه للرادار تماماً يعيد كل شيء تقريباً إليه؛ أَمِل نفس اللوح فتخرج الطاقة في اتجاه لا يسمعه الرادار. لهذا تبدو الطائرات منخفضة الرصد بشكلها المعروف، ولهذا إعادة التشكيل تتفوّق عادة على الطلاء بفارق كبير.</p>
+<p>هذه اللوحة تأخذ الموديل <em>الذي رفعته أنت</em> وتجرّب عليه مجموعة من التشويهات الواقعية القابلة للتصنيع — تحديد المقدّمة، تنحيف المؤخّرة، تسطيح المقطع إلى شكل بيضاوي، تسهيم وإمالة الزعانف والأجنحة، وإمالة أو تنحيف الجزء المُسيطر على العائد. كل مرشّح شبكةٌ مختلفة فعلياً، ويمرّ كل واحد عبر <strong>نفس حلّ PO+PTD الكامل</strong> المستخدَم للأساس. لا شيء هنا قاعدة تقريبية.</p>
+<h4>ما الذي يُحسِّنه</h4>
+<p>أنت تختار <strong>قطاع التهديد</strong> — مدى زوايا النظر التي تهمّك فعلاً (من المقدّمة لهدف قادم، من الجانب لهدف يُتابَع جانبياً، أو كل الاتجاهات إن كنت لا تعرف). الدرجة هي <strong>متوسّط RCS على ذلك القطاع</strong>، لأن تصميماً هادئاً عند زاوية واحدة ثم ساطعاً بعد 5° ليس هادئاً. ثم ينفّذ <strong>نزولاً إحداثياً</strong>: يجد أفضل تغيير منفرد، يُبقيه، ويبحث مرة أخرى من هناك، فتتراكم التغييرات اللاحقة على السابقة بدل الحكم عليها منفصلة.</p>
+<h4>بوابة الصلاحية — لماذا لن يعطيك شكلاً مكسوراً</h4>
+<p>التشويه القويّ بما يكفي للمساعدة قويّ أيضاً بما يكفي لتخريب الهندسة، لذا <strong>يُفحَص كل مرشّح قبل السماح له بالتسجيل</strong>. يُرفَض مباشرة، مع طَبْع السبب، إذا:</p>
+<ul>
+<li><strong>طوى السطح</strong> — انقلب أكثر من 0.5 % من الوجوه إلى الداخل، ما يعني أن الجلد عبر نفسه؛</li>
+<li><strong>سحق الوجوه إلى شظايا</strong> — فقد أكثر من 2 % من المثلثات مساحته، فتصبح أعمدته بلا معنى ويسقط الاعتماد على الفيزياء؛</li>
+<li><strong>خسر حجماً داخلياً كبيراً</strong> — أنت تحدّد الميزانية (15 % افتراضياً)؛ خزان الوقود أو حيّز الحمولة أو الرأس الحربي لا يزال يجب أن يتّسع؛</li>
+<li><strong>تضخّم</strong> فوق 1.5× الحجم الأصلي، أو غيّر المساحة المبلولة أكثر من النطاق المسموح؛</li>
+<li><strong>سطّح جزءاً</strong> إلى أقل من 35 % من امتداده الأصلي في أي اتجاه — الجناح المسحوق إلى صفيحة ليس جناحاً؛</li>
+<li><strong>أدخل جزءاً في الجسم</strong> — زعانف تتقاطع مع جسم الطائرة بدل أن تتّصل به.</li>
+</ul>
+<p>سطر الحالة يذكر كم مرشّحاً استُبعد بهذه الطريقة، وقائمة المرفوضين تسمّيها. هذا مقصود: بحث يقول "جُرّب 18، رُفض 6 كهندسة غير صالحة" يصدُقك عن مدى ضيق قيودك.</p>
+<h4>ما لا تفحصه البوابة — اقرأ هذا</h4>
+<p>كل ما سبق <strong>هندسة شكلية فقط</strong>. البوابة فحص سلامة للشبكة، لا مراجعة هندسية. لا تقول شيئاً عن <strong>الأيروديناميكا</strong> (الرفع، السحب، الاتزان، الاستقرار)، ولا <strong>الإنشاء</strong> (الأحمال، الصلادة، الانبعاج)، ولا <strong>التوضيب الداخلي</strong> أكثر من رقم حجم خام، ولا <strong>سلطة التحكّم</strong>، ولا <strong>الحرارة</strong>، ولا <strong>تكامل الدفع</strong>، ولا <strong>قابلية التصنيع</strong>. شكل ينجح هنا قد يبقى غير قابل للطيران. اعتبر الناتج <em>"هذا اتجاه يستحق البحث مع فريق الأيرو والإنشاء"</em>، لا تصميماً نهائياً أبداً.</p>
+<h4>قراءة النتائج</h4>
+<p>الجدول يسرد كل تغيير جُرّب، بالترتيب، مع متوسّط القطاع الذي حقّقه و<em>لماذا</em> يساعد فيزيائياً. المخطّط يُركّب الشكل المحسّن على الأساس عبر كامل مسح الزوايا، فترى إن كنت خفّضت البصمة فعلاً أم دفعت الذروة إلى زاوية أخرى — نتيجة شائعة جداً وتستحق الالتقاط. <strong>Apply the improved shape</strong> يستبدل الشبكة العاملة فتُعاد كل اللوحات الأخرى (جدول الأجزاء، العرض ثلاثي الأبعاد، الحجم الظاهري، التصدير) عليها؛ و<strong>Revert</strong> يستعيد الأصل. ويمكنك تنزيل الهندسة المحسّنة <strong>STL</strong> وكامل البحث <strong>CSV</strong>.</p>
+<h4>حدود صادقة للفيزياء تحت الغطاء</h4>
+<p>الحلّاّل لا تزامني: PO + PTD من الرتبة الأولى — انعكاس مرآوي زائد انكسار حرف واحد. لا يُمثّل الارتدادات المتعددة، ولا التجاويف (المآخذ، الفوّهات، العاكسات الزاويّة)، ولا الأمواج الزاحفة أو المسافرة، ولا التظليل الشعاعي أبعد من اختبار عمود لكل وجه. إن كان تفوّق التصميم الفائز آتياً من تجويف عميق أو زاوية داخلية، فهذا المحرّك لن يراه. استخدم <strong>فحص openEMS</strong> على الجزء المُسيطر لتأكيد أي شيء مهم.</p>`},
+    'mlb-chart':{title:'خسارة الانعكاس لكل المواد المحفوظة، متراكبة', html:`
+<h4>ما تراه</h4>
+<p>منحنى واحد لكل مادة على رفّك: كم قدرة رادارية <strong>تمتصّها</strong> تلك المادة عند تطبيقها كطلاء على معدن، مرسومة مقابل التردد. الأدنى في المخطّط امتصاص أفضل. خطّ الدليل عند <strong>−10 dB</strong> هو العتبة الهندسية المعتادة — عندها تُعيد المادة 10 % مما أصابها (امتصاص 90 %)، وهذا هو المستوى الذي تسمّيه معظم الأعمال "ماصّاً".</p>
+<h4>كيف تقرؤه</h4>
+<ul>
+<li>الـ<strong>انخفاض</strong> هو التردد المُوالَف للمادة. مصدره السماكة، لا الكيمياء وحدها: عند نحو ربع طول موجة داخل المادة يلغي الانعكاس عن الوجه الأمامي الانعكاس عن المعدن خلفه.</li>
+<li><strong>عمق</strong> الانخفاض هو ذروة الامتصاص؛ و<strong>عرضه</strong> (نطاق الامتصاص الفعّال، ≤ −10 dB) هو عادةً الرقم الأنفع، لأن الرادار الحقيقي غير مُلزَم بالجلوس على تردّدك الأفضل.</li>
+<li>حرّر أي سماكة في الجدول فيتحرّك المنحنى فوراً — هذا أقوى مقبض منفرد، وهو يعيد موالفة الانخفاض.</li>
+</ul>
+<h4>المواد المقيسة مقابل الثابتة</h4>
+<p>المادة المثبَّتة من ملف مختبري مرفوع تحمل تشتّت ε/μ الحقيقي، فيُرسَم منحناها فقط عبر النطاق المقيس فعلاً؛ وبعده يستمرّ كخطّ <strong>متقطّع "مُستَنبَط، ε/μ مثبّتة"</strong> ويُستثنى من التقييم. أما المادة المُدخَلة بـ ε/μ ثابتة فتحمل تلك القيم عبر النطاق بحقّ، فتُرسَم متّصلة بالكامل. عمود <strong>Data</strong> يخبرك أيّهما أيّ — لا تقرأ ذيلاً متقطّعاً كقياس أبداً.</p>
+<h4>لماذا توجد هذه الصفحة</h4>
+<p>هذه نفس المواد التي تعرضها قوائم أجزاء CAD-RCS، مقروءة من نفس الرفّ. ثبّت مادة مرة واحدة في تبويب خسارة الانعكاس فتستطيع إسنادها إلى أي جزء من أي موديل مستورَد. هذه الصفحة هي حيث تقارنها جنباً إلى جنب قبل أن تقرّر على أيّها تُنفِق كتلة.</p>`},
     'cad-view':{title:'الموديل ثلاثي الأبعاد — معنى الألوان', html:`
 <h4>باختصار</h4>
 <p><strong>أحمر = هذا الجزء من السطح يرجّع طاقة رادارية كثيرة مباشرة للرادار. أزرق = يرجّع القليل جدًا. رمادي غامق = يواجه بعيدًا فلا يساهم أبدًا.</strong> المناطق الحمراء هي سبب ظهورك على الرادار — وهي الأولى بالطلاء أو بتعديل الشكل.</p>
@@ -5980,7 +6066,9 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
 <h4>"Apply coating to this view"</h4>
 <p>عند تأشيرها يُعاد تلوين <em>نفس</em> المنظر بعد تطبيق طلاء كل جزء — تُضرب مساهمة كل مثلث بـ|Γ|² من فيزياء فقد الانعكاس للمادة اللي أعطيتها لذاك الجزء. فهي تجيب على سؤال «هل طلائي فعلاً يقتل النقاط الساخنة؟»: المناطق الحمراء يجب أن تخفت نحو الأصفر/الأزرق. إذا منطقة حمراء <em>ما خفتت</em>، فذاك الجزء إما لا يزال معدنًا عاريًا (PEC) أو طلاؤه غير مطابق عند هذا الترد. أزل التأشير للمقارنة مع المعدن العاري. لاحظ أن الحواف تظل تحيد في الحالتين — الطلاء يخفّض وميض السطح المستوي لا ارتداد الحافة.</p>
 <h4>التحكم</h4>
-<p>اسحب للتدوير، ودولاب الماوس للتقريب، واستخدم شريط <strong>زاوية النظر</strong> لتطير بالرادار حوله. المنظران (عاري ومطلي) يُحفظان في ملف Download-all ZIP.</p>`},
+<p>اسحب للتدوير، ودولاب الماوس للتقريب، واستخدم شريط <strong>زاوية النظر</strong> لتطير بالرادار حوله. على شاشة اللمس: إصبع واحد يدوّر، وإصبعان يقرّبان بالقرص.</p>
+<h4>أن تأخذه معك</h4>
+<p><strong>⬇ Rotating GIF</strong> يسجّل دورة كاملة للموديل المُظلَّل كصورة GIF متحركة تضعها مباشرة في عرض تقديمي أو تقرير — تعمل في أي مكان وبلا تثبيت شيء. وملف Download-all ZIP يحتوي إضافةً <strong>model_3D_rotating.html</strong>، صفحة مكتفية بذاتها تدور من تلقاء نفسها وتتيح لك <em>سحبها يميناً ويساراً لتدوير الموديل بيدك</em> (أو إيقافه)، مع صور ثابتة PNG للمنظرين العاري والمطلي. كل ذلك مُدمَج، فالملف المضغوط يعمل دون اتصال.</p>`},
     'cad-chart':{title:'RCS مقابل زاوية النظر', html:`
 <h4>شنو تشوف</h4>
 <p>المقطع الراداري (dBsm) وأنت تلف الرادار حول الموديل. <strong>الأبيض المتصل</strong> = PO+PTD معدن عارٍ؛ <strong>الأخضر</strong> = مطلي؛ <strong>المتقطّع</strong> = PO بس (بدون حواف) — ينهار في القيعان اللي يعبّيها PTD. إذا شغّلت تحقّق openEMS تطلع نقطة برتقالية للموجة الكاملة.</p>`},
@@ -6276,6 +6364,14 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
 <ul><li>موجة مستوية (total-field/scattered-field) تصيب الهدف؛ صندوق near-field-to-far-field يلتقط المجال المبعثَر. <strong>RCS = 4π · كثافة القدرة المبعثَرة / كثافة القدرة الساقطة.</strong></li>
 <li><strong>Monostatic</strong> = الرادار يشوف رجوع مباشر (backscatter). <strong>Bistatic</strong> = المرسِل والمستقبِل بزوايا مختلفة.</li>
 <li>المتقطّع = الجواب التحليلي الدقيق (<strong>Mie</strong> للكرة، <strong>physical optics</strong> للصفيحة)؛ المتصل = حلّ openEMS المجال الكامل. مقدار المجال الكامل محدود بالـ mesh بكم dB — ثق بالشكل.</li></ul>
+<h4>البنية: عارية، مطليّة، أو صلبة</h4>
+<p>هذي ثلاثة أهداف مختلفة فيزيائياً، والحلّال يبني ثلاث هندسات مختلفة:</p>
+<ul>
+<li><strong>معدن عاري (PEC)</strong> — موصِل تام. الحالة المرجعية. ما تحتاج مادة.</li>
+<li><strong>معدن + طلاء</strong> — جسم معدني لابس طبقة رقيقة فاقدة بالسماكة اللي تحددها. هذي حالة المواد الماصّة للرادار، وهي نفس الترتيب اللي تصفه <em>خسارة الانعكاس</em> للمادة: الطبقة تمتصّ بهالشكل <em>لأن</em> خلفها معدن يرجّع الموجة عبرها مرة ثانية.</li>
+<li><strong>مادة صلبة</strong> — الجسم كله من المادة، وما فيه معدن داخله أبداً. الموجة تدخل، واللي ما ينمتصّ يقدر يطلع من الجهة الثانية.</li>
+</ul>
+<p>لهذا <strong>قائمة المواد مفلترة حسب البنية</strong>. لمّا تثبّت مادة في تبويب خسارة الانعكاس تقول إذا هي طلاء ولا مادة صلبة؛ فـ"معدن + طلاء" يعرض الطلاءات بس، و"مادة صلبة" يعرض الصلبة بس. إذا القائمة بانت فاضية، فما تم تثبيت شي لهالبنية بعد — ثبّت واحدة هناك، أو أدخلها تحت <strong>Custom material</strong>. هذا مقصود: عرض طبقة رقيقة ككتلة صلبة يسأل الحلّال بهدوء سؤال ثاني غير اللي وُصِفت المادة عشانه.</p>
 <h4>ليش الطلاءات مهمة</h4>
 <p>الهدف المعدني العاري يعكس بقوة. لو تطليه بمادة ماصّة (magnetite، carbonyl iron — مواد "(Mag)")، تنمتصّ الموجة بدل ما تنعكس، وينخفض الـ RCS. الـ <strong>تخفيض بالـ dB</strong> هو هدف المواد الماصّة للرادار والتخفّي (stealth). الطلاء الموصِل الصرف (فضة، نحاس، MXene كموصِل) ما يساعد وايد — يظل يعكس — والأداة بتبيّن هذا بصراحة.</p>`},
     'rlcalc':{title:'خسارة الانعكاس (RL) و RCS من ε/μ المقاسة', html:`
@@ -6643,7 +6739,7 @@ window.LabCal = (function(){
     });
     $('invdes-trade-print').addEventListener('click',()=>{
       const w=window.open('','_blank'); if(!w){alert('Allow pop-ups to export the report.');return;}
-      let b='<h1>Lightweight waveguide — trade-space report</h1><p>Generated '+new Date().toLocaleString()+' · v3.9 · objective: minimize '+O.lbl+' subject to '+targetLbl(target)+' · launch $'+launch+'/kg'+((window.LabCal&&window.LabCal.useIt())?' · coating σ from lab calibration':'')+'</p><table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;font-family:sans-serif;font-size:13px;"><tr><th>Band</th><th>Best design</th><th>Coats</th><th>Loss dB/m</th><th>Mass g/m</th><th>Delivered $/m</th><th>CO2 kg/m</th></tr>';
+      let b='<h1>Lightweight waveguide — trade-space report</h1><p>Generated '+new Date().toLocaleString()+' · v4.0 · objective: minimize '+O.lbl+' subject to '+targetLbl(target)+' · launch $'+launch+'/kg'+((window.LabCal&&window.LabCal.useIt())?' · coating σ from lab calibration':'')+'</p><table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;font-family:sans-serif;font-size:13px;"><tr><th>Band</th><th>Best design</th><th>Coats</th><th>Loss dB/m</th><th>Mass g/m</th><th>Delivered $/m</th><th>CO2 kg/m</th></tr>';
       bands.forEach(bk=>{const c=per[bk]; b+='<tr><td>'+bk+'</td><td>'+c.desc+'</td><td>'+(c.type==='coat'?c.coats:'-')+'</td><td>'+c.loss.toFixed(3)+'</td><td>'+(c.mass*1000).toFixed(1)+'</td><td>'+c.deliv.toFixed(0)+'</td><td>'+c.co2.toFixed(2)+'</td></tr>';});
       b+='</table><p style="font-family:sans-serif;font-size:12px;color:#555;margin-top:12px;">Analytical TE10 wall loss at band centre (Pozar, Microwave Engineering); mass, cost and CO2 from the cited material catalog. Screening result — confirm a chosen design with the full-wave openEMS solver.</p>';
       w.document.write('<html><head><title>Trade-space report</title></head><body style="font-family:sans-serif;padding:24px;">'+b+'</body></html>'); w.document.close(); w.focus(); setTimeout(()=>w.print(),300);
@@ -6800,7 +6896,7 @@ window.LabCal = (function(){
   function print(){
     const rows=last||checks(), nP=rows.filter(r=>r.pass).length, w=window.open('','_blank');
     if(!w){alert('Allow pop-ups to export the report.');return;}
-    let b='<h1>EM Waveguide Simulator — Validation Report</h1><p>Generated '+new Date().toLocaleString()+' · v3.9</p><p>'+nP+' / '+rows.length+' textbook benchmarks reproduced by the analytical engine.</p>'+
+    let b='<h1>EM Waveguide Simulator — Validation Report</h1><p>Generated '+new Date().toLocaleString()+' · v4.0</p><p>'+nP+' / '+rows.length+' textbook benchmarks reproduced by the analytical engine.</p>'+
       '<table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;font-family:sans-serif;font-size:13px;"><tr><th align="left">Benchmark</th><th>Expected</th><th>Computed</th><th>Unit</th><th>Result</th></tr>';
     rows.forEach(r=>{b+='<tr><td>'+r.name+'</td><td align="right">'+r.exp+'</td><td align="right">'+r.got.toFixed(3)+'</td><td>'+r.unit+'</td><td>'+(r.pass?'PASS':'CHECK')+'</td></tr>';});
     b+='</table><p style="font-family:sans-serif;font-size:12px;color:#555;margin-top:14px;">Benchmarks from Pozar, <i>Microwave Engineering</i> (waveguide loss, cutoff, skin depth), standard physical constants, and the tool’s mass model. Tolerances are absolute. This validates the fast analytical engine; the full-wave openEMS solver is validated separately against the analytical loss and the rated 15 dBi standard-gain horn.</p>';
@@ -7672,21 +7768,30 @@ window.LabCal = (function(){
     catch(e){ return []; }
   }
   function rcsLibFind(id){ var L=rcsLibGet(); for(var i=0;i<L.length;i++) if(String(L[i].id)===String(id)) return L[i]; return null; }
+  // The list is FILTERED BY CONSTRUCTION. A material pinned as a coating is a thin film that only has
+  // meaning backed by metal (that is exactly what its reflection loss was computed against on the RL
+  // tab), so offering it as a solid body — a homogeneous block of the stuff, no metal behind it — asks
+  // the solver a different question than the one the material was characterised for. Likewise a solid
+  // block is not a film to wrap a metal shell in. Each construction therefore sees only the materials
+  // pinned for it; "Bare metal (PEC)" needs no material at all.
   function populateCoat(){
     var sel=$('rcs-coat'); if(!sel) return;
-    var cur=sel.value, lib=rcsLibGet();
+    var c=$('rcs-construct')?$('rcs-construct').value:'pec', wantSolid=(c==='solid');
+    var cur=sel.value;
+    var lib=rcsLibGet().filter(function(m){ return ((m.kind==='solid')===wantSolid); });
     var opts='<option value="__custom">Custom material (enter values below)</option>';
     lib.forEach(function(m){
-      var kind=(m.kind==='solid')?'solid block':'coating';
-      opts+='<option value="lib:'+m.id+'">'+m.name+' — '+kind+', ε '+(+m.ep).toFixed(1)+'/'+Math.abs(+m.epp).toFixed(1)+
-            ', μ '+(+m.mup).toFixed(1)+'/'+Math.abs(+m.mupp).toFixed(1)+', '+(+m.thick).toFixed(2)+' mm</option>';
+      opts+='<option value="lib:'+m.id+'">'+m.name+' — ε '+(+m.ep).toFixed(1)+'/'+Math.abs(+m.epp).toFixed(1)+
+            ', μ '+(+m.mup).toFixed(1)+'/'+Math.abs(+m.mupp).toFixed(1)+
+            (wantSolid?'':', '+(+m.thick).toFixed(2)+' mm')+'</option>';
     });
     sel.innerHTML=opts;
     sel.value = (cur && sel.querySelector('option[value="'+cur+'"]')) ? cur : (lib.length?('lib:'+lib[0].id):'__custom');
-    var note=$('rcs-coat-note');
+    var note=$('rcs-coat-note'), word=wantSolid?'solid material':'coating';
     if(note) note.textContent = lib.length
-      ? (lib.length+' material'+(lib.length>1?'s':'')+' pinned. Pin more with 📌 on the Reflection-loss tab.')
-      : 'No materials pinned yet — pin one with 📌 on the Reflection-loss tab, or use Custom material below.';
+      ? (lib.length+' '+word+(lib.length>1?'s':'')+' pinned. Pin more with 📌 on the Reflection-loss tab.')
+      : ('No '+word+'s pinned yet — pin one with 📌 on the Reflection-loss tab (choose “'+word+
+         '” there), or use Custom material below.');
   }
   function coatParams(){
     var construct=$('rcs-construct')?$('rcs-construct').value:'pec';
@@ -7703,7 +7808,7 @@ window.LabCal = (function(){
         P={sigma:0, epsr:Math.max(1,+m.ep), epspp:Math.max(0,Math.abs(+m.epp)),
            mur:Math.max(0.1,+m.mup), mupp:Math.max(0,Math.abs(+m.mupp))};
         label=m.name+((m.kind==='solid')?' (solid block)':' (coating)');
-        if($('rcs-thick') && isFinite(+m.thick) && +m.thick>0) $('rcs-thick').value=(+m.thick).toFixed(2);
+        if(construct==='coated' && $('rcs-thick') && isFinite(+m.thick) && +m.thick>0) $('rcs-thick').value=(+m.thick).toFixed(2);
         return {construct:construct, label:S.shape+' + '+label, thick:(+m.thick)/1000, P:P, key:key, mat:m};
       }
     }
@@ -7745,8 +7850,11 @@ window.LabCal = (function(){
     prevShape=sh;
     if($('rcs-custband-wrap')) $('rcs-custband-wrap').style.display = ($('rcs-band').value==='Custom')?'':'none';
   }
+  var prevConstruct=null;
   function syncConstruct(){
     var c=$('rcs-construct')?$('rcs-construct').value:'pec';
+    // re-filter the material list whenever the construction changes (coating films vs solid blocks)
+    if(c!==prevConstruct){ prevConstruct=c; if(c!=='pec') populateCoat(); }
     if($('rcs-mat-wrap')) $('rcs-mat-wrap').style.display = (c==='pec')?'none':'';
     if($('rcs-mat-lab')) $('rcs-mat-lab').textContent = (c==='solid')?'Body material':'Coating material';
     if($('rcs-thick-wrap')) $('rcs-thick-wrap').style.display = (c==='coated')?'':'none';
@@ -9121,7 +9229,7 @@ window.LabCal = (function(){
       var x=t.getContext('2d'); x.fillStyle='#ffffff'; x.fillRect(0,0,t.width,t.height); x.drawImage(c,0,0); t.toBlob(function(b){res(b);},'image/png'); }); }
   function rlManifest(){
     var b=RL_LAST.best, mm=RL_MEAS_META||{}, mode=($('rlc-mode')||{}).value||'constant';
-    return { tool:'EM Waveguide & RCS Simulator', module:'Reflection loss (RL)', version:'v3.9',
+    return { tool:'EM Waveguide & RCS Simulator', module:'Reflection loss (RL)', version:'v4.0',
       material:$('rlc-name').value||'material',
       source: mode==='constant'?'constant ε/μ (typed)':(mm.src||'uploaded file'),
       detected_layout: mode==='constant'?null:(mm.layout||null),
@@ -10971,7 +11079,7 @@ window.CADRCS = {
     return lines.join('\n');
   }
   function manifest(){
-    return { tool:'EM Waveguide Simulator', module:'CAD-RCS (analytical PO + PTD)', version:'v3.9',
+    return { tool:'EM Waveguide Simulator', module:'CAD-RCS (analytical PO + PTD)', version:'v4.0',
       model:MESH?MESH.src:null, parts:MESH?MESH.segs.map(function(s){return {name:s.name,ntri:s.ntri,area_cm2:+s.area_cm2.toFixed(1)};}):null,
       triangles:MESH?MESH.ntri:null, edges:MESH?MESH.nedge:null, half_extent_mm:MESH?+(MESH.half_m*1000).toFixed(1):null,
       frequency_GHz:LAST?LAST.f:null, sweep_plane:LAST?LAST.plane:null, polarization:LAST?LAST.pol:null, ptd:LAST?LAST.usePTD:null,
@@ -11061,6 +11169,37 @@ window.CADRCS = {
     });
     return L.join('\n');
   }
+  // Capture n frames of the shaded model around a full turn. Each frame FORCES a synchronous
+  // renderer.render() before reading the canvas — viewerDraw() alone only rebuilds the geometry and
+  // leaves the actual paint to requestAnimationFrame, which is exactly why the first rotating export
+  // came out static (all frames were the last painted image).
+  function captureTurn(n, coated, maxW){
+    var cv=document.querySelector('#cad-field3d canvas');
+    if(!cv||!V.ren||!V.scene||!V.cam||!V.grp) return null;
+    var sc=Math.min(1,(maxW||cv.width)/cv.width);
+    var w=Math.max(2,Math.round(cv.width*sc)), h=Math.max(2,Math.round(cv.height*sc));
+    var c2=document.createElement('canvas'); c2.width=w; c2.height=h;
+    var g2=c2.getContext('2d',{willReadFrequently:true});
+    var out=[];
+    for(var i=0;i<n;i++){
+      viewerDraw(Math.round(i*360/n), coated);
+      try{
+        V.grp.rotation.x=V.rotX; V.grp.rotation.y=V.rotY;
+        V.cam.position.set(0,0,V.base*V.dist); V.cam.lookAt(0,0,0);
+        V.ren.render(V.scene,V.cam);                     // synchronous — do not wait for a frame
+      }catch(e){ return null; }
+      g2.fillStyle='#0d1117'; g2.fillRect(0,0,w,h);
+      g2.drawImage(cv,0,0,w,h);
+      out.push({rgba:g2.getImageData(0,0,w,h).data, jpeg:c2.toDataURL('image/jpeg',0.72)});
+    }
+    return {w:w, h:h, frames:out};
+  }
+  function rotatingGif(){
+    if(!LAST||!MESH){ $('cad-runstatus').textContent='Compute first.'; return null; }
+    var cap=captureTurn(12, LAST.coat!=null, 360);
+    if(!cap){ $('cad-runstatus').textContent='The 3-D view has to be on screen to record it.'; return null; }
+    return gifEncode(cap.frames.map(function(f){return f.rgba;}), cap.w, cap.h, 12);
+  }
   function dlAll(){
     if(!LAST){ $('cad-runstatus').textContent='Compute first.'; return; }
     if(!window.JSZip){ $('cad-runstatus').textContent='JSZip not available.'; return; }
@@ -11098,32 +11237,43 @@ window.CADRCS = {
         return viewPNG().then(function(b2){ if(b2) zip.file('model_3D_facets_coated.png', b2); });
       });
     }).then(function(){
-      // A rotating view without adding a GIF encoder dependency: capture frames from the live
-      // viewer and inline them as data URIs in one self-contained HTML page. Double-clickable,
-      // works offline, and shows the shape from every side the way a GIF would.
-      var cv=document.querySelector('#cad-field3d canvas');
-      if(!cv) return null;
-      var frames=[], N=18, showCoat=(LAST.coat!=null);
-      for(var i=0;i<N;i++){
-        var ang=Math.round(i*360/N);
-        viewerDraw(ang, showCoat);
-        var d=null;
-        try{ var c2=document.createElement('canvas'); c2.width=cv.width; c2.height=cv.height;
-             var g2=c2.getContext('2d'); g2.fillStyle='#0d1117'; g2.fillRect(0,0,c2.width,c2.height);
-             g2.drawImage(cv,0,0); d=c2.toDataURL('image/jpeg',0.72); }catch(e){}
-        if(d) frames.push(d);
-      }
-      if(!frames.length) return null;
+      // Rotating outputs, both from ONE capture: a real animated .gif and a self-contained HTML
+      // player. captureTurn() forces a synchronous render per frame — without that every frame is
+      // the last painted image, which is why the first version of this file came out static.
+      var cap=captureTurn(12, LAST.coat!=null, 360);
+      if(!cap) return null;
+      try{ zip.file('model_3D_rotating.gif', gifEncode(cap.frames.map(function(f){return f.rgba;}), cap.w, cap.h, 12)); }catch(e){}
+      var jpegs=cap.frames.map(function(f){return f.jpeg;});
       zip.file('model_3D_rotating.html',
-        '<!doctype html><meta charset="utf-8"><title>'+String(MESH.src).replace(/[<>]/g,'')+' — rotating view</title>'+
+        '<!doctype html><meta charset="utf-8"><title>'+String(MESH.src).replace(/[<>]/g,'')+' \u2014 rotating view</title>'+
         '<style>html,body{margin:0;background:#0d1117;color:#cdd6d1;font:13px/1.5 system-ui,sans-serif;'+
         'display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh}'+
-        'img{max-width:96vw;max-height:80vh;border-radius:8px}p{opacity:.75;margin:12px 16px;text-align:center;max-width:70ch}</style>'+
-        '<img id="f"><p>'+String(MESH.src).replace(/[<>]/g,'')+' — facets shaded by their echo contribution at each look-angle '+
-        '('+LAST.f+' GHz, '+LAST.plane+' sweep, '+LAST.pol+'-pol'+(showCoat?', coated':'')+'). '+
-        'Red = strongest return, blue = weak, dark = facing away. Frames are embedded, so this file works offline.</p>'+
-        '<script>var F='+JSON.stringify(frames)+',i=0,e=document.getElementById("f");'+
-        'e.src=F[0];setInterval(function(){i=(i+1)%F.length;e.src=F[i];},110);<\/script>');
+        '#f{max-width:96vw;max-height:74vh;border-radius:8px;cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none}'+
+        '#f.drag{cursor:grabbing}p{opacity:.75;margin:10px 16px;text-align:center;max-width:70ch}'+
+        'button{background:#1b2a24;color:#cdd6d1;border:1px solid #2c4038;border-radius:20px;padding:7px 15px;'+
+        'font:12px system-ui,sans-serif;cursor:pointer;margin-top:4px}</style>'+
+        '<img id="f" draggable="false"><button id="p">Pause</button>'+
+        '<p>'+String(MESH.src).replace(/[<>]/g,'')+' \u2014 facets shaded by their echo contribution at each '+
+        'look-angle ('+LAST.f+' GHz, '+LAST.plane+' sweep, '+LAST.pol+'-pol'+(LAST.coat!=null?', coated':'')+'). '+
+        'Red = strongest return, blue = weak, dark = facing away. It spins on its own; '+
+        '<strong>drag left/right to turn it by hand</strong>, or use the button. Frames are embedded, so this file works offline.</p>'+
+        '<script>(function(){var F='+JSON.stringify(jpegs)+',i=0,e=document.getElementById("f"),b=document.getElementById("p");'+
+        'e.src=F[0];var t=null,run=false;'+
+        'function show(k){i=((k%F.length)+F.length)%F.length;e.src=F[i];}'+
+        'function play(){if(t)return;run=true;b.textContent="Pause";t=setInterval(function(){show(i+1);},110);}'+
+        'function stop(){run=false;b.textContent="Play";if(t){clearInterval(t);t=null;}}'+
+        'b.onclick=function(){run?stop():play();};'+
+        'var dx=0,px=0,down=false;'+
+        'function s(x){down=true;px=x;dx=0;stop();e.classList.add("drag");}'+
+        'function m(x){if(!down)return;dx+=x-px;px=x;var st=Math.trunc(dx/18);if(st){show(i-st);dx-=st*18;}}'+
+        'function u(){down=false;e.classList.remove("drag");}'+
+        'e.addEventListener("mousedown",function(ev){s(ev.clientX);ev.preventDefault();});'+
+        'window.addEventListener("mousemove",function(ev){m(ev.clientX);});'+
+        'window.addEventListener("mouseup",u);'+
+        'e.addEventListener("touchstart",function(ev){s(ev.touches[0].clientX);},{passive:true});'+
+        'e.addEventListener("touchmove",function(ev){m(ev.touches[0].clientX);ev.preventDefault();},{passive:false});'+
+        'e.addEventListener("touchend",u,{passive:true});'+
+        'play();})();<\/script>');
       return null;
     }).then(function(){
       if(slider&&savedAng!=null) slider.value=savedAng;       // put the viewer back as the user had it
@@ -11368,9 +11518,101 @@ window.CADRCS = {
     if((b=$('cad-opt-stl')))    b.addEventListener('click', optSTL);
     if((b=$('cad-opt-csv')))    b.addEventListener('click', optCSV);
     if((b=$('cad-opt-revert'))) b.addEventListener('click', optRevert);
+    if((b=$('cad-gif'))) b.addEventListener('click',function(){
+      $('cad-runstatus').textContent='recording the rotating view…';
+      var sl=$('cad-view-ang'), sa=sl?sl.value:null, cb=$('cad-view-coat'), sc=cb?!!cb.checked:false;
+      var gif=rotatingGif();
+      if(sl&&sa!=null) sl.value=sa; if(cb) cb.checked=sc;
+      try{ viewerDraw(parseFloat(sa!=null?sa:LAST.pkAng), sc); }catch(e){}
+      if(!gif) return;
+      var u=URL.createObjectURL(gif), a=document.createElement('a');
+      a.href=u; a.download='CAD_RCS_'+safe()+'_rotating.gif'; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){URL.revokeObjectURL(u);},4000);
+      $('cad-runstatus').textContent='downloaded the rotating GIF ('+(gif.size/1024).toFixed(0)+' kB, 12 frames).';
+    });
     if((b=$('cad-manifest'))) b.addEventListener('click',function(){ if(LAST) dl(JSON.stringify(manifest(),null,2),'CAD_RCS_manifest_'+safe()+'.json','application/json'); });
     if((b=$('cad-mathbtn'))) b.addEventListener('click',showMath);
     if((b=$('cad-verify'))) b.addEventListener('click',verifyOpenems);
+  }
+
+  /* ------------------------------------------------------------------------------------------
+   * Minimal animated GIF89a encoder. Needed because the owner wants a downloadable .gif of the
+   * shaded model rotating, and adding a CDN encoder would break the "one self-contained file"
+   * rule and the offline case. Frames are quantised to a fixed 252-colour palette built from the
+   * jet ramp the viewer already uses plus a grey ramp, which is exactly the colour content of
+   * these renders, then LZW-compressed per frame.
+   * ---------------------------------------------------------------------------------------- */
+  function gifPalette(){
+    var pal=[], i;
+    for(i=0;i<216;i++){                       // 216 jet-ramp entries: the facet colours
+      var c=jet(i/215); pal.push([Math.round(c[0]*255),Math.round(c[1]*255),Math.round(c[2]*255)]);
+    }
+    for(i=0;i<40;i++){ var g=Math.round(i*255/39); pal.push([g,g,g]); }   // greys: background + dark facets
+    return pal;                                                          // 256 total
+  }
+  var GIF_LUT=null;
+  function gifQuantise(rgba,w,h,pal){
+    if(!GIF_LUT) GIF_LUT=new Int16Array(32768).fill(-1);      // 5 bits per channel, shared per session
+    var idx=new Uint8Array(w*h);
+    for(var p=0,q=0;p<rgba.length;p+=4,q++){
+      var r=rgba[p],g=rgba[p+1],b=rgba[p+2];
+      var key=((r>>3)<<10)|((g>>3)<<5)|(b>>3), hit=GIF_LUT[key];
+      if(hit<0){
+        var best=0, bd=1e9;
+        for(var k=0;k<pal.length;k++){
+          var dr=r-pal[k][0], dg=g-pal[k][1], db=b-pal[k][2], d=dr*dr+dg*dg+db*db;
+          if(d<bd){ bd=d; best=k; if(!d) break; }
+        }
+        hit=GIF_LUT[key]=best;
+      }
+      idx[q]=hit;
+    }
+    return idx;
+  }
+  // LZW exactly as GIF89a specifies: dictionary keyed by (prefix code, next byte), variable code
+  // width 9..12 bits, clear/end codes, output packed LSB-first into <=255-byte sub-blocks.
+  function gifLZW(idx,minCode){
+    var clear=1<<minCode, end=clear+1, next=end+1, size=minCode+1;
+    var dict=new Map(), out=[], cur=0, bits=0;
+    function emit(code){ cur|=code<<bits; bits+=size;
+      while(bits>=8){ out.push(cur&255); cur>>=8; bits-=8; } }
+    emit(clear);
+    var prefix=idx[0];
+    for(var i=1;i<idx.length;i++){
+      var k=idx[i], key=(prefix<<8)|k, found=dict.get(key);
+      if(found!==undefined){ prefix=found; continue; }
+      emit(prefix);
+      dict.set(key,next++);
+      if(next>(1<<size) && size<12) size++;
+      if(next>4095){ emit(clear); dict.clear(); next=end+1; size=minCode+1; }
+      prefix=k;
+    }
+    emit(prefix); emit(end);
+    if(bits>0) out.push(cur&255);
+    var blocks=[];
+    for(var o=0;o<out.length;o+=255){
+      var chunk=out.slice(o,o+255); blocks.push(chunk.length);
+      for(var c=0;c<chunk.length;c++) blocks.push(chunk[c]);
+    }
+    blocks.push(0);
+    return blocks;
+  }
+  function gifEncode(frames,w,h,delayCs){
+    var pal=gifPalette(), B=[];
+    function str(x){ for(var i=0;i<x.length;i++) B.push(x.charCodeAt(i)); }
+    function u16(v){ B.push(v&255,(v>>8)&255); }
+    str('GIF89a'); u16(w); u16(h);
+    B.push(0xF7, 0, 0);                                  // global table, 256 colours, 8 bpp
+    for(var i=0;i<256;i++){ var c=pal[i]||[0,0,0]; B.push(c[0],c[1],c[2]); }
+    B.push(0x21,0xFF,0x0B); str('NETSCAPE2.0'); B.push(3,1); u16(0); B.push(0);   // loop forever
+    frames.forEach(function(fr){
+      B.push(0x21,0xF9,0x04,0x04); u16(delayCs); B.push(0,0);                     // graphic control
+      B.push(0x2C); u16(0); u16(0); u16(w); u16(h); B.push(0);                    // image descriptor
+      B.push(8);                                                                  // LZW min code size
+      B=B.concat(gifLZW(gifQuantise(fr,w,h,pal),8));
+    });
+    B.push(0x3B);
+    return new Blob([new Uint8Array(B)],{type:'image/gif'});
   }
 
   /* ==========================================================================================
@@ -11427,7 +11669,7 @@ window.CADRCS = {
      All of them keep the axial extent fixed (they only move transverse coordinates, or move axial
      coordinates within the existing span), so length is preserved by construction. */
   var LEVERS=[
-    { id:'nose', name:'Sharpen the nose', unit:'ogive power', grid:[1.3,1.7,2.2,3.0,4.0],
+    { id:'nose', name:'Sharpen the nose', unit:'ogive power', grid:[1.4,1.8,2.4,3.0],
       why:'A blunter nose presents a near-normal surface head-on. Raising the ogive power pulls the forward radius in, so the nose-on specular is spread over a steeper, smaller-normal surface.',
       fn:function(vm,k){ var F=meshFrame(vm), out=new Array(vm.length), zN=F.lo[F.ax]+0.30*F.len;
         for(var i=0;i<vm.length;i++){ var p=vm[i].slice();
@@ -11436,7 +11678,7 @@ window.CADRCS = {
             p[F.t1]*=f; p[F.t2]*=f; }
           out[i]=p; }
         return out; } },
-    { id:'tail', name:'Boat-tail the aft end', unit:'aft radius ×', grid:[0.85,0.72,0.60,0.48,0.35],
+    { id:'tail', name:'Boat-tail the aft end', unit:'aft radius ×', grid:[0.88,0.78,0.68,0.58],
       why:'A flat or full base is a broadside-facing disc. Contracting the aft radius removes that normal-incidence area and tilts the aft surface away from the sector.',
       fn:function(vm,k){ var F=meshFrame(vm), out=new Array(vm.length), zT=F.hi[F.ax]-0.30*F.len;
         for(var i=0;i<vm.length;i++){ var p=vm[i].slice();
@@ -11444,18 +11686,18 @@ window.CADRCS = {
             p[F.t1]*=f; p[F.t2]*=f; }
           out[i]=p; }
         return out; } },
-    { id:'taper', name:'Taper the body', unit:'fore/aft radius ratio', grid:[0.90,0.80,0.70,1.15,1.30],
+    { id:'taper', name:'Taper the body', unit:'fore/aft radius ratio', grid:[0.90,0.82,0.74,1.14],
       why:'A constant-radius cylinder returns a broadside specular line at exactly 90°. A steady taper rotates every side normal off broadside, so the flash leaves the sector.',
       fn:function(vm,k){ var F=meshFrame(vm), out=new Array(vm.length);
         for(var i=0;i<vm.length;i++){ var p=vm[i].slice(), u=(p[F.ax]-F.lo[F.ax])/F.len, f=1+(k-1)*(1-u);
           p[F.t1]*=f; p[F.t2]*=f; out[i]=p; }
         return out; } },
-    { id:'ellipse', name:'Flatten the cross-section', unit:'width/height', grid:[0.75,0.60,0.48,1.35,1.7],
+    { id:'ellipse', name:'Flatten the cross-section', unit:'width/height', grid:[0.82,0.70,1.22,1.40],
       why:'A circular section always presents a normal somewhere in every azimuth. An elliptical (or faceted) section concentrates the normals into fewer azimuths, which can be aimed away from the threat sector.',
       fn:function(vm,k){ var F=meshFrame(vm), out=new Array(vm.length), s=Math.sqrt(k);
         for(var i=0;i<vm.length;i++){ var p=vm[i].slice(); p[F.t1]*=s; p[F.t2]/=s; out[i]=p; }
         return out; } },
-    { id:'sweep', name:'Sweep the planform back', unit:'shear (° from normal)', grid:[15,25,35,45,55],
+    { id:'sweep', name:'Sweep the planform back', unit:'shear (° from normal)', grid:[10,18,26,34],
       why:'Ufimtsev PTD: an edge radiates a cone about itself, so an edge perpendicular to the line of sight throws its diffraction lobe straight back. Sweeping the planform rotates every leading edge out of that condition (planform alignment).',
       fn:function(vm,k){ var F=meshFrame(vm), out=new Array(vm.length), t=Math.tan(k*Math.PI/180);
         for(var i=0;i<vm.length;i++){ var p=vm[i].slice();
@@ -11465,7 +11707,7 @@ window.CADRCS = {
         var G=meshFrame(out), sc=F.len/(G.len||1e-9), z0=G.lo[F.ax];
         for(var j=0;j<out.length;j++) out[j][F.ax]=F.lo[F.ax]+(out[j][F.ax]-z0)*sc;
         return out; } },
-    { id:'cant', name:'Cant the appendages', unit:'roll (°)', grid:[10,20,30,40,50],
+    { id:'cant', name:'Cant the appendages', unit:'roll (°)', grid:[8,15,22,30],
       why:'Fins and panels normal to the incident wave are strong flat-plate scatterers. Rolling them about the body axis moves their specular peak to a different azimuth, and their edges out of perpendicularity.',
       fn:function(vm,k){ var F=meshFrame(vm), out=vm.map(function(p){return p.slice();});
         // "appendages" = every segment except the largest by area (the body)
@@ -11478,7 +11720,7 @@ window.CADRCS = {
           var x=out[i][F.t1], y=out[i][F.t2];
           out[i][F.t1]=x*c-y*s2; out[i][F.t2]=x*s2+y*c; }
         return out; } },
-    { id:'tilt', name:'Tilt the dominant part', unit:'tilt (°)', grid:[6,12,18,25,32],
+    { id:'tilt', name:'Tilt the dominant part', unit:'tilt (°)', grid:[4,8,14,20],
       why:'Whichever part carries most of the return is the one worth tilting: a flat panel\'s PO lobe is a narrow beam about its normal, so a few degrees of tilt can drop its contribution by tens of dB in that direction.',
       fn:function(vm,k){ var F=meshFrame(vm), out=vm.map(function(p){return p.slice();});
         var dom=dominantSeg(); if(dom==null) return out;
@@ -11497,7 +11739,7 @@ window.CADRCS = {
         var G=meshFrame(out), sc=F.len/(G.len||1e-9), z0=G.lo[F.ax];
         for(var q=0;q<out.length;q++) out[q][F.ax]=F.lo[F.ax]+(out[q][F.ax]-z0)*sc;
         return out; } },
-    { id:'slim', name:'Slim the dominant part', unit:'transverse ×', grid:[0.92,0.85,0.78,0.70,0.60],
+    { id:'slim', name:'Slim the dominant part', unit:'transverse ×', grid:[0.94,0.88,0.82,0.76],
       why:'A direct area trade: PO backscatter from a flat region goes as area², so narrowing the biggest contributor buys signature at a cost in internal volume — which is why the volume column matters here.',
       fn:function(vm,k){ var F=meshFrame(vm), out=vm.map(function(p){return p.slice();});
         var dom=dominantSeg(); if(dom==null) return out;
@@ -11507,6 +11749,106 @@ window.CADRCS = {
         for(var i=0;i<out.length;i++){ if(!mark[i]) continue; out[i][F.t1]*=k; out[i][F.t2]*=k; }
         return out; } }
   ];
+
+  /* A deformation is only a design suggestion if the result is still a sensible solid. Unconstrained
+   * vertex moves can invert facets, fold a wing into a sliver, or rotate a fin bodily through the
+   * fuselage — and PO would happily report a large "improvement" for such a thing. Every candidate is
+   * therefore audited against the undeformed mesh and REJECTED if it fails, with the reason recorded.
+   * Note the honest limit of this gate: it checks GEOMETRY only. It knows nothing about aerodynamics,
+   * structures, internal packaging or manufacturability, and it says so on the panel. */
+  function segName(id){
+    var s=(MESH&&MESH.segs||[]).filter(function(x){return String(x.id)===String(id);})[0];
+    return s&&s.name ? s.name : ('part '+id);
+  }
+  function meshAudit(vm,tris,axisHint,sideHint){
+    var n=tris.length, nrm=new Float64Array(n*3), area=new Float64Array(n), tot=0;
+    for(var t=0;t<n;t++){
+      var A=vm[tris[t].i], B=vm[tris[t].j], D=vm[tris[t].k];
+      var ux=B[0]-A[0],uy=B[1]-A[1],uz=B[2]-A[2], wx=D[0]-A[0],wy=D[1]-A[1],wz=D[2]-A[2];
+      var cx=uy*wz-uz*wy, cy=uz*wx-ux*wz, cz=ux*wy-uy*wx, L=Math.hypot(cx,cy,cz);
+      area[t]=0.5*L; tot+=area[t];
+      if(L>1e-18){ nrm[t*3]=cx/L; nrm[t*3+1]=cy/L; nrm[t*3+2]=cz/L; }
+    }
+    // per-part bounding boxes, and the largest part's box (the "body")
+    var boxes={}, big=null, bigA=-1;
+    for(var q=0;q<n;q++){ var sid=tris[q].segId||0, b=boxes[sid];
+      if(!b) b=boxes[sid]={lo:[1e30,1e30,1e30],hi:[-1e30,-1e30,-1e30],a:0};
+      b.a+=area[q];
+      [tris[q].i,tris[q].j,tris[q].k].forEach(function(vi){ var v=vm[vi];
+        for(var d=0;d<3;d++){ if(v[d]<b.lo[d])b.lo[d]=v[d]; if(v[d]>b.hi[d])b.hi[d]=v[d]; } });
+    }
+    for(var k in boxes) if(boxes[k].a>bigA){ bigA=boxes[k].a; big=k; }
+    // How much of each part sits inside the body — measured RADIALLY about the body axis, not against
+    // the body's axis-aligned box. The box version is rotation-sensitive: rolling a fin about the body
+    // axis keeps its true clearance identical, but sweeps its vertices through the box's CORNERS, so
+    // the test flagged "drives a part into the body" for a pure rotation that penetrates nothing. Since
+    // canting appendages is one of the most effective and most buildable signature fixes there is, that
+    // false rejection was throwing away good designs. Radius about the axis is invariant under exactly
+    // the rotation that was tripping it, and still rises when a part is genuinely tilted inward.
+    var BB=boxes[big];
+    var ax=(axisHint!=null)?axisHint:0;
+    if(axisHint==null){ var be=[BB.hi[0]-BB.lo[0],BB.hi[1]-BB.lo[1],BB.hi[2]-BB.lo[2]];
+      ax=(be[1]>be[0])?1:0; if(be[2]>be[ax]) ax=2; }
+    var u=(ax+1)%3, v=(ax+2)%3;
+    var cu=0.5*(BB.lo[u]+BB.hi[u]), cv=0.5*(BB.lo[v]+BB.hi[v]);
+    // inscribed transverse radius: for a round body it is exact, for a square-section body it
+    // under-covers the corners, i.e. it errs toward NOT flagging — the safe direction here.
+    var rB=0.5*Math.min(BB.hi[u]-BB.lo[u], BB.hi[v]-BB.lo[v]);
+    // Only APPENDAGES can be "driven into the body" — a fin, wing, rotor or pod sits alongside the
+    // fuselage, so its axial span overlaps the body's. A nose cone or a nozzle is in SERIES with the
+    // body, fore or aft of it, and pulling its profile inward (which is exactly what sharpening a nose
+    // does) is not penetration. Testing those too produced a false "drives a part into the body" for
+    // the sharpen-nose lever. Which parts count is decided from the REFERENCE mesh and reused, so a
+    // deformation can never change the population being tested.
+    var alongside=(axisHint!=null&&sideHint)?sideHint:{};
+    if(!(axisHint!=null&&sideHint)){
+      for(var kb in boxes){ if(String(kb)===String(big)){ alongside[kb]=false; continue; }
+        var pb=boxes[kb], lo=Math.max(pb.lo[ax],BB.lo[ax]), hi=Math.min(pb.hi[ax],BB.hi[ax]);
+        var ov=Math.max(0,hi-lo), own=pb.hi[ax]-pb.lo[ax];
+        alongside[kb]=(own>1e-9)?(ov/own>=0.5):false;
+      }
+    }
+    var inside={}, cnt={};
+    for(var r=0;r<n;r++){ var sid2=tris[r].segId||0; if(String(sid2)===String(big)) continue;
+      if(!alongside[sid2]) continue;
+      var c=vm[tris[r].i];
+      var rad=Math.hypot(c[u]-cu, c[v]-cv);
+      var isIn=(rB>1e-9 && rad < 0.95*rB && c[ax]>=BB.lo[ax] && c[ax]<=BB.hi[ax]);
+      inside[sid2]=(inside[sid2]||0)+(isIn?1:0); cnt[sid2]=(cnt[sid2]||0)+1; }
+    var inFrac={}; for(var k2 in cnt) inFrac[k2]=inside[k2]/cnt[k2];
+    return {nrm:nrm, area:area, totArea:tot, boxes:boxes, big:big, ax:ax, alongside:alongside, inFrac:inFrac, vol:meshVolume(vm,tris)};
+  }
+  function validateShape(ref,vm2,tris,maxVolLossPct){
+    var au=meshAudit(vm2,tris,ref.ax,ref.alongside), n=tris.length, flip=0, degen=0;
+    for(var t=0;t<n;t++){
+      var d=au.nrm[t*3]*ref.nrm[t*3]+au.nrm[t*3+1]*ref.nrm[t*3+1]+au.nrm[t*3+2]*ref.nrm[t*3+2];
+      if(d<0) flip++;                                          // normal reversed => folded/inverted
+      if(ref.area[t]>1e-18 && au.area[t] < 0.2*ref.area[t]) degen++;   // collapsed to a sliver
+    }
+    var fF=flip/n, dF=degen/n;
+    var volR=(ref.vol>0)?au.vol/ref.vol:1, arR=(ref.totArea>0)?au.totArea/ref.totArea:1;
+    var why=null;
+    if(fF>0.005) why='folds the surface ('+(fF*100).toFixed(1)+'% of facets inverted)';
+    else if(dF>0.02) why='collapses '+(dF*100).toFixed(1)+'% of facets into slivers';
+    else if(volR<1-Math.max(1,maxVolLossPct)/100) why='loses '+((1-volR)*100).toFixed(0)+'% of the enclosed volume (limit '+maxVolLossPct+'%)';
+    else if(volR>1.5) why='inflates the volume '+((volR-1)*100).toFixed(0)+'%';
+    else if(arR<0.6||arR>1.8) why='changes the wetted area by '+((arR-1)*100).toFixed(0)+'%';
+    if(!why){
+      // a part must not be squashed flat, nor driven bodily inside the main body
+      for(var k in au.boxes){
+        var b=au.boxes[k], r0=ref.boxes[k]; if(!r0) continue;
+        var e=[b.hi[0]-b.lo[0],b.hi[1]-b.lo[1],b.hi[2]-b.lo[2]];
+        var e0=[r0.hi[0]-r0.lo[0],r0.hi[1]-r0.lo[1],r0.hi[2]-r0.lo[2]];
+        for(var d2=0;d2<3;d2++){
+          if(e0[d2]>1e-9 && e[d2] < 0.35*e0[d2]){ why='flattens '+segName(k)+' to '+(100*e[d2]/e0[d2]).toFixed(0)+'% of a dimension'; break; }
+        }
+        if(why) break;
+        if(au.inFrac[k]!=null && ref.inFrac[k]!=null && au.inFrac[k] > ref.inFrac[k]+0.15){
+          why='drives '+segName(k)+' into the body ('+(100*(au.inFrac[k]-ref.inFrac[k])).toFixed(0)+'% more of it now inside)'; break; }
+      }
+    }
+    return {ok:!why, why:why, flipPct:fF*100, degenPct:dF*100, volRatio:volR, areaRatio:arR};
+  }
 
   function optSector(){
     var c=parseFloat($('cad-opt-c').value); if(!isFinite(c)) c=0;
@@ -11561,7 +11903,11 @@ window.CADRCS = {
     var vm0=MESH.vm, tris=MESH.tris;
     var m0=meshMetrics(vm0), v0=meshVolume(vm0,tris);
     var base=evalShape(vm0,tris,sector,f,lam,plane,pol,usePTD,gfn);
-    var rows=[], i=0, stage=1, chain=[], chainVm=vm0, chainMean=base.mean, chainPeak=base.peak, used={}, skipped=[];
+    var maxVol=Math.max(0,Math.min(60,parseFloat($('cad-opt-vol').value)));
+    if(!isFinite(maxVol)) maxVol=15;
+    var REF=meshAudit(vm0,tris);                     // the yardstick every candidate is judged against
+    var rows=[], i=0, stage=1, chain=[], chainVm=vm0, chainMean=base.mean, chainPeak=base.peak, used={},
+        skipped=[], rejected=[];
     OPT_RUNNING=true; OPT_STOP=false;
     $('cad-opt-run').disabled=true; $('cad-opt-stop').style.display='';
     var total=jobs.length*rounds;
@@ -11570,6 +11916,8 @@ window.CADRCS = {
     function finish(){
       OPT_RUNNING=false; $('cad-opt-run').disabled=false; $('cad-opt-stop').style.display='none';
       $('cad-opt-bar').style.display='none';
+      if(rejected.length){ console.log('shape search rejected '+rejected.length+' geometrically invalid candidate(s):', rejected);
+        $('cad-opt-status').textContent+='  ·  '+rejected.length+' rejected as invalid geometry'; }
       if(skipped.length){ console.log('shape search skipped '+skipped.length+' candidate(s):', skipped);
         $('cad-opt-status').textContent+='  ·  '+skipped.length+' candidate'+(skipped.length===1?'':'s')+' skipped (see console)'; }
       // Release every candidate's vertex array except the adopted chain's. optRender() never reads
@@ -11578,6 +11926,7 @@ window.CADRCS = {
       rows.forEach(function(r){ r.vm=null; });
       var mB=meshMetrics(chainVm), vB=meshVolume(chainVm,tris);
       OPT={ sector:sector, f:f, plane:plane, pol:pol, usePTD:usePTD,
+            maxVol:maxVol, rejected:rejected.slice(),
             base:{mean:base.mean, peak:base.peak, len:m0.len, dia:m0.dia, vol:v0},
             best:{mean:chainMean, peak:chainPeak, len:mB.len, dia:mB.dia, vol:vB},
             chain:chain.slice(), rows:rows.slice(), vm:chainVm, secs:((Date.now()-t0)/1000) };
@@ -11610,6 +11959,9 @@ window.CADRCS = {
         try{
           var vm2=j.L.fn(chainVm, j.k);
           if(!vm2 || vm2.length!==chainVm.length) continue;
+          // GEOMETRY GATE FIRST — a mangled mesh must never be scored, let alone win
+          var vd=validateShape(REF,vm2,tris,maxVol);
+          if(!vd.ok){ rejected.push(j.L.name+' @ '+j.L.unit+'='+j.k+' — '+vd.why); continue; }
           var r=evalShape(vm2,tris,sector,f,lam,plane,pol,usePTD,gfn);
           if(!r || !isFinite(r.mean)) continue;
           var mm=meshMetrics(vm2), vv=meshVolume(vm2,tris);
@@ -11685,7 +12037,31 @@ window.CADRCS = {
     });
     $('cad-opt-table').innerHTML=h+'</tbody>';
 
-    $('cad-opt-caveat').textContent='Scope, stated plainly: these numbers are this tool\'s validated PO + first-order PTD prediction on a genuinely deformed mesh — specular and single-edge scattering only. It cannot see multiple bounces, so a deformation that opens a corner or a cavity (an inlet, a nozzle, a step between panels) will be UNDERESTIMATED, and it cannot see creeping or travelling waves, which matter for smooth bodies near a wavelength across. The search is a coordinate descent over '+LEVERS.length+' closed-form deformations, not a free-form shape optimiser, so it finds the best combination of THESE levers, not the global optimum. Treat a winning shape as a candidate to take back into CAD and confirm — with the openEMS cross-check for a small part, or a measurement.';
+    var rj=(OPT.rejected||[]);
+    var rjBox=$('cad-opt-rejects');
+    if(rjBox){
+      if(!rj.length) rjBox.innerHTML='';
+      else rjBox.innerHTML='<details style="margin:0 0 10px;"><summary style="cursor:pointer;color:var(--muted);'+
+        'font-family:var(--font-mono);font-size:11.5px;">'+rj.length+' candidate'+(rj.length===1?'':'s')+
+        ' rejected as invalid geometry — show why</summary>'+
+        '<ul style="margin:8px 0 0 4px;padding-left:18px;font-family:var(--font-mono);font-size:11px;color:var(--faint);line-height:1.75;">'+
+        rj.map(function(x){ return '<li>'+String(x).replace(/[<>&]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c];})+'</li>'; }).join('')+
+        '</ul></details>';
+    }
+    $('cad-opt-caveat').textContent=
+      'Every candidate is checked for geometric validity BEFORE it is scored, and rejected if it folds the '+
+      'surface (inverted facets), collapses facets into slivers, flattens a part below 35% of a dimension, '+
+      'drives a part bodily into the fuselage, changes the wetted area by more than about half, or loses more '+
+      'than the '+OPT.maxVol+'% of enclosed volume you allowed. That volume budget is CUMULATIVE across the '+
+      'stages — it is measured against your original model, not the previous stage — so later stages have less '+
+      'room left, which is why a change that passed on its own can be refused once an earlier one is already '+
+      'in the chain. '+
+      (rj.length? (rj.length+' candidate'+(rj.length===1?' was':'s were')+' rejected in this search; the reasons are listed just above. ')
+                : 'No candidate had to be rejected in this search. ')+
+      'That gate is GEOMETRY ONLY: it cannot judge aerodynamics, structural load paths, internal volume '+
+      'packaging, control authority, thermal or manufacturability, so a shape that passes it is a starting '+
+      'point for a designer, not a finished design. '+
+      'Scope, stated plainly: these numbers are this tool\'s validated PO + first-order PTD prediction on a genuinely deformed mesh — specular and single-edge scattering only. It cannot see multiple bounces, so a deformation that opens a corner or a cavity (an inlet, a nozzle, a step between panels) will be UNDERESTIMATED, and it cannot see creeping or travelling waves, which matter for smooth bodies near a wavelength across. The search is a coordinate descent over '+LEVERS.length+' closed-form deformations, not a free-form shape optimiser, so it finds the best combination of THESE levers, not the global optimum. Treat a winning shape as a candidate to take back into CAD and confirm — with the openEMS cross-check for a small part, or a measurement.';
     $('cad-opt-revert').style.display = MESH0 ? '' : 'none';
   }
 
@@ -11794,7 +12170,7 @@ window.CADRCS = {
 <div id="mscrim"></div>
 <aside id="mdrawer" role="dialog" aria-modal="true" aria-label="All pages">
   <div class="dhead">
-    <div><b>Signal to Signature</b><small>KHALIFA UNIVERSITY · v3.9</small></div>
+    <div><b>Signal to Signature</b><small>KHALIFA UNIVERSITY · v4.0</small></div>
     <button id="mdrawer-close" type="button" aria-label="Close the menu">&times;</button>
   </div>
   <div id="mdrawer-body"></div>

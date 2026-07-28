@@ -15,7 +15,7 @@
  * ==========================================================================*/
 // Bump on ANY change to the icons, the manifest or this file — the shell cache holds
 // the icons and manifest, so without a bump an installed phone keeps the old artwork.
-const CACHE_VERSION = 'emsim-v3.9.0';
+const CACHE_VERSION = 'emsim-v4.0.0';
 const SHELL_CACHE   = CACHE_VERSION + '-shell';
 const LIB_CACHE     = CACHE_VERSION + '-lib';
 
