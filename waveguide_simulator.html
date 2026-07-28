@@ -70,6 +70,10 @@
 
   /* masthead */
   .masthead{padding:40px 0 26px;border-bottom:1px solid var(--line);margin-bottom:30px;}
+  /* Mobile-only affordance: it toggles body.mast-min, which is styled only inside the <=820px block.
+     A <button> defaults to inline-block and the rule that hid it lived inside that same query, so on
+     desktop this was a visible control that did nothing at all when pressed. */
+  #mast-toggle{display:none;}
   .masthead .kicker{font-family:var(--font-mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin:0 0 12px;}
   .masthead h1{font-family:var(--font-head);font-size:34px;font-weight:600;letter-spacing:-.02em;margin:0 0 10px;line-height:1.08;}
   .masthead .lede{font-size:15.5px;color:var(--muted);margin:0;max-width:620px;}
@@ -106,9 +110,9 @@
   #page-phys,#page-mat,#page-guide,#page-refs{padding-top:34px;}
   /* The arrow was a literal ▸ in the summary text, so the app's front-page disclosure always looked
      collapsed even while open. Same ::before pair the .setup-os widget already uses. */
-  #coatq-panel>summary::before{content:'▸ ';}
-  #coatq-panel[open]>summary::before{content:'▾ ';}
-  #coatq-panel>summary::-webkit-details-marker{display:none;}
+  #coatq-panel>summary::before,#space-how>summary::before{content:'▸ ';}
+  #coatq-panel[open]>summary::before,#space-how[open]>summary::before{content:'▾ ';}
+  #coatq-panel>summary::-webkit-details-marker,#space-how>summary::-webkit-details-marker{display:none;}
   .setup-os{border:1px solid var(--line);border-radius:8px;margin:10px 0;background:var(--panel2);overflow:hidden;}
   .setup-os>summary{cursor:pointer;padding:11px 15px;font-weight:600;font-family:var(--font-body);list-style:none;}
   .setup-os>summary::-webkit-details-marker{display:none;}
@@ -363,6 +367,7 @@
   @media screen and (max-width:820px){
     /* sit above the bottom tab bar, and shrink so it never covers the content it sits over */
     .fab{right:10px!important;top:auto;bottom:calc(12px + var(--mtabs-h,90px));}
+    #phys-index ol{columns:1!important;}
     @supports (padding: env(safe-area-inset-right)) {
       .fab{right:calc(10px + env(safe-area-inset-right))!important;}
     }
@@ -371,7 +376,7 @@
     .fab button{padding:11px 15px;font-size:12.5px;min-height:44px;}
     .fab button.sec{display:none;}          /* one button only on a phone */
   }
-  @media print{ .fab{display:none!important;} }
+  @media print{ .fab{display:none!important;} #phys-index{display:none!important;} }
 
   /* --- friendly error / bridge banner --- */
   .errbanner{background:var(--amber-soft);border:1px solid #ecd7ad;border-left:3px solid var(--amber);border-radius:var(--r-sm);padding:12px 15px;margin:10px 0 0;font-family:var(--font-body);font-size:13px;color:var(--ink);line-height:1.55;box-shadow:var(--sh-1);}
@@ -1337,7 +1342,7 @@
     <!-- ===== DESIGN COMPARISON ===== -->
     <div id="hna-cmp-wrap" style="display:none;margin-bottom:16px;">
       <p class="charttitle">Pinned designs — gain comparison<button class="chartinfo" data-info="hna-cmp" title="What is this?">ⓘ</button></p>
-      <p class="chartsub">Every design you pin (📌 above) is overlaid here. Pins persist in your browser.</p>
+      <p class="chartsub">Every design you pin with 📌 on the <strong>Horn design (analytical)</strong> tab is overlaid here — there is no 📌 on this page. Pins persist in your browser.</p>
       <div class="panel" style="padding:14px;margin-bottom:10px;"><canvas id="hna-cmp-chart" height="150"></canvas></div>
       <div style="display:flex;gap:10px;margin-bottom:10px;"><button class="btn go" id="hna-cmp-csv" type="button">⬇ CSV</button><button class="btn" id="hna-cmp-clear" type="button">Clear pins</button></div>
       <div style="overflow-x:auto;"><table id="hna-cmp-table" style="width:100%;border-collapse:collapse;font-size:12.5px;"><thead></thead><tbody></tbody></table></div>
@@ -2494,13 +2499,15 @@ for t_mm in [0.5, 1, 2, 3, 4]:
     <h1 style="font-size:26px;margin:2px 0 6px;">Can this part actually survive in orbit?</h1>
     <p class="lede">Low loss is necessary but not sufficient — before an RF part flies, two vacuum-specific failure modes decide whether it works: <strong>multipaction</strong> (an electron avalanche that detonates the signal at high power) and <strong>overheating</strong> (in vacuum a wall can only shed absorbed power by radiation). These first-order screens flag both. They're the go/no-go questions no generic EM tool asks.</p>
 
-    <div class="panel" style="padding:16px 20px;margin:14px 0 26px;border-left:3px solid var(--accent);">
-      <p style="margin:0 0 8px;font-weight:600;">How this tab works</p>
+    <details id="space-how" class="panel" style="padding:0;margin:14px 0 26px;border-left:3px solid var(--accent);">
+      <summary style="cursor:pointer;font-weight:600;padding:14px 20px;list-style:none;">How this tab works — the two checks, and what the colours mean</summary>
+      <div style="padding:0 20px 16px;">
       <p style="margin:0 0 10px;font-size:13.5px;color:var(--muted);">Two quick physics checks, each with a couple of inputs and a plain read-out. Neither needs the openEMS bridge — both are computed instantly from textbook formulas, so you can sweep power and band and watch the flags change live.</p>
       <p style="margin:0 0 10px;font-size:13.5px;color:var(--muted);"><strong>1 · Multipaction.</strong> In vacuum at high power, a stray electron is flung across the hollow guide by the RF field. If it hits the opposite wall exactly in step with the field and knocks loose more than one new electron, the population doubles, and doubles again — an avalanche that corrupts or destroys the signal (and can permanently damage the part). Whether it can start depends on two things: the <strong>frequency × gap</strong> product (how the wall spacing compares to the RF cycle) and the <strong>peak voltage across the gap</strong>. You set the band and peak power; the tool computes the gap voltage from the TE₁₀ power–field relation and flags <strong>LOW / WATCH / HIGH</strong> against the standard ECSS susceptibility chart. It's a screen, not a verdict — a full check needs the wall's secondary-electron-yield curve (which for MXene is essentially unmeasured — an open research question).</p>
       <p style="margin:0 0 10px;font-size:13.5px;color:var(--muted);"><strong>2 · Power handling &amp; heating.</strong> On the ground a warm part loses heat to the surrounding air; in vacuum it can shed heat <em>only</em> by radiating it away. The wall absorbs a small slice of the signal (the very loss you computed on the other tabs) as heat; this check balances that absorbed power against what the surface can radiate (Stefan–Boltzmann law) to find the <strong>steady-state wall temperature</strong>, and the <strong>maximum input power</strong> before the coating reaches its safe limit (~300 °C for MXene, conservative). <strong>Emissivity</strong> matters a lot — a bare shiny metal (ε≈0.1) runs far hotter than a coated / oxidised surface (ε≈0.5–0.9).</p>
       <p style="margin:0;font-size:13.5px;color:var(--muted);">Read both as conservative go/no-go flags: green ≈ "no obvious showstopper," amber/red ≈ "test this before you fly it." Every formula and threshold is cited in the notes beneath each panel and on the References tab.</p>
-    </div>
+      </div>
+    </details>
 
     <!-- Multipaction -->
     <p class="charttitle">1 · Multipaction screening<button class="chartinfo" data-info="space-mp" title="What is this?">ⓘ</button></p>
@@ -2579,9 +2586,10 @@ for t_mm in [0.5, 1, 2, 3, 4]:
   <div class="page" id="page-phys">
     <button class="pageinfo" data-info="phys">ⓘ&nbsp;Info</button>
     <p class="phys-intro">Everything the simulator computes comes from one chain of physics: an electromagnetic wave travels down a hollow rectangular pipe, and the imperfectly-conducting walls steal a little energy from it on every bounce. Here is the full derivation, in order.</p>
+    <nav id="phys-index" aria-label="Contents of the physics page" style="display:none;"></nav>
     <div class="phys-toolbar" style="display:flex;justify-content:flex-end;align-items:center;gap:10px;margin:10px 0 -8px;">
       <span style="font-family:var(--font-mono);font-size:11px;color:var(--faint);">Hand this derivation to your advisor →</span>
-      <button class="btn" type="button" onclick="window.print()" style="display:inline-flex;align-items:center;gap:8px;">
+      <button class="btn go" type="button" onclick="window.print()" style="display:inline-flex;align-items:center;gap:8px;">
         <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;"><path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7" rx="1"/></svg>Print / Save as PDF</button>
     </div>
 
@@ -3678,6 +3686,43 @@ function build(){
   window.addEventListener('orientationchange',function(){ setTimeout(refitCharts,260); });
 })();
 
+/* Contents index for the Physics page (20 sections, ~13,700px — the last one is 13,000px down and
+   there was no way to get to it but scrolling). Generated from the .step headings themselves so it
+   cannot drift, built once on first activation, hidden from print. */
+(function(){
+  function build(){
+    var host=document.getElementById('phys-index'); if(!host||host.dataset.built) return;
+    var steps=[].slice.call(document.querySelectorAll('#page-phys .step'));
+    if(steps.length<4) return;
+    var links=steps.map(function(st,i){
+      var id=st.id||('phys-s'+(i+1)); st.id=id;
+      var h=st.querySelector('h2,h3,h4');
+      var t=(h?h.textContent:('Section '+(i+1))).trim();
+      return '<li style="margin:0;"><a href="#'+id+'" data-jump="'+id+'" style="color:var(--muted);text-decoration:none;">'+
+             t.replace(/[<>&]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c];})+'</a></li>';
+    }).join('');
+    host.innerHTML='<div class="panel" style="padding:14px 18px;margin:16px 0 4px;">'+
+      '<p style="margin:0 0 8px;font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;'+
+      'text-transform:uppercase;color:var(--faint);">On this page — '+steps.length+' sections</p>'+
+      '<ol style="margin:0;padding-left:20px;columns:2;column-gap:26px;font-size:13px;line-height:1.85;">'+
+      links+'</ol></div>';
+    host.style.display='';
+    host.dataset.built='1';
+    host.addEventListener('click',function(e){
+      var a=e.target.closest&&e.target.closest('a[data-jump]'); if(!a) return;
+      e.preventDefault();
+      var el=document.getElementById(a.dataset.jump);
+      if(!el) return;
+      // Compute the offset and scroll directly rather than scrollIntoView({behavior:'smooth'}):
+      // smooth scrolling is animated, and animations are throttled or paused in a backgrounded tab —
+      // the same trap that made the rotating export static. An instant jump is also the more useful
+      // behaviour for a table of contents, since you can see immediately where you landed.
+      window.scrollTo(0, Math.max(0, el.getBoundingClientRect().top + window.scrollY - 12));
+    });
+  }
+  window.physIndex=build;
+})();
+
 window.clampPicker=function(dd){
   if(!dd) return;
   // Always clear first, THEN bail on desktop — an early return would have left a clamp applied on
@@ -3860,6 +3905,7 @@ function activateTab(page){
   if(page==='compare' && window.cmpShow) window.cmpShow();
   if(page==='invdes' && window.invdesShow) window.invdesShow();
   if(page==='fit' && window.fitInit) window.fitInit();
+  if(page==='phys' && window.physIndex) window.physIndex();
   if(page==='space' && window.spaceInit) window.spaceInit();
   if(page==='rcs' && window.rcsInit) window.rcsInit();
   if(page==='invrcs' && window.invrcsInit) window.invrcsInit();
@@ -3871,13 +3917,22 @@ function activateTab(page){
   if(['horn','horninv','horncmp','hornfw'].indexOf(page)>=0 && window.hornAnaInit) window.hornAnaInit();
   document.querySelectorAll('.more-menu').forEach(m=>m.classList.remove('open'));
   { const fb=document.getElementById('cad-fab');
-    if(fb) fb.classList.toggle('on', page==='cadrcs' && fb.dataset.ready==='1'); }
+    if(fb) fb.classList.toggle('on', page==='cadrcs' && fb.dataset.ready==='1');
+    const mf=document.getElementById('mat-fab');
+    if(mf) mf.classList.toggle('on', page==='mat'); }
   if(window.mnavSync) window.mnavSync(page);      // mobile app bar + tab bar + drawer
-  // Land at the TOP of the new page. Without this the scroll offset carried over, so switching tabs
+  // Land at the top of the new page. Without this the scroll offset carried over, so switching tabs
   // from far down a long page dropped you into the middle of the next one — no title, no config
-  // panel, no Run button in view, which reads as a broken tab. The [data-goto] cross-tab links and
-  // the mobile go() already did this; the main nav path was the one that missed it.
-  window.scrollTo(0,0);
+  // panel, no Run button in view, which reads as a broken tab.
+  // NB scroll to the NAV, not to 0: the desktop masthead is ~670px tall, so scrolling to the document
+  // top would put the whole lede back between the user and the page on every single tab switch.
+  if(window.__tabReady){
+    var nv=document.querySelector('nav.tabs'), y=0;
+    if(nv && getComputedStyle(nv).display!=='none')
+      y=Math.max(0, nv.getBoundingClientRect().top + window.scrollY - 8);
+    if(window.scrollY>y) window.scrollTo(0,y);      // only ever scroll UP, never down into the page
+  }
+  window.__tabReady=true;
 }
 document.querySelectorAll('.tab[data-page]').forEach(t=>t.addEventListener('click',()=>activateTab(t.dataset.page)));
 document.querySelectorAll('.morelink').forEach(t=>t.addEventListener('click',()=>activateTab(t.dataset.page)));
@@ -3978,6 +4033,17 @@ function resetMaterials(){
   if(window.cmpRefresh) window.cmpRefresh();
 }
 document.getElementById('apply-btn').addEventListener('click',applyMaterials);
+// The floating twin. DELEGATED from document, because this script runs long before the .fab markup
+// near the end of <body> exists — a direct getElementById here returns null and the button would
+// silently do nothing (which is exactly what happened on the first attempt). It also scrolls the
+// confirmation line into view, since the button you pressed is nowhere near it.
+document.addEventListener('click',function(e){
+  var fb=e.target && e.target.closest && e.target.closest('#mat-fab-apply');
+  if(!fb) return;
+  applyMaterials();
+  var m=document.getElementById('apply-msg');
+  if(m) try{ m.scrollIntoView({behavior:'smooth',block:'center'}); }catch(e2){ m.scrollIntoView(); }
+});
 document.getElementById('reset-btn').addEventListener('click',resetMaterials);
 // dielectric-loss unit switch: convert the shown value between εr″ and tan δ (= εr″/εr′)
 ['coat','sub','solid'].forEach(k=>{ const md=document.getElementById('f-'+k+'LossMode'); if(!md) return;
@@ -12545,6 +12611,12 @@ window.CADRCS = {
      source of truth for the tab list — add a tab there and it appears here too.
      ========================================================================= -->
 <!-- floating Compute for the CAD-RCS tab: the results page is several screens long -->
+<div class="fab" id="mat-fab">
+  <button id="mat-fab-apply" type="button" title="Apply the edited material values and re-run the simulator">
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>
+    Apply &amp; simulate</button>
+</div>
+
 <div class="fab" id="cad-fab">
   <button id="cad-fab-run" type="button" title="Recompute the RCS sweep with the current settings">
     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3.2-6.9"/><path d="M21 4v5h-5"/></svg>
