@@ -1011,7 +1011,7 @@
     <div class="panel chartbox"><div class="cv" style="height:440px;"><canvas id="radarchart"></canvas></div></div>
     <div style="margin:10px 0;"><button class="btn" id="radar-nums-btn">Show actual numbers</button></div>
     <div id="radar-numbers" style="display:none;overflow-x:auto;margin-bottom:8px;"></div>
-    <p class="chartsub" style="margin-top:8px;">Cost-effectiveness and lightness are computed from the current run (delivered cost &amp; weight per metre); EM performance from the mid-band loss at the ideal (loss-floor) coat count; sustainability is an indicative composite rating; <strong>env-friendly</strong> is scored from embodied carbon (CO₂e per kg, lower = greener). Press <em>Show actual numbers</em> for the raw values with units.</p>
+    <p class="chartsub" style="margin-top:8px;">Cost-effectiveness and lightness are computed from the current run (delivered cost &amp; weight per metre); EM performance from the mid-band loss at the ideal (loss-floor) coat count; <strong>sustainability is a fixed 0–100 rating the author assigned to the four default materials — it is not computed, and it does not change when you define your own test material, so ignore that axis for a custom material</strong>; <strong>env-friendly</strong> is scored from embodied carbon (CO₂e per kg, lower = greener). Press <em>Show actual numbers</em> for the raw values with units.</p>
 
     <footer id="sim-footer"></footer>
   </div>
@@ -1020,7 +1020,7 @@
   <div class="page" id="page-cst">
     <button class="pageinfo" data-info="cst">ⓘ&nbsp;Info</button>
     <p class="eyebrow">Full-wave · openEMS</p>
-    <p style="margin:0 0 18px;color:var(--muted);">Full-wave validation with openEMS — a free FDTD solver running natively on this Mac. Configure below and run: a rectangular waveguide with your chosen wall material. Tick which simulations to run (guided wave, reflection, S-parameters, field/loss map, angle sweep); the charts overlay this tool's fast analytical model so you can see how well they agree.</p>
+    <p style="margin:0 0 18px;color:var(--muted);">Full-wave validation with openEMS — a free FDTD solver running on the machine that hosts this page. Configure below and run: a rectangular waveguide with your chosen wall material. Tick which simulations to run (guided wave, reflection, S-parameters, field/loss map, angle sweep); the charts overlay this tool's fast analytical model so you can see how well they agree.</p>
 
     <p class="charttitle">Run on openEMS — automated</p>
     <p class="chartsub">Pick the configuration and run the full-wave solver directly. (Requires the local bridge: start <code>openEMS/openems_server.py</code> and open this page at <code>http://localhost:8731</code>.)</p>
@@ -1121,6 +1121,8 @@
             <li>In <strong>Field view → frequency-domain</strong> the picture is a single steady |E| snapshot at the band-centre frequency instead of an animation.</li>
           </ul>
         </div>
+        <p class="charttitle" style="margin:18px 0 4px;">Simulated field — what the animation shows
+          <button class="chartinfo" data-info="wg-field" title="How to read the field animation">ⓘ</button></p>
         <div style="display:grid;grid-template-columns:1fr;gap:18px;">
           <figure style="margin:0;">
             <img id="oe-field-guide" alt="guided wave" style="width:100%;border:1px solid var(--line);border-radius:8px;display:block;">
@@ -1141,7 +1143,7 @@
     <div class="panel" style="padding:16px 18px;margin-bottom:22px;">
       <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:12px;">
         <div><div style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Band</div>
-          <select id="cst-il-band" style="padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-body);font-size:13px;"><option value="X">X</option><option value="Ku">Ku</option><option value="K">K</option></select></div>
+          <select id="cst-il-band" style="padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-body);font-size:13px;"><option value="X">X (8–12 GHz)</option><option value="Ku">Ku (12–18 GHz)</option><option value="K">K (18–27 GHz)</option></select></div>
         <div><div style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Length (m)</div>
           <input id="cst-il-len" type="number" value="0.3" step="0.1" style="width:80px;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-mono);font-size:13px;"></div>
         <div><div style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Model wall</div>
@@ -1177,7 +1179,7 @@
       </div>
     </div>
 
-    <p class="charttitle">Far-field radiation pattern — the guide's open end (aperture antenna)<button class="chartinfo" data-info="wg-ff" title="What is this?">ⓘ</button></p>
+    <p class="charttitle">3 · Far-field radiation pattern — the guide's open end (aperture antenna)<button class="chartinfo" data-info="wg-ff" title="What is this?">ⓘ</button></p>
     <p class="chartsub">A waveguide's open end radiates like an aperture antenna. The <strong>analytical</strong> open-ended TE10 pattern (Balanis) is shown instantly for the current band — E-plane (φ=90°) and H-plane (φ=0°), normalized to the main beam. Tick <strong>"Far-field radiation pattern"</strong> in the Simulations picker and Run to overlay the full-wave <strong>openEMS NF2FF</strong> result automatically (or load a CSV manually below).</p>
     <div class="panel" style="padding:16px 18px;margin-bottom:22px;">
       <label class="btn" style="cursor:pointer;display:inline-block;margin-bottom:12px;">Load openEMS far-field CSV<input id="cst-ff-file" type="file" accept=".csv,.txt" style="display:none;"></label>
@@ -1192,7 +1194,7 @@
       <p class="chartsub" style="margin-top:8px;">How to read: the peak at 0° is the forward (boresight) beam; the curves show how the radiated power falls off with angle. The E-plane beam is set by the guide's short wall (b), the H-plane by the broad wall (a).</p>
     </div>
 
-    <p class="charttitle">3 · Reflection / transmission / absorption — openEMS vs model<button class="chartinfo" data-info="wg-rta" title="What is this?">ⓘ</button></p>
+    <p class="charttitle">4 · Reflection / transmission / absorption — openEMS vs model<button class="chartinfo" data-info="wg-rta" title="What is this?">ⓘ</button></p>
     <p class="chartsub">Transfer-matrix model R/T/A (current Materials test material), shown automatically. Load an openEMS R/T/A file to overlay.</p>
     <div class="panel" style="padding:16px 18px;margin-bottom:22px;">
       <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:12px;">
@@ -1211,7 +1213,7 @@
       <p class="chartsub" style="margin-top:8px;">How to read: R = reflected, T = transmitted, A = absorbed (they add to 100%). For a good waveguide wall you want R near 100% — almost the whole wave bounces off the wall and stays guided. MXene-coated basswood sits near 99.8%, like metal.</p>
     </div>
 
-    <p class="charttitle">4 · R/T/A vs incidence angle — model<button class="chartinfo" data-info="wg-angle" title="What is this?">ⓘ</button></p>
+    <p class="charttitle">5 · R/T/A vs incidence angle — model<button class="chartinfo" data-info="wg-angle" title="What is this?">ⓘ</button></p>
     <p class="chartsub">Oblique-incidence (TE) model vs angle at band centre, shown automatically. Load an angle-sweep file to overlay.</p>
     <div class="panel" style="padding:16px 18px;margin-bottom:22px;">
       <label class="btn" style="cursor:pointer;display:inline-block;margin-bottom:12px;">Load openEMS CSV<input id="cst-ang-file" type="file" accept=".csv,.txt" style="display:none;"></label>
@@ -1225,13 +1227,13 @@
       <p class="chartsub" style="margin-top:8px;">How to read: reflection vs the angle the wave strikes the wall. A flat, high R means it reflects well from head-on to grazing (a metal-like reflector — works at every angle); a dip would mark a "leaky" angle. A dielectric like bare basswood shows much more angle dependence.</p>
     </div>
 
-    <footer>Field renders and S-parameters are produced by openEMS (free FDTD, on this Mac) via the local bridge. The dashed curves are this tool's validated analytical model. The matched (guided) run gives transmission/insertion loss; the reflector run shows how strongly the MXene wall reflects.</footer>
+    <footer>Field renders and S-parameters are produced by openEMS (free FDTD, running on the bridge host) via the local bridge. The dashed curves are this tool's validated analytical model. The matched (guided) run gives transmission/insertion loss; the reflector run shows how strongly the MXene wall reflects.</footer>
   </div>
 
   <!-- ============ HORN ANTENNA (openEMS) ============ -->
   <div class="page" id="page-horn">
     <button class="pageinfo" data-info="horn">ⓘ&nbsp;Info</button>
-    <p class="eyebrow">Horn antenna · openEMS</p>
+    <p class="eyebrow">Horn antenna · analytical design (instant)</p>
     <p style="margin:0 0 18px;color:var(--muted);"><strong>Design a horn instantly</strong> from its dimensions (analytical aperture theory, this tab), then <strong>validate the full 3-D structure</strong> with the openEMS FDTD solve (the <em>Full-wave</em> sub-tab). <strong>An antenna is a different problem from a closed waveguide</strong> — it uses open (PML) boundaries and a near-field-to-far-field transform for gain.</p>
 
     <!-- ============================ ANALYTICAL HORN DESIGN (instant) ============================ -->
@@ -1435,7 +1437,7 @@
         <!-- interactive 3-D SIMULATED field (real openEMS |E| volume) -->
         <figure id="hrn-field3d-fig" style="margin:0 0 20px;display:none;">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap;">
-            <span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--accent);">Simulated field · interactive 3-D</span>
+            <span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--accent);">Simulated field · interactive 3-D<button class="chartinfo" data-info="hrn-field" title="How to read the simulated field">ⓘ</button></span>
             <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
               <button class="btn" id="hrn-field3d-vol" type="button" style="padding:4px 12px;font-size:12px;">Volume</button>
               <button class="btn" id="hrn-field3d-plane" type="button" style="padding:4px 12px;font-size:12px;">Cut-plane</button>
@@ -1462,7 +1464,7 @@
         <!-- interactive 3-D geometry (replaces the static CAD render) -->
         <figure style="margin:0;">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px;">
-            <span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);">Geometry · interactive 3-D</span>
+            <span style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);">Geometry · interactive 3-D<button class="chartinfo" data-info="hrn-geom" title="What this view shows">ⓘ</button></span>
             <button class="btn" id="hrn-geo3d-reset" type="button" style="padding:4px 12px;font-size:12px;">Reset view</button>
           </div>
           <div id="hrn-geo3d" style="position:relative;width:100%;height:min(46vh,420px);background:#0d1117;border:1px solid var(--line);border-radius:8px;overflow:hidden;cursor:grab;"></div>
@@ -1554,7 +1556,7 @@
           </select></div>
       </div>
       <div id="rcs-custmat-wrap" style="display:none;margin-top:12px;padding:12px;border:1px dashed var(--line);border-radius:8px;background:var(--panel2);">
-        <div class="oe-lab" style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Custom material — enter the electromagnetic properties your advisor wants to test</div>
+        <div class="oe-lab" style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Custom material — enter the electromagnetic properties you want to test</div>
         <div style="display:flex;flex-wrap:wrap;gap:12px 18px;align-items:end;">
           <label style="font-size:11.5px;color:var(--muted);">σ conductivity (S/m)<br><input id="rcs-cm-sigma" type="number" value="5" step="any" min="0" style="width:96px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);font-family:var(--font-mono);font-size:12.5px;"></label>
           <label style="font-size:11.5px;color:var(--muted);">εr′ (real permittivity)<br><input id="rcs-cm-epsr" type="number" value="12" step="any" min="1" style="width:82px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);font-family:var(--font-mono);font-size:12.5px;"></label>
@@ -1628,7 +1630,7 @@
     </div>
     <div id="rcs-radar" style="margin-top:30px;">
       <h2 style="margin-bottom:6px;">Radar range &amp; detectability<button class="chartinfo" data-info="rcs-radar" title="What is this?">ⓘ</button></h2>
-      <p class="chartsub" style="margin-bottom:14px;">How far away a radar can detect this target, from the classic radar range equation <a class="cref" href="https://doi.org/10.1109/74.210840" target="_blank" rel="noopener">[43]</a> <span style="white-space:nowrap;">R = [P<sub>t</sub> G<sub>t</sub> G<sub>r</sub> λ² σ / ((4π)³ P<sub>min</sub> L)]<sup>1/4</sup></span>. Detection range scales as σ<sup>1/4</sup>, so a coating that cuts RCS by Δ dB shrinks the range by 10<sup>−Δ/40</sup> — the headline reason radar-absorbing material matters. The target RCS auto-fills from your last solve; every field is editable.</p>
+      <p class="chartsub" style="margin-bottom:14px;">How far away a radar can detect this target, from the classic radar range equation <a class="cref" href="#refs" data-goto="refs">[43]</a> <span style="white-space:nowrap;">R = [P<sub>t</sub> G<sub>t</sub> G<sub>r</sub> λ² σ / ((4π)³ P<sub>min</sub> L)]<sup>1/4</sup></span>. Detection range scales as σ<sup>1/4</sup>, so a coating that cuts RCS by Δ dB shrinks the range by 10<sup>−Δ/40</sup> — the headline reason radar-absorbing material matters. The target RCS auto-fills from your last solve; every field is editable.</p>
       <div class="panel" style="padding:16px 18px;">
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px 20px;align-items:end;">
           <div><div class="oe-lab" style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Peak power P<sub>t</sub> (dBW)</div>
@@ -1689,7 +1691,7 @@
 
     <div id="rcs-freq-fig">
     <p class="charttitle">Monostatic RCS vs frequency<button class="chartinfo" data-info="rcs-freq" title="What is this?">ⓘ</button></p>
-    <p class="chartsub"><strong>Monostatic</strong> means the transmitter and receiver sit together, so this is the <em>backscatter</em> — the echo that comes straight back at the radar — in dBsm (dB relative to 1&nbsp;m²) across the frequency band. <strong>Lower = harder to detect (stealthier).</strong> Dashed green = the exact analytical answer (Mie series for a sphere, physical optics for a plate); solid = the openEMS full-wave solve, whose magnitude is mesh-limited so read the <em>shape</em>, not the last decibel.</p>
+    <p class="chartsub"><strong>Monostatic</strong> means the transmitter and receiver sit together, so this is the <em>backscatter</em> — the echo that comes straight back at the radar — in dBsm (dB relative to 1&nbsp;m²) across the frequency band. <strong>Lower = harder to detect (stealthier).</strong> Dashed green = the analytical reference — the <em>exact</em> Mie series for a sphere, and physical optics for a plate (an asymptotic high-frequency approximation: close near broadside, degrading toward grazing); solid = the openEMS full-wave solve, whose magnitude is mesh-limited so read the <em>shape</em>, not the last decibel.</p>
     <div class="panel" style="padding:16px;margin-bottom:24px;"><canvas id="rcs-freq-chart" height="150"></canvas></div>
     </div>
 
@@ -1701,7 +1703,7 @@
 
     <div id="rcs-eplane-fig">
     <p class="charttitle">Bistatic RCS — E-plane (f₀)<button class="chartinfo" data-info="rcs-bistatic" title="What is this?">ⓘ</button></p>
-    <p class="chartsub">The same bistatic sweep taken in the <strong>E-plane</strong> — the plane that <em>contains</em> the radar's E-field (perpendicular to the H-plane cut above). Comparing the two planes shows how the scattering depends on polarization: for a sphere they differ only slightly, for a flat plate they differ by which edge sets the lobe width. Again 0° = forward, ±180° = backscatter; dashed = analytical, solid = openEMS.</p>
+    <p class="chartsub">The same bistatic sweep taken in the x-z plane — the principal cut perpendicular to the one above — the plane that <em>contains</em> the radar's E-field (perpendicular to the H-plane cut above). Comparing the two planes shows how the scattering depends on polarization: for a sphere they differ only slightly, for a flat plate they differ by which edge sets the lobe width. Again 0° = forward, ±180° = backscatter; dashed = analytical, solid = openEMS.</p>
     <div class="panel" style="padding:16px;margin-bottom:24px;"><canvas id="rcs-eplane-chart" height="150"></canvas></div>
     </div>
 
@@ -1728,7 +1730,7 @@
 
     <p style="margin-top:26px;color:var(--muted);font-size:13.5px;line-height:1.6;">The full theory — how RCS is defined (the far-field <em>&sigma;</em> limit and dBsm), the scattering mechanisms, and how full-wave methods (FDTD, MoM) differ from the high-frequency asymptotic methods (PO, PTD, SBR) used for whole vehicles — now lives on the <a href="#" id="rcs-gotophys" style="color:var(--accent);font-weight:600;">The physics &#8599;</a> tab, alongside the waveguide and horn derivations. Every formula there is cited.</p>
 
-    <footer>RCS = 4π · (scattered power density) / (incident power density), from a plane-wave (total-field/scattered-field) openEMS solve with a near-field-to-far-field transform. The analytical Mie (sphere) and physical-optics (plate) curves are exact references; the full-wave magnitude is mesh-limited (a few dB) — expect it to track the shape, not match to the decimal. Coating reduction is the bare-minus-coated backscatter at band centre.</footer>
+    <footer>RCS = 4π · (scattered power density) / (incident power density), from a plane-wave (total-field/scattered-field) openEMS solve with a near-field-to-far-field transform. The analytical Mie (sphere) curve is exact; the physical-optics (plate) curve is asymptotic — close near broadside, degrading toward grazing. Both serve as references; the full-wave magnitude is mesh-limited (a few dB) — expect it to track the shape, not match to the decimal. Coating reduction is the bare-minus-coated backscatter at band centre.</footer>
   </div>
 
   <!-- ============ INVERSE RAM DESIGN (RCS) ============ -->
@@ -1796,7 +1798,7 @@
     <p class="lede">Every material you pin with <strong>📌 Pin material to library</strong> on the <strong>Reflection-loss (RL)</strong> tab lands here. This page overlays their <strong>reflection-loss curves</strong> so you can see, side by side, which material absorbs best and over what bandwidth — and the same library feeds the per-part coating dropdowns on the <strong>CAD-RCS</strong> tab. Everything is analytical and instant; the library is stored in your browser and survives between sessions.</p>
 
     <div id="mlb-empty" style="padding:22px;border:1px dashed var(--line);border-radius:10px;color:var(--muted);text-align:center;line-height:1.7;">
-      No materials saved yet.<br>Go to <strong>RCS ▾ → Reflection loss (RL)</strong>, load or type a material, press <strong>Compute reflection loss</strong>, then press <strong>📌 Pin material to library</strong>. Repeat for each material you want to compare.
+      No materials saved yet.<br>Go to <strong>RCS + RL ▾ → Reflection loss (RL)</strong>, load or type a material, press <strong>Compute reflection loss</strong>, then press <strong>📌 Pin material to library</strong>. Repeat for each material you want to compare.
     </div>
 
     <div id="mlb-body" style="display:none;">
@@ -1853,7 +1855,7 @@
           <select id="rcsb-shape" class="segselect" tabindex="-1" aria-hidden="true"><option value="sphere">Sphere</option><option value="plate">Plate</option><option value="cylinder">Cylinder</option></select></div>
         <div><div class="oe-lab">Band</div>
           <div class="segbar" data-for="rcsb-band"></div>
-          <select id="rcsb-band" class="segselect" tabindex="-1" aria-hidden="true"><option value="X">X</option><option value="Ku">Ku</option><option value="K">K</option></select></div>
+          <select id="rcsb-band" class="segselect" tabindex="-1" aria-hidden="true"><option value="X" data-short="X">X (8–12 GHz)</option><option value="Ku" data-short="Ku">Ku (12–18 GHz)</option><option value="K" data-short="K">K (18–27 GHz)</option></select></div>
         <div><div class="oe-lab">Construction</div>
           <div class="segbar" data-for="rcsb-construct"></div>
           <select id="rcsb-construct" class="segselect" tabindex="-1" aria-hidden="true"><option value="coated">Coated</option><option value="solid">Solid material</option><option value="pec">Bare metal</option></select></div>
@@ -1915,7 +1917,7 @@ for t_mm in [0.5, 1, 2, 3, 4]:
     mid = r["coated"]["freq"][len(r["coated"]["freq"])//2]
     print(t_mm, "mm →", round(mid["dbsm"],2), "dBsm  · reduction",
           r["reduction_db"], "dB")</pre>
-    <p style="font-size:12px;color:var(--faint);margin-top:8px;">Response keys: <code>bare</code>/<code>coated</code> (each with <code>freq</code>, <code>bistatic</code>, …), <code>reduction_db</code>, <code>polar</code>, <code>files</code>, <code>seconds</code>, <code>errors</code>. See the References tab for the full field list.</p>
+    <p style="font-size:12px;color:var(--faint);margin-top:8px;">Response keys: <code>bare</code>/<code>coated</code> (each with <code>freq</code>, <code>bistatic</code>, …), <code>reduction_db</code>, <code>polar</code>, <code>files</code>, <code>seconds</code>, <code>errors</code>. The keys above are the complete set; the defaults live in openEMS/openems_server.py.</p>
     <footer>The batch runner is a thin sequential driver over the validated <code>/run_rcs</code> endpoint — identical physics to the RCS tab, just automated across one swept parameter.</footer>
   </div>
 
@@ -2062,7 +2064,7 @@ for t_mm in [0.5, 1, 2, 3, 4]:
 
     <div class="panel" style="padding:18px 20px;margin:6px 0 14px;border:2px solid var(--accent);">
       <div class="oe-head">RCS — coated plate vs bare metal · ① bare-metal (PEC) target</div>
-      <p style="margin:0 0 12px;font-size:13px;color:var(--muted);line-height:1.55;">The bare metal plate from physical optics: <span style="white-space:nowrap;">σ<sub>PEC</sub>(θ) = 4πA²/λ²·cos²θ·sinc²(k·w·sinθ)</span> <a class="cref" href="https://us.artechhouse.com/Radar-Cross-Section-Second-Edition-P279.aspx" target="_blank" rel="noopener">[38]</a>. A coating scales the specular return by its reflection coefficient, <span style="white-space:nowrap;">σ<sub>coated</sub>(θ) = σ<sub>PEC</sub>(θ)·|Γ|²</span>, so the boresight <strong>RCS reduction = the reflection loss</strong> <a class="cref" href="#refs" data-goto="refs">[47]</a>. Defaults (editable) reproduce the advisor's case — 180×180 mm plate, 9 GHz, θ = −90…+90°.</p>
+      <p style="margin:0 0 12px;font-size:13px;color:var(--muted);line-height:1.55;">The bare metal plate from physical optics: <span style="white-space:nowrap;">σ<sub>PEC</sub>(θ) = 4πA²/λ²·cos²θ·sinc²(k·w·sinθ)</span> <a class="cref" href="https://us.artechhouse.com/Radar-Cross-Section-Second-Edition-P279.aspx" target="_blank" rel="noopener">[38]</a>. A coating scales the specular return by its reflection coefficient, <span style="white-space:nowrap;">σ<sub>coated</sub>(θ) = σ<sub>PEC</sub>(θ)·|Γ|²</span>, so the boresight <strong>RCS reduction = the reflection loss</strong> <a class="cref" href="#refs" data-goto="refs">[47]</a>. Defaults (editable) reproduce the published reference case — 180×180 mm plate, 9 GHz, θ = −90…+90°.</p>
       <div class="oe-grid">
         <div><div class="oe-lab">Plate width (mm)</div>
           <input id="rlc-pw" type="number" value="180" step="10" min="10" style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-mono);font-size:13px;"></div>
@@ -2115,7 +2117,7 @@ for t_mm in [0.5, 1, 2, 3, 4]:
     </div>
     </div>
 
-    <footer>Reflection loss is the exact metal-backed transmission-line result (identical to the Inverse-RAM engine and to all five reference papers), validated against the supplied Excel to ~0.01 dB away from nulls. The coated-plate RCS is the physical-optics specular envelope scaled by the measured |Γ| — instant and exact at boresight; the openEMS RCS tab gives the rigorous angle-dependent reduction on a real 3-D plate. Everything here is <em>analytical</em> (dashed convention); full-wave is one click away.</footer>
+    <footer>Reflection loss is the exact metal-backed transmission-line result (identical to the Inverse-RAM engine and to all five reference papers), validated against the supplied Excel to ~0.01 dB away from nulls. The coated-plate RCS is the physical-optics specular envelope scaled by the measured |Γ| — instant, and accurate at boresight for a plate several wavelengths across; the openEMS RCS tab gives the rigorous angle-dependent reduction on a real 3-D plate. Everything here is <em>analytical</em> (dashed convention); full-wave is one click away.</footer>
   </div>
 
   <!-- ============ CAD-RCS (analytical PO + PTD from an uploaded 3-D model) ============ -->
@@ -2237,7 +2239,7 @@ for t_mm in [0.5, 1, 2, 3, 4]:
         Surfaces square-on to the radar light up; slanted ones go dark — that's why a flat panel glows and a curved arm doesn't. Drag to rotate, scroll to zoom.
       </p>
       <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-top:8px;">
-        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;flex:1;min-width:240px;">Look angle&nbsp; <input id="cad-view-ang" type="range" min="0" max="360" value="0" step="2" style="flex:1;"> <span id="cad-view-anglab" style="font-family:var(--font-mono);width:44px;text-align:right;">0°</span></label>
+        <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;flex:1;min-width:240px;">Look angle<button class="chartinfo" data-info="cad-view" title="Which way 0° points, and how it maps to the RCS tab">ⓘ</button>&nbsp; <input id="cad-view-ang" type="range" min="0" max="360" value="0" step="2" style="flex:1;"> <span id="cad-view-anglab" style="font-family:var(--font-mono);width:44px;text-align:right;">0°</span></label>
         <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;" title="Recolours the same view with each part's coating applied (echo × |Γ|²), so you can see which hot-spots the RAM actually kills."><input id="cad-view-coat" type="checkbox"> <strong>Apply coating to this view</strong> — the red hot-spots should dim</label>
         <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;" title="Shrinks the model to the size an UNCOATED copy would have to be to give the same echo — the ghost is the real size."><input id="cad-view-shrink" type="checkbox"> <strong>Show apparent size</strong> — shrunk vs real (ghost)</label>
       </div>
@@ -2497,7 +2499,7 @@ for t_mm in [0.5, 1, 2, 3, 4]:
     <button class="pageinfo" data-info="space">ⓘ&nbsp;Info</button>
     <p class="eyebrow">Space survivability</p>
     <h1 style="font-size:26px;margin:2px 0 6px;">Can this part actually survive in orbit?</h1>
-    <p class="lede">Low loss is necessary but not sufficient — before an RF part flies, two vacuum-specific failure modes decide whether it works: <strong>multipaction</strong> (an electron avalanche that detonates the signal at high power) and <strong>overheating</strong> (in vacuum a wall can only shed absorbed power by radiation). These first-order screens flag both. They're the go/no-go questions no generic EM tool asks.</p>
+    <p class="lede">Low loss is necessary but not sufficient — before an RF part flies, two vacuum-specific failure modes decide whether it works: <strong>multipaction</strong> (an electron avalanche that collapses the signal and can damage the part) and <strong>overheating</strong> (in vacuum a wall can only shed absorbed power by radiation). These first-order screens flag both. They're the go/no-go questions no generic EM tool asks.</p>
 
     <details id="space-how" class="panel" style="padding:0;margin:14px 0 26px;border-left:3px solid var(--accent);">
       <summary style="cursor:pointer;font-weight:600;padding:14px 20px;list-style:none;">How this tab works — the two checks, and what the colours mean</summary>
@@ -2560,7 +2562,7 @@ for t_mm in [0.5, 1, 2, 3, 4]:
       <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;">
         <div><div style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Band</div>
           <select id="cmp-band" style="padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-body);font-size:13px;"><option value="X">X (8–12 GHz)</option><option value="Ku">Ku (12–18 GHz)</option><option value="K">K (18–27 GHz)</option></select></div>
-        <div><div style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Coats (coatings)</div>
+        <div><div style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Coats (× 1 µm)</div>
           <input id="cmp-coats" type="number" value="20" style="width:70px;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-mono);font-size:13px;"></div>
         <div><div style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">openEMS length (mm)</div>
           <input id="cmp-len" type="number" value="200" step="20" style="width:80px;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-mono);font-size:13px;"></div>
@@ -2755,11 +2757,11 @@ for t_mm in [0.5, 1, 2, 3, 4]:
     <li><strong>Shooting and Bouncing Rays (SBR) / ray tracing</strong> — launches millions of rays, follows their multiple bounces across the geometry, and is essential for the cavity and corner returns that PO alone misses <a class="cref" href="https://doi.org/10.1109/8.18706" target="_blank" rel="noopener">[41]</a>.</li>
     </ul>
     <p>The generic high-frequency workflow used across industry is: import and clean the CAD geometry (suppressing sub-wavelength detail the solver cannot use) → assign materials (a perfect conductor, or a complex $\varepsilon/\mu$ for a radar-absorbing coating) → excite with a plane wave at a chosen azimuth $\phi$, elevation $\theta$ and polarization → solve the ray or current problem → transform the near field to the far field to build a 2-D or 3-D RCS pattern.</p>
-    <p>The exact analytical references the RCS tab overlays are the <strong>Mie series</strong> for a conducting sphere <a class="cref" href="https://onlinelibrary.wiley.com/doi/10.1002/andp.19083300302" target="_blank" rel="noopener">[37]</a> and <strong>physical optics</strong> for a flat plate, a broadside cylinder ($\sigma=2\pi a h^2/\lambda$) and a dihedral corner ($\sigma=8\pi a^2 h^2/\lambda^2$, the large-reflector upper bound) <a class="cref" href="https://us.artechhouse.com/Radar-Cross-Section-Second-Edition-P279.aspx" target="_blank" rel="noopener">[38]</a>.</p>
+    <p>The analytical references the RCS tab overlays are the <strong>exact Mie series</strong> for a conducting sphere <a class="cref" href="https://onlinelibrary.wiley.com/doi/10.1002/andp.19083300302" target="_blank" rel="noopener">[37]</a> and <strong>physical optics</strong> for a flat plate, a broadside cylinder ($\sigma=2\pi a h^2/\lambda$) and a dihedral corner ($\sigma=8\pi a^2 h^2/\lambda^2$, the large-reflector upper bound) <a class="cref" href="https://us.artechhouse.com/Radar-Cross-Section-Second-Edition-P279.aspx" target="_blank" rel="noopener">[38]</a>.</p>
     <div class="note"><strong>Honest scope of the RCS tab.</strong> It is FDTD-only — it does not implement MoM, PO, PTD or SBR. It is therefore suited to <em>small, canonical</em> targets (spheres, plates, coated blocks a few wavelengths across), not whole vehicles: a 15 m aircraft at 10 GHz is electrically enormous and out of reach for FDTD, which is exactly why industry uses PO and SBR at that scale (the tab enforces this with a half-extent&nbsp;≤&nbsp;5·λ guard). The full-wave <em>magnitude</em> is mesh-limited to within a few dB — treat the analytical Mie / PO curve as the exact reference and the openEMS solve as tracking its shape, not matching it to the decimal.</div>
 
     <div class="step"><div class="num">SHAPE</div><h2>Shaping — why geometry beats coating, and how the search works</h2></div>
-    <p>Physical optics gives a surface an induced current $\mathbf{J}_s = 2\,\hat{n}\times\mathbf{H}^{inc}$ on its lit side and nothing on its shadowed side, so the scattered far field of a facet is the phase integral of that current over its area. The consequence that dominates low-observable design is that a flat or singly-curved surface radiates a <strong>narrow specular lobe about its own normal</strong>: for a flat plate of dimension $a$ the return falls as $\mathrm{sinc}^2(ka\sin\theta)$, whose first null is only $\theta \approx \lambda/2a$ away from broadside <a class="cref" href="https://doi.org/10.1002/9781118753767" target="_blank" rel="noopener">[38]</a>. A 1&nbsp;m panel at 10&nbsp;GHz therefore drops tens of decibels for a few degrees of tilt, which no practical absorber can match — a coating multiplies the lobe by $|\Gamma|^2$, but shaping decides whether the lobe points at the radar at all.</p>
+    <p>Physical optics gives a surface an induced current $\mathbf{J}_s = 2\,\hat{n}\times\mathbf{H}^{inc}$ on its lit side and nothing on its shadowed side, so the scattered far field of a facet is the phase integral of that current over its area. The consequence that dominates low-observable design is that a flat or singly-curved surface radiates a <strong>narrow specular lobe about its own normal</strong>: for a flat plate of dimension $a$ the return falls as $\mathrm{sinc}^2(ka\sin\theta)$, whose first null is only $\theta \approx \lambda/2a$ away from broadside <a class="cref" href="https://us.artechhouse.com/Radar-Cross-Section-Second-Edition-P279.aspx" target="_blank" rel="noopener">[38]</a>. A 1&nbsp;m panel at 10&nbsp;GHz therefore drops tens of decibels for a few degrees of tilt, which no practical absorber can match — a coating multiplies the lobe by $|\Gamma|^2$, but shaping decides whether the lobe points at the radar at all.</p>
     <div class="eq">$$ \sigma_{\text{plate}}(\theta)=\frac{4\pi A^2}{\lambda^2}\cos^2\theta\;\mathrm{sinc}^2(ka\sin\theta), \qquad \sigma_{\text{tilted}}\big|_{\theta=\theta_{\text{tilt}}} \ll \sigma_{\text{plate}}(0) $$</div>
     <p>The same argument runs for edges. First-order Ufimtsev PTD makes an edge radiate on the <strong>Keller cone</strong> about itself, so an edge perpendicular to the line of sight throws its diffraction lobe straight back at the radar, while a swept edge throws it elsewhere <a class="cref" href="https://doi.org/10.1002/9781118753767" target="_blank" rel="noopener">[40]</a>. That is the physics behind <em>planform alignment</em> — aligning every leading and trailing edge of an airframe to a few common sweep angles, so the whole aircraft has only a handful of narrow edge-flash azimuths instead of dozens.</p>
     <p><strong>What the search on the CAD-RCS tab actually does.</strong> It applies closed-form vertex deformations to the imported mesh — nose ogive power, aft boat-tail, body taper, cross-section ellipticity, planform shear, appendage roll, and tilt or slimming of whichever part dominates — and for each candidate re-runs the identical PO+PTD solve used elsewhere in the tool over the threat sector you select. There is no surrogate model and no scoring heuristic: every number is the same physics on a genuinely different geometry. The stacking is coordinate descent — adopt the single best change, then search the remaining levers on top of it — which is why the recipe it prints is a short, explainable list rather than an opaque parameter vector.</p>
@@ -2767,7 +2769,7 @@ for t_mm in [0.5, 1, 2, 3, 4]:
     <div class="note"><strong>Honest scope of the shape search.</strong> It inherits every limit of PO+PTD: no multiple bounces, so a deformation that opens a corner, a step or a cavity is <em>under</em>-reported and could be worse than the tool says; no creeping or travelling waves, which matter for smooth bodies within a few wavelengths; and shadowing is per-facet by surface normal only. It searches the best combination of the deformations listed above, which is not the global optimum of all possible shapes. The shipped <code>corner_test_dihedral</code> demo exists to make the multiple-bounce blind spot visible: its true RCS is far larger than this engine reports. Take a winning shape back into CAD and confirm it — with the openEMS cross-check on a small part, or a measurement.</div>
 
     <div class="step"><div class="num">RAM</div><h2>Radar-absorbing material — the inverse-design engine</h2></div>
-    <p>The <strong>Inverse RAM design</strong> tab searches coatings by scoring each candidate on a <strong>metal-backed reflector</strong>. A stack of layers on a perfect conductor has an input impedance built by the transmission-line recursion, from the short-circuit at the metal outward through each layer of complex permittivity $\varepsilon=\varepsilon'-j\varepsilon''$ and permeability $\mu=\mu'-j\mu''$ <a class="cref" href="https://www.wiley.com/en-us/Microwave+Engineering%2C+4th+Edition-p-9780470631553" target="_blank" rel="noopener">[9]</a>:</p>
+    <p>The <strong>Inverse RAM design</strong> tab searches coatings by scoring each candidate on a <strong>metal-backed reflector</strong>. A stack of layers on a perfect conductor has an input impedance built by the transmission-line recursion, from the short-circuit at the metal outward through each layer of complex permittivity $\varepsilon=\varepsilon'-j\varepsilon''$ and permeability $\mu=\mu'-j\mu''$ <a class="cref" href="https://www.wiley.com/en-us/Microwave+Engineering%2C+4th+Edition-p-9780470631553" target="_blank" rel="noopener">[6]</a>:</p>
     <div class="eq">$$ Z_{i} = \eta_i\,\frac{Z_{i+1} + \eta_i\tanh(\gamma_i d_i)}{\eta_i + Z_{i+1}\tanh(\gamma_i d_i)}, \qquad \eta_i=\eta_0\sqrt{\tfrac{\mu_i}{\varepsilon_i}},\quad \gamma_i=jk_0\sqrt{\mu_i\varepsilon_i} $$</div>
     <p>starting from $Z=0$ (the metal). The front-face reflection and the <strong>reflection loss</strong> in dB are</p>
     <div class="eq">$$ \Gamma = \frac{Z_1-\eta_0}{Z_1+\eta_0}, \qquad \mathrm{RL} = -20\log_{10}|\Gamma| $$</div>
@@ -2906,7 +2908,7 @@ for t_mm in [0.5, 1, 2, 3, 4]:
   <!-- ============ INSTRUCTIONS ============ -->
   <div class="page" id="page-guide">
     <button class="pageinfo" data-info="guide">ⓘ&nbsp;Info</button>
-    <p class="phys-intro">This tool tests whether lightweight coated materials — flagship <strong>MXene-coated basswood</strong> — could replace solid metal for satellite <strong>waveguides</strong> and <strong>horn antennas</strong>: far lighter, but do they still carry, reflect and radiate microwave signals well? It works three ways: a fast built-in model that runs instantly in your browser, a full-wave solver (openEMS) that runs the real 3-D electromagnetic simulation, and design/characterization tools that pick the optimal material for you and read a real conductivity back from a lab measurement. It runs on macOS or Windows (setup in step 6).</p>
+    <p class="phys-intro">This tool tests whether lightweight coated materials — flagship <strong>MXene-coated basswood</strong> — could replace solid metal for satellite <strong>waveguides</strong> and <strong>horn antennas</strong>: far lighter, but do they still carry, reflect and radiate microwave signals well? It answers four questions: what a material costs you in waveguide loss, mass and launch cost; how a horn antenna built from it performs; how much radar reflection a coating absorbs, from your own measured ε/μ; and what radar cross section a real 3-D model has, part by part. Each answer comes two ways — a fast built-in model that runs instantly in your browser, and a full-wave solver (openEMS) that runs the real 3-D electromagnetic simulation — plus design/characterization tools that pick the optimal material for you and read a real conductivity back from a lab measurement. It runs on macOS or Windows (setup in step 6).</p>
 
     <div class="step"><div class="num">1</div><h2>What a "simulator" actually is</h2></div>
     <p>A simulator is a calculator with physics behind it: you describe a situation (a wave, a material, a shape) and it predicts what happens, using equations we know are correct, instead of building hardware. That lets you ask "what if the coating were thicker?" or "what about a higher frequency?" and get an answer in seconds. Everything here rests on <strong>Maxwell's equations</strong> — the laws governing electromagnetic waves. A material enters those equations as just a few numbers: its conductivity (how well it carries current), permittivity, and permeability.</p>
@@ -2916,16 +2918,28 @@ for t_mm in [0.5, 1, 2, 3, 4]:
 
     <div class="step"><div class="num">3</div><h2>What each tab does</h2></div>
     <ul>
-      <li><strong>Analytical Simulator</strong> — the headline results: signal loss vs frequency across the X/Ku/K bands, and a radar chart comparing MXene-coated basswood, basswood, copper and aluminum on cost, weight, performance, sustainability and env-friendliness (embodied CO₂).</li>
-      <li><strong>Full-wave (openEMS)</strong> — runs the real solver on a waveguide and brings back 3-D field animations (guided wave and reflection), S-parameters (S11/S21), a far-field radiation pattern, R/T/A, and a multi-layer coating-stack builder. 1- or 2-port and mesh density are selectable.</li>
-      <li><strong>Horn antenna</strong> — <em>instant analytical design</em> (pyramidal or conical: type the feed/aperture/flare dimensions → gain, aperture efficiency, E/H beamwidths, sidelobe level and radiation pattern, via Balanis aperture theory), with <strong>inverse design</strong> (size the shortest horn for a target gain), a <strong>parametric sweep</strong>, <strong>design comparison</strong> (pin &amp; overlay), and a <strong>lightweight-coating gain-penalty vs mass trade</strong> (MXene-coated basswood vs solid metal) with a Monte-Carlo band. Then a <em>full-wave openEMS</em> solve validates it: gain vs frequency, S11/VSWR/impedance, radiation pattern (E/H-plane, co/cross-pol), interior field, and a coating comparison — with Excel export and a "run all materials" batch.</li>
-      <li><strong>Inverse design</strong> — you set a target (band, max loss) and what to minimize (mass / delivered cost / CO₂); it searches every coating, substrate, coat-count and solid metal and returns the Pareto-optimal designs and a single recommendation — which you can send straight to the Full-wave tab to simulate.</li>
-      <li><strong>Measurement fit</strong> — upload a measured S21 (CSV or Touchstone <code>.s2p</code>) and it back-fits the effective conductivity of your fabricated coating, overlaying measured vs simulated.</li>
-      <li><strong>Compare</strong> — a side-by-side table of the leading candidates (solid metals plus metal/MXene-coated lightweight blocks). Analytical loss/weight/cost load instantly; Run each on openEMS, generate a summary, and download all images, animations and CSVs.</li>
-      <li><strong>The physics</strong> — every equation behind the numbers, each with a literature citation.</li>
-      <li><strong>Materials</strong> — define <em>any</em> material (conductivity, density, price, εr″/tan δ) and the whole tool recomputes for it.</li>
-      <li><strong>Instructions</strong> — this tab.</li>
-      <li><strong>References</strong> — every value and formula, with its source.</li>
+      <li><strong>Waveguide ▾ → Analytical Simulator</strong> — the headline results: signal loss vs frequency across the X/Ku/K bands, mass and delivered launch cost, all recomputed instantly as you move the sliders. Start here.</li>
+      <li><strong>Waveguide ▾ → Full-wave (openEMS)</strong> — runs the real 3-D solver on a waveguide and brings back field animations, S-parameters and R/T/A. Needs the bridge.</li>
+      <li><strong>Waveguide ▾ → Inverse design</strong> — you set a target (band, maximum loss) and what to minimise (mass, delivered cost or CO₂e); it returns the Pareto-optimal design.</li>
+      <li><strong>Waveguide ▾ → Measurement fit</strong> — upload a measured S21 (CSV or Touchstone .s2p) and it back-fits the effective conductivity of your real sample.</li>
+      <li><strong>Waveguide ▾ → Space survival</strong> — two first-order vacuum screens: multipaction susceptibility and how hot the wall runs with no air to cool it.</li>
+      <li><strong>Waveguide ▾ → Compare</strong> — a side-by-side table of the leading candidates, with a Run button per row to validate any of them on openEMS.</li>
+      <li><strong>Horn ▾ → Horn design (analytical)</strong> — type feed, aperture and flare dimensions (pyramidal or conical) and get gain, beamwidth and patterns instantly.</li>
+      <li><strong>Horn ▾ → Inverse &amp; sweep</strong> — the horn that hits a target gain, plus an aperture × flare sweep ranked into a table.</li>
+      <li><strong>Horn ▾ → Compare &amp; trade</strong> — pinned designs overlaid, and the project's core trade: a coated light shell against solid metal, gain penalty against mass saved.</li>
+      <li><strong>Horn ▾ → Full-wave (openEMS)</strong> — the same horn solved rigorously: gain vs frequency, radiation patterns, S11 and the interior field in 3-D.</li>
+      <li><strong>RCS + RL ▾ → RCS (openEMS)</strong> — how big a target looks to a radar. A plane wave illuminates a sphere, plate, cylinder, dihedral or an imported mesh; the headline is the dB by which a coating shrinks the echo.</li>
+      <li><strong>RCS + RL ▾ → Reflection loss (RL)</strong> — the measured-material workflow: give it a material's ε/μ (typed, or uploaded from your VNA) and it returns reflection loss for every thickness at once, plus the coated-plate RCS that follows.</li>
+      <li><strong>RCS + RL ▾ → Fast material search (analytical)</strong> — thousands of closed-form evaluations in seconds, to find which ε/μ and thickness absorb best. No solver involved.</li>
+      <li><strong>RCS + RL ▾ → Inverse RAM design</strong> — searches absorber recipes (Salisbury, Dallenbach, Jaumann, multilayer) and plots reduction against the mass you pay for it, with the Rozanov thickness bound for context.</li>
+      <li><strong>RCS + RL ▾ → Material library</strong> — the shelf. Materials you pin here are the ones offered on the RCS tab and on every part of an imported CAD model.</li>
+      <li><strong>RCS + RL ▾ → Full-wave batch (openEMS)</strong> — sweeps one parameter unattended, one real full-wave solve per point. Slow and rigorous; the opposite of Fast material search.</li>
+      <li><strong>RCS + RL ▾ → CAD-RCS (STEP/STL)</strong> — upload a 3-D model and get its radar signature part by part, which part dominates, what a coating buys you, and a search over real deformations of the geometry for a lower signature.</li>
+      <li><strong>Materials</strong> (in both the Waveguide and Horn menus — it is one page, listed twice) — define any material and the whole tool recomputes around it.</li>
+      <li><strong>More ▾ → The physics</strong> — every equation behind every number, each with a literature citation. It opens with a contents index.</li>
+      <li><strong>More ▾ → Instructions</strong> — this tab.</li>
+      <li><strong>More ▾ → References</strong> — every value and formula, with its source.</li>
+
     </ul>
     <p>Every openEMS chart and animation, and every page, has a small <strong>ⓘ</strong> button that opens a plain-language explanation (with an English / Emirati-Arabic toggle).</p>
 
@@ -2948,7 +2962,7 @@ for t_mm in [0.5, 1, 2, 3, 4]:
       <li><strong>Install Python 3</strong> (Anaconda recommended — <a href="https://www.anaconda.com/download" target="_blank" rel="noopener">anaconda.com</a> — or <a href="https://www.python.org/downloads/" target="_blank" rel="noopener">python.org</a>).</li>
       <li><strong>Install the Python libraries</strong> for the bridge + 3-D rendering. In Terminal:<br><code>pip install flask pyvista imageio imageio-ffmpeg numpy</code></li>
       <li><strong>Install openEMS + Octave</strong> (the full-wave solver and the interface that drives it):<br><code>brew install octave</code> then the openEMS Homebrew tap, <em>or</em> <code>sudo port install openEMS</code> (MacPorts). Confirm it imports:<br><code>python3 -c "import openEMS, CSXCAD; print('ok')"</code></li>
-      <li><strong>Point the bridge at your binaries</strong> if they differ from the defaults: open <code>openEMS/openems_server.py</code> and set <code>OCTAVE</code> (from <code>which octave</code>) and <code>PYTHON</code> (the one with pyvista, from <code>which python3</code>). If openEMS installed outside <code>/opt/homebrew/Cellar/openems/…</code>, update the two <code>addpath(...)</code> lines at the top of <code>openEMS/wg_run.m</code>, <code>openEMS/wg_farfield.m</code> and <code>openEMS/cad/horn_run.m</code> to your openEMS and CSXCAD <code>matlab</code> folders.</li>
+      <li><strong>Point the bridge at your binaries only if they differ from the defaults.</strong> Nothing in the repository needs editing — every path is an <em>environment variable</em> whose default is the usual macOS Homebrew location, so a standard Homebrew install normally needs none of this. To override, set <code>OPENEMS_OCTAVE</code> (from <code>which octave</code>), <code>OPENEMS_PYTHON</code> (the one with pyvista, from <code>which python3</code>), and if openEMS lives outside <code>/opt/homebrew/Cellar/openems/…</code> also <code>OPENEMS_MATLAB_PATH</code> and <code>CSXCAD_MATLAB_PATH</code>.</li>
       <li><strong>Start the bridge</strong> (leave the Terminal window open):<br><code>python "…/openEMS/openems_server.py"</code> → it prints <code>http://localhost:8731</code>.</li>
       <li><strong>Open</strong> <code>http://localhost:8731</code> in your browser (not the file directly) and use the Run buttons.</li>
     </ol>
@@ -2961,13 +2975,14 @@ for t_mm in [0.5, 1, 2, 3, 4]:
       <li><strong>Install the Python libraries.</strong> Open <em>Command Prompt</em> (or PowerShell) and run:<br><code>pip install flask pyvista imageio imageio-ffmpeg numpy</code></li>
       <li><strong>Install openEMS for Windows</strong> — download the Windows build from <a href="https://www.openems.de/start/" target="_blank" rel="noopener">openEMS.de</a> and unzip to e.g. <code>C:\openEMS</code> (it includes the solver plus the Octave/MATLAB interface). Add <code>C:\openEMS</code> to your Windows <em>PATH</em> so the solver is found.</li>
       <li><strong>Install GNU Octave for Windows</strong> from <a href="https://octave.org/download" target="_blank" rel="noopener">octave.org</a> (provides <code>octave-cli.exe</code>, used to drive openEMS).</li>
-      <li><strong>Edit the machine paths</strong> — this folder ships with macOS paths baked in; change them once:
+      <li><strong>Set the machine paths as environment variables</strong> — do <em>not</em> edit any file in the repository; the defaults are the macOS Homebrew paths and every one of them is overridable from the environment:
         <ul>
-          <li>In <code>openEMS\openems_server.py</code>: set <code>OCTAVE = r"C:\…\octave-cli.exe"</code> and <code>PYTHON = r"C:\…\python.exe"</code> (the Python that has pyvista).</li>
-          <li>In <code>openEMS\wg_run.m</code>, <code>openEMS\wg_farfield.m</code> and <code>openEMS\cad\horn_run.m</code>: change the two <code>addpath('/opt/homebrew/…/matlab')</code> lines to your Windows openEMS + CSXCAD <code>matlab</code> folders, using forward slashes, e.g. <code>addpath('C:/openEMS/matlab'); addpath('C:/openEMS/CSXCAD/matlab');</code></li>
-          <li>In those same three <code>.m</code> files, change the Unix scratch path <code>Sim_Path = '/tmp/…'</code> to a writable Windows folder, e.g. <code>Sim_Path = 'C:/temp/wg_sim';</code> (create <code>C:\temp</code> first).</li>
+          <li><code>OPENEMS_OCTAVE</code> = <code>C:\…\octave-cli.exe</code></li>
+          <li><code>OPENEMS_PYTHON</code> = <code>C:\…\python.exe</code> (the one that has pyvista)</li>
+          <li><code>OPENEMS_MATLAB_PATH</code> = <code>C:/openEMS/matlab</code> and <code>CSXCAD_MATLAB_PATH</code> = <code>C:/openEMS/CSXCAD/matlab</code> (forward slashes)</li>
+          <li><code>OPENEMS_SCRATCH</code> = a working directory <strong>with no spaces in its path</strong>, e.g. <code>C:\openems_scratch</code></li>
         </ul>
-      </li>
+        Full Windows walkthrough, including sharing the bridge over a public HTTPS link: <code>openEMS/WINDOWS_SETUP.md</code> in this folder.</li>
       <li><strong>Start the bridge</strong> — in Command Prompt (leave it open):<br><code>python "C:\…\Wave Guide Simulator\openEMS\openems_server.py"</code> → it prints <code>http://localhost:8731</code>.</li>
       <li><strong>Open</strong> <code>http://localhost:8731</code> in your browser and use the Run buttons.</li>
     </ol>
@@ -2990,7 +3005,7 @@ for t_mm in [0.5, 1, 2, 3, 4]:
     <ul>
       <li>The analytical model is exact for the idealized 1-D layered problem; openEMS adds the real 3-D field behavior. Cite openEMS (Liebig et al., 2012) in any writeup.</li>
       <li>openEMS conductor-loss magnitude at this mesh resolution is approximate — the precise loss number comes from the validated analytical model; the field visuals and reflection behavior are the full-wave payoff.</li>
-      <li>Radar-chart sustainability score is an indicative composite rating; the env-friendly score is derived from embodied-carbon (CO₂/kg) figures that are themselves approximate — treat both as ballpark, not measured values.</li>
+      <li>Radar-chart <strong>Sustainability</strong> axis is a fixed 0–100 rating the author assigned to the four default materials — it is not computed from anything, and it does not update for a material you define yourself. The env-friendly score IS derived, from embodied-carbon (CO₂/kg) figures that are themselves approximate — treat both as ballpark, not measured values.</li>
       <li>The physical space-qualification tests (radiation, vibration, vacuum) are separate lab checks, not part of this electromagnetic tool.</li>
     </ul>
   </div>
@@ -3144,8 +3159,8 @@ for t_mm in [0.5, 1, 2, 3, 4]:
       <li>Golden-section search — the 1-D minimizer used to invert the loss model for effective conductivity (Measurement-fit tab): J. Kiefer, "Sequential minimax search for a maximum," <em>Proc. Amer. Math. Soc.</em>, 4(3):502–506, 1953. DOI: <a href="https://doi.org/10.2307/2032161" target="_blank" rel="noopener">10.2307/2032161</a>.</li>
       <li>Multipaction (multipactor) design/test for vacuum RF hardware — the frequency×gap susceptibility framework behind the Space-survival multipaction screen: <em>ECSS-E-ST-20-01C, "Space engineering — Multipactor design and test"</em>, ECSS/ESA, 15 June 2020: <a href="https://ecss.nl/wp-content/uploads/2020/07/ECSS-E-ST-20-01C(15June2020).pdf" target="_blank" rel="noopener">standard PDF</a>.</li>
       <li>Ti₃C₂Tₓ MXene thermal stability — oxidation onset ≈ 322–360 °C in air, structurally stable to ≈ 600 °C in inert/vacuum (the coating's safe-temperature limit in the vacuum-thermal screen): S. Gao <em>et al.</em>, "Thermal Stability of MXene: Current Status and Future Perspectives," <em>Small</em> (2025) <a href="https://onlinelibrary.wiley.com/doi/full/10.1002/smll.202505881" target="_blank" rel="noopener">link</a>; high-temperature-stable Ti₃C₂Tₓ, <em>Nature Communications</em> (2022) <a href="https://www.nature.com/articles/s41467-022-33280-2" target="_blank" rel="noopener">link</a>.</li>
-      <li>Radiative heat transfer in vacuum — Stefan–Boltzmann law $P=\varepsilon\sigma_{SB}A(T^4-T_{\text{env}}^4)$ used for the vacuum power-handling screen: T. L. Bergman &amp; A. S. Lavine, <em>Fundamentals of Heat and Mass Transfer</em>, 8th ed., Wiley, ISBN 978-1-119-32042-5, 8th ed., Wiley (standard reference).</li>
-      <li>Full-wave method — the finite-difference time-domain (FDTD) solver and the running-DFT extraction of frequency-domain fields and spectra from a single time-domain run (the basis of the openEMS solve, the S-parameter/far-field results, and the Field-view time/frequency toggle): A. Taflove &amp; S. C. Hagness, 3rd ed., Artech House, ISBN 978-1-58053-832-9<em>Computational Electrodynamics: The Finite-Difference Time-Domain Method</em>, 3rd ed., Artech House, 2005.</li>
+      <li>Radiative heat transfer in vacuum — Stefan–Boltzmann law $P=\varepsilon\sigma_{SB}A(T^4-T_{\text{env}}^4)$ used for the vacuum power-handling screen: T. L. Bergman &amp; A. S. Lavine, <em>Fundamentals of Heat and Mass Transfer</em>, 8th ed., Wiley, 2017, ISBN 978-1-119-32042-5.</li>
+      <li>Full-wave method — the finite-difference time-domain (FDTD) solver and the running-DFT extraction of frequency-domain fields and spectra from a single time-domain run (the basis of the openEMS solve, the S-parameter/far-field results, and the Field-view time/frequency toggle): A. Taflove &amp; S. C. Hagness, <em>Computational Electrodynamics: The Finite-Difference Time-Domain Method</em>, 3rd ed., Artech House, 2005, ISBN 978-1-58053-832-9.</li>
       <li>Conductor surface-roughness loss — the Hammerstad–Jensen correction factor applied to the surface resistance in the Coating-quality (real-world coating) panel: E. O. Hammerstad and Ø. Jensen, "Accurate Models for Microstrip Computer-Aided Design," <em>IEEE MTT-S International Microwave Symposium Digest</em>, 1980, pp. 407–409. DOI: <a href="https://doi.org/10.1109/TMTT.1980.1130118" target="_blank" rel="noopener">10.1109/TMTT.1980.1130118</a>.</li>
       <li>Mie scattering — the exact series solution for a plane wave scattered by a sphere, used as the analytical anchor on the RCS tab (openEMS is validated against it): G. Mie, "Beiträge zur Optik trüber Medien, speziell kolloidaler Metallösungen," <em>Annalen der Physik</em>, 330(3):377–445, 1908. DOI: <a href="https://onlinelibrary.wiley.com/doi/10.1002/andp.19083300302" target="_blank" rel="noopener">10.1002/andp.19083300302</a>. Perfectly-conducting-sphere backscatter and the resonance/optical regimes follow the standard Riccati-Bessel formulation (e.g. Balanis <a href="#">[25]</a>, Bohren &amp; Huffman).</li>
       <li>Physical optics &amp; radar cross section — the flat-plate PO estimate (broadside σ = 4πA²/λ²) and RCS conventions used on the RCS tab: E. F. Knott, J. F. Shaeffer, M. T. Tuley, <em>Radar Cross Section</em>, 2nd ed., SciTech/Artech House (standard reference). <a href="https://us.artechhouse.com/Radar-Cross-Section-Second-Edition-P279.aspx" target="_blank" rel="noopener">publisher page</a>. openEMS RCS follows the plane-wave (TF/SF) + near-field-to-far-field method of its own RCS-sphere tutorial (Taflove &amp; Hagness FDTD <a href="#">[35]</a>).</li>
@@ -3153,8 +3168,8 @@ for t_mm in [0.5, 1, 2, 3, 4]:
       <li>Physical Theory of Diffraction (PTD) — the edge-wave correction that adds edge line-currents to physical optics, used to explain the high-frequency asymptotic regime on the RCS tab: P. Ya. Ufimtsev, <em>Fundamentals of the Physical Theory of Diffraction</em>, 2nd ed., Wiley–IEEE Press, 2014. DOI: <a href="https://doi.org/10.1002/9781118753767" target="_blank" rel="noopener">10.1002/9781118753767</a>.</li>
       <li>Shooting and Bouncing Rays (SBR) — the multi-bounce ray-tracing method for electrically large targets and cavities cited on the RCS tab: H. Ling, R.-C. Chou and S.-W. Lee, "Shooting and bouncing rays: calculating the RCS of an arbitrarily shaped cavity," <em>IEEE Transactions on Antennas and Propagation</em>, 37(2):194–205, 1989. DOI: <a href="https://doi.org/10.1109/8.18706" target="_blank" rel="noopener">10.1109/8.18706</a>.</li>
       <li>Standard CEM validation targets (NASA/EMCC benchmark suite) — the canonical smooth-target family (almond, ogive, cone-sphere) used to validate computational-electromagnetics RCS codes, referenced by the "Standard RCS benchmarks" panel on the RCS tab: A. C. Woo, H. T. G. Wang, M. J. Schuh and M. L. Sanders, "Benchmark radar targets for the validation of computational electromagnetics programs," <em>IEEE Antennas and Propagation Magazine</em>, 35(1):84–89, 1993. DOI: <a href="https://doi.org/10.1109/74.210840" target="_blank" rel="noopener">10.1109/74.210840</a>. (Almond: two-segment parametric surface, overall length L = 9.936 in = 252.37 mm; canonical monostatic test frequencies 1.19 and 7 GHz.)</li>
-      <li>Radar range equation — the detection-range relation used by the "Radar range / detectability" calculator on the RCS tab, R = [P<sub>t</sub> G<sub>t</sub> G<sub>r</sub> λ² σ / ((4π)³ P<sub>min</sub> L)]<sup>1/4</sup>: M. I. Skolnik, <em>Introduction to Radar Systems</em>, 3rd ed., McGraw-Hill, ISBN 978-0-07-288138-7, 3rd ed., McGraw-Hill, 2001 (§1.2, the radar equation). ISBN 0-07-288138-0.</li>
-      <li>Radar-absorbing-material thickness bound — the physical limit relating a magnetic absorber's total thickness to the bandwidth over which it can suppress reflection, used by the Inverse RAM design tab's "Rozanov bound": K. N. Rozanov, "Ultimate thickness to bandwidth ratio of radar absorbers," <em>IEEE Transactions on Antennas and Propagation</em>, 48(8):1230–1234, 2000. DOI: <a href="https://doi.org/10.1109/8.884491" target="_blank" rel="noopener">10.1109/8.884491</a>. The Salisbury screen (resistive sheet a quarter-wave above a ground plane) and Dallenbach/Jaumann lossy-layer absorbers are standard: R. L. Fante and M. T. McCormack, "Reflection properties of the Salisbury screen," <em>IEEE Trans. Antennas Propag.</em>, 36(10):1443–1454, 1988, DOI: <a href="https://doi.org/10.1109/8.8632" target="_blank" rel="noopener">10.1109/8.8632</a>; and Knott/Shaeffer/Tuley, <em>Radar Cross Section</em> <a class="cref" href="https://us.artechhouse.com/Radar-Cross-Section-Second-Edition-P279.aspx" target="_blank" rel="noopener">[38]</a> (Ch. on RAM). Metal-backed reflection is the transmission-line/transfer-matrix input-impedance recursion (Pozar, <em>Microwave Engineering</em> <a class="cref" href="https://www.wiley.com/en-us/Microwave+Engineering%2C+4th+Edition-p-9780470631553" target="_blank" rel="noopener">[9]</a>).</li>
+      <li>Radar range equation — the detection-range relation used by the "Radar range / detectability" calculator on the RCS tab, R = [P<sub>t</sub> G<sub>t</sub> G<sub>r</sub> λ² σ / ((4π)³ P<sub>min</sub> L)]<sup>1/4</sup>: M. I. Skolnik, <em>Introduction to Radar Systems</em>, 3rd ed., McGraw-Hill, 2001, ISBN 978-0-07-288138-7 (§1.2, the radar equation).</li>
+      <li>Radar-absorbing-material thickness bound — the physical limit relating a magnetic absorber's total thickness to the bandwidth over which it can suppress reflection, used by the Inverse RAM design tab's "Rozanov bound": K. N. Rozanov, "Ultimate thickness to bandwidth ratio of radar absorbers," <em>IEEE Transactions on Antennas and Propagation</em>, 48(8):1230–1234, 2000. DOI: <a href="https://doi.org/10.1109/8.884491" target="_blank" rel="noopener">10.1109/8.884491</a>. The Salisbury screen (resistive sheet a quarter-wave above a ground plane) and Dallenbach/Jaumann lossy-layer absorbers are standard: R. L. Fante and M. T. McCormack, "Reflection properties of the Salisbury screen," <em>IEEE Trans. Antennas Propag.</em>, 36(10):1443–1454, 1988, DOI: <a href="https://doi.org/10.1109/8.8632" target="_blank" rel="noopener">10.1109/8.8632</a>; and Knott/Shaeffer/Tuley, <em>Radar Cross Section</em> <a class="cref" href="https://us.artechhouse.com/Radar-Cross-Section-Second-Edition-P279.aspx" target="_blank" rel="noopener">[38]</a> (Ch. on RAM). Metal-backed reflection is the transmission-line/transfer-matrix input-impedance recursion (Pozar, <em>Microwave Engineering</em> <a class="cref" href="https://www.wiley.com/en-us/Microwave+Engineering%2C+4th+Edition-p-9780470631553" target="_blank" rel="noopener">[6]</a>).</li>
       <li>Detection probability &amp; target fluctuation — the P<sub>d</sub>-vs-range curves on the RCS radar panel: the non-fluctuating (Swerling 0) single-pulse detection uses the North/Albersheim approximation, and the fluctuating case uses the closed-form Swerling&nbsp;1 result P<sub>d</sub> = P<sub>fa</sub><sup>1/(1+SNR)</sup>. P. Swerling, "Probability of detection for fluctuating targets," <em>IRE Trans. Information Theory</em>, 6(2):269–308, 1960, DOI: <a href="https://doi.org/10.1109/TIT.1960.1057561" target="_blank" rel="noopener">10.1109/TIT.1960.1057561</a>; D. O. North, "An analysis of the factors which determine signal/noise discrimination in pulsed-carrier systems," <em>Proc. IEEE</em>, 51(7):1016–1027, 1963 (reprint), DOI: <a href="https://doi.org/10.1109/PROC.1963.2383" target="_blank" rel="noopener">10.1109/PROC.1963.2383</a>.</li>
       <li>Polarimetric decomposition — the 2×2 Sinclair scattering matrix and the Pauli (odd-/even-/volume-bounce) decomposition on the RCS polarimetric panel: S. R. Cloude and E. Pottier, "A review of target decomposition theorems in radar polarimetry," <em>IEEE Trans. Geoscience and Remote Sensing</em>, 34(2):498–518, 1996. DOI: <a href="https://doi.org/10.1109/36.485127" target="_blank" rel="noopener">10.1109/36.485127</a>. The down-range profile is the standard inverse-DFT of the stepped-frequency backscatter (synthetic range profiling / ISAR), Mensa, <em>High Resolution Radar Cross-Section Imaging</em>, Artech House, 1991.</li>
       <li>Reflection-loss / RCS reference paper (dielectric absorber, CuS/ZnS) replicated on the Reflection-loss (RL) tab: S. B. Jamali, T. H. Qamar, S. ul Hassan, <em>et al.</em>, "3D CuS/ZnS snowflakes as multi-waveband microwave absorbers," <em>Materials Chemistry and Physics</em> 340 (2025) 130821. DOI: <a href="https://doi.org/10.1016/j.matchemphys.2025.130821" target="_blank" rel="noopener">10.1016/j.matchemphys.2025.130821</a>. Source of the metal-backed reflection-loss workflow, RL-vs-thickness maps and CST plate-RCS comparison.</li>
@@ -3366,7 +3381,7 @@ const SIMS=[
   {key:'reflection',label:'Reflection (standing wave)',  note:'reflector field render + R/T/A'},
   {key:'sparams',   label:'S-parameters vs frequency',   note:'S11 &amp; S21 curves (CSV)'},
   {key:'fieldmap',  label:'Field &amp; wall-loss map',   note:'|E| map + where the wall heats'},
-  {key:'angle',     label:'Angle-of-incidence sweep',    note:'R/T/A vs angle (analytical model)'},
+  {key:'angle',     label:'Angle sweep CSV (analytical — no solve)', note:'R/T/A vs angle from the analytical model; exports a CSV, runs no solver'},
   {key:'farfield',  label:'Far-field radiation pattern',  note:'openEMS NF2FF from the open end (E/H-plane, CSV)'}
 ];
 (function(){
@@ -3610,14 +3625,17 @@ function build(){
   const co2=[co2test,(S.b1.co2||0),(S.b2.co2||0),WOOD_CO2];
   // env-friendly score: lower embodied carbon -> higher score (0.5 kg/kg -> ~92, 9 -> ~22)
   const env=co2.map(c=>Math.max(0,Math.min(100,100*Math.exp(-c/6))));
-  const sust=[80,48,55,95];   // indicative composite sustainability scores
+  // ⚠ FIXED, AUTHOR-ASSIGNED numbers, positional by chart slot (test, baseline1, baseline2,
+  // basswood) — NOT computed, and NOT recomputed when the user defines their own test material.
+  // The axis label and both captions say so; do not describe this as derived.
+  const sust=[80,48,55,95];
   const sc=i=>[100*minC/cost[i], 100*minW/wts[i], perf(loss[i]), sust[i], env[i]];
   const matNames=[S.test.display, S.b1.name, S.b2.name, 'Basswood'];
   const matCols=[COLORS.test, COLORS.b1, COLORS.b2, '#9c7f50'];
   const fills=['rgba(11,110,84,.16)','rgba(154,106,22,.14)','rgba(95,107,103,.12)','rgba(156,127,80,.12)'];
   const rds=[0,1,2,3].map(i=>({label:matNames[i],data:sc(i).map(v=>Math.round(v)),
       borderColor:matCols[i],backgroundColor:fills[i],borderWidth:2,pointRadius:2,pointBackgroundColor:matCols[i]}));
-  const axes=['Cost-effectiveness','Lightness','EM performance','Sustainability','Env-friendly'];
+  const axes=['Cost-effectiveness','Lightness','EM performance','Sustainability (fixed rating)','Env-friendly'];
   // stash raw values (with units) for the "Show actual numbers" table
   window.__radarData={names:matNames, colors:matCols, axes,
     scores:[0,1,2,3].map(i=>sc(i).map(v=>Math.round(v))),
@@ -4627,7 +4645,7 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
       const results=data.results||{}, errs=data.errors||{};
       const ranKeys=Object.keys(results), errKeys=Object.keys(errs);
       let stat='Done: '+data.label+' in '+data.seconds+' s. Ran: '+(ranKeys.length?ranKeys.join(', '):'—')+'.';
-      if(errKeys.length){ stat+='  Issues: '+errKeys.join(', ')+' (see console).'; console.log('openEMS sim issues:', errs); }
+      if(errKeys.length){ stat+='  ·  these sub-simulations produced no output: '+errKeys.join(', ')+' — press “Show math” to read the solver log.'; console.log('openEMS sim issues:', errs); }
       $('oe-status').textContent=stat;
       oeProg.done('Done: '+(ranKeys.length||0)+' simulation(s) in '+data.seconds+' s'+(errKeys.length?'  ('+errKeys.length+' issue)':''));
       $('oe-result').style.display='block';
@@ -4886,7 +4904,7 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
   if(mb) mb.addEventListener('click',()=>{const el=$('oe-math');el.textContent=showMathText();el.style.display=el.style.display==='block'?'none':'block';});
   if(db) db.addEventListener('click',async()=>{
     const r=window.__lastRun; if(!r){return;}
-    if(typeof JSZip==='undefined'){alert('JSZip not loaded (needs internet).');return;}
+    if(typeof JSZip==='undefined'){alert('The ZIP library did not load. It comes from a CDN on the first visit — reconnect to the internet, reload this page, then download again. Individual CSV downloads still work without it.');return;}
     db.disabled=true; db.textContent='Zipping…';
     try{
       const zip=new JSZip();
@@ -4989,8 +5007,8 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
       const res=await fetch('/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(runCfg(spec))});
       const data=await res.json();
       if(!data.ok){ if(cell) cell.textContent='error'; console.log(data.log||data); if(btn) btn.disabled=false;
-        cmpProg.fail('openEMS error on '+spec.display+' — see console.');
-        $('cmp-status').textContent='openEMS error on '+spec.display+' (see console).'; return; }
+        cmpProg.fail('openEMS failed on '+spec.display+'.');
+        $('cmp-status').textContent='openEMS failed on '+spec.display+'. The full solver log is in openEMS/last_run.log on the bridge host.'; return; }
       const R=data.results||{};
       const fetchTxt=async u=>{ if(!u) return ''; try{ return await (await fetch(u)).text(); }catch(e){ return ''; } };
       const ilTxt=await fetchTxt(data.csv), rtaTxt=await fetchTxt(data.rta), angTxt=await fetchTxt(R.angle&&R.angle.csv);
@@ -5159,7 +5177,7 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
   $('cmp-runall').addEventListener('click',runAll);
   $('cmp-sum-btn').addEventListener('click',()=>{const el=$('cmp-summary');el.textContent=buildSummary();el.style.display=el.style.display==='block'?'none':'block';});
   $('cmp-dl-btn').addEventListener('click',async()=>{
-    if(typeof JSZip==='undefined'){alert('JSZip not loaded (needs internet).');return;}
+    if(typeof JSZip==='undefined'){alert('The ZIP library did not load. It comes from a CDN on the first visit — reconnect to the internet, reload this page, then download again. Individual CSV downloads still work without it.');return;}
     const b=$('cmp-dl-btn'); b.disabled=true; b.textContent='Zipping…';
     try{
       const zip=new JSZip();
@@ -5221,7 +5239,7 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
   const $=id=>document.getElementById(id);
   const fileI=$('hrn-file'), fname=$('hrn-fname'), runB=$('hrn-run'),
         status=$('hrn-status'), prog=$('hrn-progress'), result=$('hrn-result'),
-        gainD=$('hrn-gain'), fieldImg=$('hrn-field'), geomImg=$('hrn-geom'),
+        gainD=$('hrn-gain'), fieldImg=$('hrn-field'),
         metricsD=$('hrn-metrics'), xlsxA=$('hrn-xlsx'),
         mathBtn=$('hrn-math-btn'), mathPre=$('hrn-math'),
         dlBtn=$('hrn-dl-btn'), sumBtn=$('hrn-sum-btn'), sumPre=$('hrn-summary'),
@@ -5516,7 +5534,7 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
       // failed wall-loss step republished the PREVIOUS run's coating table as ok:true
       var _pe=j.errors&&Object.keys(j.errors).length?Object.keys(j.errors):null;
       status.textContent='Done in '+j.seconds+' s · '+j.coating+' coating · '+j.band+'-band'
-                         +(_pe?('  ·  incomplete: '+_pe.join(', ')+' (see console)'):'');
+                         +(_pe?('  ·  incomplete — these post-processing steps failed: '+_pe.join(', ')+' (the numbers they produce are missing, the rest of the solve is good)'):'');
       status.style.color=_pe?'#9a6a16':'var(--accent)';
       if(_pe) console.log('horn post-processing issues', j.errors);
       const d=j.dims||{}, g=j.gain||{}, s=j.selected||{}, m=j.metrics||{};
@@ -5554,8 +5572,6 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
         document.querySelectorAll('.hrn-fld-tog').forEach(b=>b.style.display='');
         setField(fieldSrc.db ? 'db' : 'lin');
       }
-      if(geomImg){ if(j.geom_img) animFig.set(geomImg, {still:j.geom_img+'&_='+bust}, {label:'geometry render'});
-                   else animFig.clear(geomImg); }
       if(window.hrnField3D) window.hrnField3D.load(j.field3d||null);   // real solved |E| volume (interactive)
       if(j.excel_url){ xlsxA.href=j.excel_url; xlsxA.style.display='inline-block'; } else xlsxA.style.display='none';
       const xlsx2=$('hrn-xlsx2'); if(xlsx2){ if(j.excel_url){ xlsx2.href=j.excel_url; xlsx2.style.display='inline-block'; } else xlsx2.style.display='none'; }
@@ -5927,10 +5943,7 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
 <h4>How to read it</h4>
 <ul><li>A flat, high R from head-on to grazing = a metal-like reflector that works at every angle.</li>
 <li>A dip marks a "leaky" angle; a dielectric like bare wood shows much more angle dependence.</li></ul>`},
-    'wg-shots':{title:'Extra screenshots & field plots', html:`
-<h4>What this is</h4>
-<p>A place to load any extra images (ParaView field plots, 3-D views, S-parameter exports) so they sit alongside the run. Purely for your own reference — nothing is computed here.</p>`},
-    'hrn-field':{title:'Horn field image', html:`
+        'hrn-field':{title:'Horn field image', html:`
 <h4>What you're looking at</h4>
 <p>|E| (field strength) <strong>inside the horn and radiating out of the aperture</strong>. Use the <strong>dB / Linear</strong> toggle to switch the colour scale.</p>
 <h4>How to read it</h4>
@@ -5980,7 +5993,7 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
 <h4>How it works</h4>
 <ul><li>A plane wave (total-field/scattered-field) hits the target; a near-field-to-far-field box captures the scattered field. <strong>RCS = 4π · scattered power density / incident power density.</strong></li>
 <li><strong>Monostatic</strong> = the radar looks straight back (backscatter). <strong>Bistatic</strong> = transmitter and receiver at different angles.</li>
-<li>Dashed = the exact analytical answer (<strong>Mie series</strong> for a sphere, <strong>physical optics</strong> for a plate); solid = the openEMS full-wave solve. The full-wave magnitude is mesh-limited to a few dB — trust the shape.</li></ul>
+<li>Dashed = the analytical reference (the <em>exact</em> <strong>Mie series</strong> for a sphere; <strong>physical optics</strong> for a plate — asymptotic, best near broadside); solid = the openEMS full-wave solve. The full-wave magnitude is mesh-limited to a few dB — trust the shape.</li></ul>
 <h4>Construction: bare, coated, or solid</h4>
 <p>These are three physically different targets, and the solver builds three different geometries:</p>
 <ul>
@@ -6033,7 +6046,7 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
 <h4>How to use it</h4>
 <ul><li><strong>Box ①</strong> defines the bare-metal plate (width, height, frequency, angle span) — physical optics σ = 4πA²/λ²·cos²θ·sinc²(k·w·sinθ) [38].</li>
 <li><strong>Box ②</strong> holds one or more coatings (ε′, ε″, μ′, μ″, frequency, thickness). Click <strong>Import optimal RL</strong> to pull the deepest-absorption point (ε/μ, frequency, thickness) of the material loaded above; use <strong>+ Add material</strong> to compare several. Each coating scales the return by |Γ|², so its boresight reduction = its reflection loss.</li>
-<li>Analytical (physical-optics) envelope — <strong>Send to openEMS</strong> for the true angle-dependent full-wave reduction on a real 3-D plate. Bare-PEC defaults reproduce the advisor's case: 180×180 mm, 9 GHz, θ = −90…+90°.</li></ul>`},
+<li>Analytical (physical-optics) envelope — <strong>Send to openEMS</strong> for the true angle-dependent full-wave reduction on a real 3-D plate. Bare-PEC defaults reproduce the published reference case: 180×180 mm, 9 GHz, θ = −90…+90°.</li></ul>`},
     'sweep':{title:'Parametric sweep — mass design exploration', html:`
 <h4>What this tab does</h4>
 <p>Runs the reflection-loss calculation across <strong>thousands of parameter combinations at once</strong> — thickness, frequency, and the material's ε′,ε″,μ′,μ″ — and ranks them by how strongly they absorb. Reflection loss is a closed-form formula, so this is instant: no full-wave solves.</p>
@@ -6042,7 +6055,7 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
 <li><strong>Measured material</strong> mode: takes the material you loaded on the Reflection-loss tab and sweeps only its thickness (ε/μ are fixed by measurement).</li>
 <li>Rank by <strong>deepest reflection loss</strong>, <strong>widest −10 dB bandwidth</strong>, or <strong>best reflection loss at a target frequency</strong>. Download every result as CSV for a paper, or send the winner to the Reflection-loss tab.</li></ul>
 <h4>vs the Batch sweeps tab</h4>
-<p>This is <strong>analytical and instant</strong> (thousands of runs in seconds). The openEMS <strong>Batch sweeps</strong> tab runs one slow full-wave solve per point — use that only to validate a shortlist of designs this tab surfaces.</p>`},
+<p>This is <strong>analytical and instant</strong> (thousands of runs in seconds). The openEMS <strong>Full-wave batch (openEMS)</strong> tab runs one slow full-wave solve per point — use that only to validate a shortlist of designs this tab surfaces.</p>`},
     'sweep-chart':{title:'Bandwidth vs peak absorption', html:`
 <h4>What this chart shows</h4>
 <p>Every simulated design as a dot: horizontal = deepest reflection loss (further left = stronger peak absorption), vertical = −10 dB bandwidth (higher = broader). The best trade-offs sit toward the <strong>top-left</strong>; the red marker is the winner for your chosen objective.</p>`},
@@ -6245,6 +6258,26 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
 <p>معادلة الرادار تعطي أقصى مدى كشف R<sub>max</sub> ∝ σ^¼ <a class="cref" href="#refs" data-goto="refs">[43]</a>، فالمدى يتناسب مع 10<sup>−R/40</sup> أيضًا. خفض 20 dB يعني أن رادارًا كان يراك على 100 كم يراك الآن على 32 كم تقريبًا — وغالبًا هذه أهم طريقة عملية للتعبير عن فائدة الطلاء.</p>
 <h4>النطاق</h4>
 <p>هذه قيم عند الأمام (θ = 0) عند ترد كل طلاء، على موديل البصريات الفيزيائية للوح المستوي في اللوحة أعلاه. وبعيدًا عن الأمام يسيطر نمط اللوح نفسه، والحواف تظل تحيد سواء طليت الأوجه أو لا — وتبويب CAD-RCS يسوّي نفس الحساب على شكل ثلاثي الأبعاد حقيقي وعلى مسح زوايا كامل.</p>`},
+    'wg-field':{title:'أنيميشن المجال والصورة الثابتة (الدليل الموجي)', html:`
+<h4>شنو تشوف</h4>
+<p>الـ GIF هو الموجة وهي تتحرّك: في تشغيل <em>guided</em> تسافر داخل الدليل؛ وفي تشغيل <em>reflection</em> ترتد عن الطرف المقصور فتتكوّن موجة واقفة. اللون = شدة المجال الكهربائي |E| (الأفتح = أقوى).</p>
+<h4>كيف تقرأها</h4>
+<ul><li>على جدار موصِل جيّد تبقى الموجة داخل مخطّط الدليل.</li>
+<li>على جدار <strong>راشح</strong> (خشب عاري أو σ منخفضة) بتشوف مجالاً يهرب خارج المخطّط — هذي قدرة مفقودة عبر الجدار.</li>
+<li>الصورة الثابتة هي <strong>غلاف الذروة</strong>: منتظمة ولامعة = مُحمَلة بخسارة قليلة؛ باهتة كل ما بعدت = خسارة عالية.</li></ul>
+<h4>الزمني مقابل الترددي</h4>
+<p>في <strong>Field view → frequency-domain</strong> الصورة لقطة |E| مستقرة واحدة عند تردد منتصف النطاق بدل الأنيميشن — الحلّال نفسه زمني في الحالتين، والفرق طريقة عرض فقط.</p>`},
+    'hrn-field':{title:'صورة مجال البوق', html:`
+<h4>شنو تشوف</h4>
+<p>|E| (شدة المجال) <strong>داخل البوق وهو يشعّ خارج الفتحة</strong>. استخدم مفتاح <strong>dB / Linear</strong> لتغيير سلّم الألوان.</p>
+<h4>كيف تقرأها</h4>
+<ul><li>الموجة تدخل من التغذية الضيّقة، تتوسّع عبر التوسّع المخروطي، وتشعّ للخارج.</li>
+<li>السعة <em>تنقص فعلاً</em> كل ما انتشر الشعاع وأشعّ — هذي فيزياء حقيقية لا خطأ. عرض dB يبقّي النمط والفصوص المشعّة مرئية للنهاية.</li></ul>`},
+    'hrn-geom':{title:'هندسة البوق ثلاثية الأبعاد (تفاعلية)', html:`
+<h4>شنو هذا</h4>
+<p>هندسة البوق التي شُبِّكت وحُلّت فعلاً — إمّا ملف <code>.step</code> اللي رفعته أو بوق WR-90 المدمج — معروضة شبه شفّافة حتى تشوف التغذية → التوسّع → الفتحة.</p>
+<h4>التحكّم</h4>
+<p>اسحب للتدوير، ولفّ عجلة الماوس للتقريب، و<strong>Reset view</strong> يرجّع الزاوية الأصلية. على شاشة اللمس: إصبع واحد يدوّر، وإصبعان يقرّبان بالقرص.</p>`},
     'cad-shrink':{title:'كم يبدو الموديل المطلي أصغر للرادار؟', html:`
 <h4>شنو تجاوب هالّوحة</h4>
 <p>طليت الموديل، فصار الرادار يستقبل صدى أضعف منه. هذي اللوحة تترجم ذلك إلى أحجام تتخيّلها. الطلاء يغيّر <em>الطاقة المرتدة</em> لا الأبعاد الفيزيائية — و«أصغر» تعني «خافت مثل جسم معدني عارٍ أصغر».</p>
@@ -6302,6 +6335,8 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
 <p>السطح المستوي يعكس مثل المرآة: يرجّع الطاقة للرادار فقط لما يكون شبه <em>مواجه تمامًا</em> (عمودي) لخط النظر — وقتها يصير أحمر. ميّله فيذهب الانعكاس باتجاه ثاني ويعتم. لهذا اللوح المستوي أو جانب جسم الدرون المسطّح هدف راداري ضخم عند زاوية معيّنة، ولهذا الأسطح المدوّرة أو المائلة (ذراع منحني، وجه شبح مائل) ما تسطع بقوة عند أي زاوية. حرّك الشريط وراقب اللي يصير أحمر — هذا يخبرك أي زوايا تجعل تصميمك قابلًا للكشف.</p>
 <h4>"Apply coating to this view"</h4>
 <p>عند تأشيرها يُعاد تلوين <em>نفس</em> المنظر بعد تطبيق طلاء كل جزء — تُضرب مساهمة كل مثلث بـ|Γ|² من فيزياء فقد الانعكاس للمادة اللي أعطيتها لذاك الجزء. فهي تجيب على سؤال «هل طلائي فعلاً يقتل النقاط الساخنة؟»: المناطق الحمراء يجب أن تخفت نحو الأصفر/الأزرق. إذا منطقة حمراء <em>ما خفتت</em>، فذاك الجزء إما لا يزال معدنًا عاريًا (PEC) أو طلاؤه غير مطابق عند هذا الترد. أزل التأشير للمقارنة مع المعدن العاري. لاحظ أن الحواف تظل تحيد في الحالتين — الطلاء يخفّض وميض السطح المستوي لا ارتداد الحافة.</p>
+<h4>وين تشير الصفر درجة؟</h4>
+<p><strong>0° تعني أن الرادار ينظر على محور +X للموديل</strong> بعد إعادة تمركز الشبكة على الأصل، والشريط يمشي به عكس عقارب الساعة حول مستوى المسح المختار. ولاحظ أن تبويب <strong>RCS (openEMS)</strong> يُدخل نفس الاتجاه بالمقلوب، كـ<em>سقوط</em> = زاوية النظر + 180° — لأن الرادار هناك يُوصَف بالمكان اللي تجي منه الموجة. وزر «Verify a part on openEMS» يحوّل بينهما تلقائياً، فما تحتاج تسويها بنفسك.</p>
 <h4>التحكم</h4>
 <p>اسحب للتدوير، ودولاب الماوس للتقريب، واستخدم شريط <strong>زاوية النظر</strong> لتطير بالرادار حوله. على شاشة اللمس: إصبع واحد يدوّر، وإصبعان يقرّبان بالقرص.</p>
 <h4>أن تأخذه معك</h4>
@@ -6403,6 +6438,8 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
 <p>هذي تشغّل <strong>محاكاة فيزيائية حقيقية</strong>، مو مجرّد معادلة. تستخدم <strong>openEMS</strong> — وهو حلّال full-wave من نوع <strong>FDTD</strong> ومجاني — اللي يقسّم الـ waveguide إلى شبكة ثلاثية الأبعاد دقيقة ويحرّك المجال الكهرومغناطيسي خطوة زمنية صغيرة ورا الثانية. النتيجة هي <strong>الموجة الفعلية</strong> وهي تتحرّك داخل الموجّه، مع الانعكاس والنقل.</p>
 <h4>وش الفرق عن تبويب Simulator</h4>
 <p>الـ Simulator يستخدم معادلات دقيقة — فوري، ويعطي رقم الخسارة الدقيق. أما هالتبويب فيشغّل الحلّال ثلاثي الأبعاد الحقيقي — ياخذ دقائق، بس <strong>يوريك أنماط المجال والأنيميشن الحقيقية</strong> وسلوك الانعكاس اللي المعادلات ما تقدر تصوّره.</p>
+<h4>زمني ولا ترددي؟</h4>
+<p>openEMS حلّال <strong>زمني</strong> — يخطو بالمجال في الزمن دائماً (هذا معنى FDTD). والنتائج الترددية اللي تشوفها (S-parameters، المجال البعيد، R/T/A) تُنتَج بـ<strong>تحويل فورييه</strong> لنفس التشغيلة الزمنية الواحدة، فتشغيلة وحدة تعطي كل الترددات مرة واحدة. ومحدّد <strong>Field view</strong> يغيّر طريقة عرض صورة المجال فقط — وهو <em>لا</em> يبدّل الحلّال (ما فيه إلا واحد وهو زمني): <em>Time-domain</em> يعرض أنيميشن الموجة المتحركة؛ و<em>Frequency-domain</em> يعرض مقدار |E| في الحالة المستقرة عند تردد منتصف النطاق (من تفريغ DFT الفوري في openEMS).</p>
 <h4>كيف تشغّلها</h4>
 <p>تحتاج مساعد محلي صغير (الـ "bridge"): شغّل <code>openEMS/openems_server.py</code> وافتح الصفحة على <code>http://localhost:8731</code>. بعدها اختر النطاق (band) والمادة (أو stack متعدد الطبقات) وعدد الـ coats والطول، وأشّر على الـ Simulations اللي تبيها، واضغط <strong>Run on openEMS</strong>. كل تحليل full-wave مؤشّر ياخذ ~1–3 دقائق.</p>
 <h4>كيف تُدخَل الموجة (Ports)</h4>
@@ -6435,7 +6472,7 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
 <li><strong>3 · R/T/A</strong> — نسب المنعكس/المنقول/الممتص (مجموعها 100%). الجدار الزين R قريبة من 100%.</li>
 <li><strong>4 · R/T/A vs angle</strong> — كيف يتغيّر الانعكاس مع زاوية السقوط.</li>
 </ul>
-<h4>Multi-layer coating stack</h4>
+<h4>طبقات طلاء متعددة (Multi-layer coating stack)</h4>
 <p>أشّر على <strong>Multi-layer coating stack</strong> عشان تبني الجدار من block زائد لين 3 طبقات طلاء (<strong>Layer 1 = الأعمق</strong>، اللي تواجه الموجة). الفيزياء الطبقية الدقيقة تُحسب بنموذج transfer-matrix؛ وبعدها openEMS يشتغل بالجدار الفعّال للـ stack.</p>
 <h4>حدود بصراحة</h4>
 <p>مقدار الخسارة في openEMS عند حجم الشبكة هذا تقريبي (أثر الشبكة الخشنة) — عشان كذا خذ <strong>رقم الخسارة الدقيق من النموذج التحليلي (Simulator)</strong>، واستخدم openEMS لسلوك المجال والانعكاس. كل صورة مجال و S-parameter هنا منتَجة فعلاً من openEMS.</p>`},
@@ -6787,8 +6824,13 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
   function renderInfo(){
     if(!infoKey) return;
     const en=INFO[infoKey]||{}, ar=INFO_AR[infoKey]||{}, isAr=(infoLang==='ar' && !!ar.html);
+    const arMissing = (infoLang==='ar' && !ar.html);
     $('info-title').textContent = isAr ? ar.title : en.title;
-    $('info-body').innerHTML   = isAr ? ar.html  : en.html;
+    // Say so, rather than silently returning English with the EN button re-lit — which reads as a
+    // broken toggle instead of as missing content.
+    $('info-body').innerHTML   = (isAr ? ar.html : en.html) +
+      (arMissing ? '<p dir="rtl" style="margin-top:16px;padding:10px 12px;border-radius:8px;'+
+        'background:var(--amber-soft);color:var(--amber);font-size:13px;">هذا الشرح غير متوفّر بالعربي بعد — معروض بالإنجليزي.</p>' : '');
     $('info-body').setAttribute('dir', isAr?'rtl':'ltr');
     $('info-title').setAttribute('dir', isAr?'rtl':'ltr');
     const eb=$('info-en'), ab=$('info-ar'); if(eb) eb.classList.toggle('on',!isAr); if(ab) ab.classList.toggle('on',isAr);
@@ -6949,7 +6991,7 @@ window.LabCal = (function(){
   function lossTarget(){ const v=parseFloat($('invdes-loss').value); return (isFinite(v)&&v>=0)?v:null; }
   function targetLbl(t){ return t===null ? 'no loss constraint' : ('loss ≤ '+t+' dB/m'); }
   function run(){
-    if(!window.EM||!window.SIM){$('invdes-status').textContent='Engine not ready.';return;}
+    if(!window.EM||!window.SIM){$('invdes-status').textContent='The calculation engine has not finished loading — reload the page. If it keeps happening, the page scripts or the CDN libraries are being blocked.';return;}
     const bk=$('invdes-band').value, obj=$('invdes-obj').value, target=lossTarget(),
           launch=parseFloat($('invdes-launch').value)||7000, O=OBJ[obj];
     const yval=c=> obj==='mass'? c.mass*1000 : c[obj];
@@ -7098,7 +7140,7 @@ window.LabCal = (function(){
   function fmtSig(v){const e=Math.floor(Math.log10(v));return (v/Math.pow(10,e)).toFixed(2)+'×10'+String(e).replace(/[0-9-]/g,d=>'⁰¹²³⁴⁵⁶⁷⁸⁹⁻'['0123456789-'.indexOf(d)]);}
   function run(){
     if(!measured.length){$('fit-status').textContent='Upload a file first.';return;}
-    if(!window.EM||!window.SIM){$('fit-status').textContent='Engine not ready.';return;}
+    if(!window.EM||!window.SIM){$('fit-status').textContent='The calculation engine has not finished loading — reload the page. If it keeps happening, the page scripts or the CDN libraries are being blocked.';return;}
     const bk=$('fit-band').value, L=(parseFloat($('fit-len').value)||200)/1000, lf=lossFn(bk);
     const r=fitSigma(measured,L,lf);
     $('fit-best').style.display='block';
@@ -8468,7 +8510,7 @@ window.LabCal = (function(){
   });
   var dlBtn=$('rcs-dl-btn'); if(dlBtn) dlBtn.addEventListener('click',async function(){
     var d=window.__rcsRun; if(!d){ return; }
-    if(typeof JSZip==='undefined'){ alert('JSZip not loaded (needs internet on first load).'); return; }
+    if(typeof JSZip==='undefined'){ alert('The ZIP library did not load. It comes from a CDN on the first visit — reconnect to the internet, reload this page, then download again. Individual CSV downloads still work without it.'); return; }
     var old=dlBtn.textContent; dlBtn.disabled=true; dlBtn.textContent='Zipping…';
     try{
       var zip=new JSZip();
@@ -8911,7 +8953,7 @@ window.LabCal = (function(){
     } else if(fails.length){
       st.style.color='#c0392b';
       st.textContent='Finished '+batchRows.length+' of '+vals.length+'; '+fails.length+' failed (last: '+
-                     ((fails[fails.length-1]||{}).msg||'see console')+')';
+                     ((fails[fails.length-1]||{}).msg||'no message returned')+')';
       console.log('batch sweep failures', fails);
     } else {
       st.style.color=''; st.textContent='Done: '+batchRows.length+' of '+vals.length+' solves complete.';
@@ -9105,7 +9147,7 @@ window.LabCal = (function(){
   function xlsxColIdx(ref){ var m=/^([A-Z]+)/.exec(ref||''); if(!m)return 0; var s=m[1],n=0; for(var i=0;i<s.length;i++)n=n*26+(s.charCodeAt(i)-64); return n-1; }
   function xmlUnesc(s){ return String(s).replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&amp;/g,'&'); }
   function parseXlsxBuf(buf){
-    if(typeof JSZip==='undefined') return Promise.reject(new Error('JSZip not loaded (needs internet on first load)'));
+    if(typeof JSZip==='undefined') return Promise.reject(new Error('The ZIP library did not load. It comes from a CDN on the first visit — reconnect to the internet, reload this page, then download again. Individual CSV downloads still work without it.'));
     return JSZip.loadAsync(buf).then(function(zip){
       var pSS=zip.file('xl/sharedStrings.xml');
       return (pSS?pSS.async('string'):Promise.resolve('')).then(function(sx){
@@ -9583,7 +9625,7 @@ window.LabCal = (function(){
   function xmlEsc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
   function xlsxCol(n){ var s=''; n++; while(n>0){ var m=(n-1)%26; s=String.fromCharCode(65+m)+s; n=(n-m-1)/26|0; } return s; }
   function buildXlsxBlob(aoa,sheetName,colStyle){
-    if(typeof JSZip==='undefined') return Promise.reject(new Error('JSZip not loaded'));
+    if(typeof JSZip==='undefined') return Promise.reject(new Error('The ZIP library did not load. It comes from a CDN on the first visit — reconnect to the internet, reload this page, then download again. Individual CSV downloads still work without it.'));
     colStyle=colStyle||{};
     var sd='';
     for(var r=0;r<aoa.length;r++){ var row=aoa[r]||[], cells='';
@@ -9635,7 +9677,7 @@ window.LabCal = (function(){
       'Thickness: '+m.thicknesses_mm.join(', ')+' mm','',
       'BEST ABSORPTION: RL = '+b.minRL_dB+' dB at '+b.matchingFreq_GHz+' GHz, '+b.thickness_mm+' mm; EAB(≤-10 dB) = '+b.EAB_GHz+' GHz.','',
       'Files','-----',
-      'RL_table.xlsx            RL vs frequency, one column per thickness (Excel; advisor layout).',
+      'RL_table.xlsx            RL vs frequency, one column per thickness (Excel; same column layout as the reference papers).',
       'RL_table.csv             Same table as CSV.',
       'material_dispersion.csv  The ε/μ(f) actually used (cleaned from the upload).',
       'RCS_vs_angle.csv         Coated-plate RCS (dBsm) vs angle: bare PEC + one column per coating (the RCS chart data).',
@@ -9667,7 +9709,7 @@ window.LabCal = (function(){
   }
   async function dlAll(){
     if(!RL_LAST){ alert('Compute a material first.'); return; }
-    if(typeof JSZip==='undefined'){ alert('JSZip not loaded (needs internet on first load).'); return; }
+    if(typeof JSZip==='undefined'){ alert('The ZIP library did not load. It comes from a CDN on the first visit — reconnect to the internet, reload this page, then download again. Individual CSV downloads still work without it.'); return; }
     var btn=$('rlc-dlall'), old=btn?btn.textContent:'';
     if(btn){ btn.disabled=true; btn.textContent='Building ZIP…'; }
     try{
@@ -11637,7 +11679,7 @@ window.CADRCS = {
   }
   function dlAll(){
     if(!LAST){ $('cad-runstatus').textContent='Compute first.'; return; }
-    if(!window.JSZip){ $('cad-runstatus').textContent='JSZip not available.'; return; }
+    if(!window.JSZip){ $('cad-runstatus').textContent='The ZIP library did not load. It comes from a CDN on the first visit — reconnect to the internet, reload this page, then download again. Individual CSV downloads still work without it.'; return; }
     var zip=new JSZip();
     zip.file('RCS_vs_angle.csv', csvText());
     zip.file('parts_table.csv', partsCSV());                       // SS7: the per-part table as data
@@ -12365,7 +12407,7 @@ window.CADRCS = {
       if(rejected.length){ console.log('shape search rejected '+rejected.length+' geometrically invalid candidate(s):', rejected);
         $('cad-opt-status').textContent+='  ·  '+rejected.length+' rejected as invalid geometry'; }
       if(skipped.length){ console.log('shape search skipped '+skipped.length+' candidate(s):', skipped);
-        $('cad-opt-status').textContent+='  ·  '+skipped.length+' candidate'+(skipped.length===1?'':'s')+' skipped (see console)'; }
+        $('cad-opt-status').textContent+='  ·  '+skipped.length+' candidate'+(skipped.length===1?'':'s')+' skipped after an error while deforming the mesh'; }
       // Release every candidate's vertex array except the adopted chain's. optRender() never reads
       // r.vm, and on a 39k-triangle model each one is a few hundred kB — with 80 candidates that is
       // tens of MB retained for nothing, and it accumulates over repeated searches.
