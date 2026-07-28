@@ -885,6 +885,11 @@
       </svg>
     </div>
     <p class="specs" style="margin-top:16px;">Created by Huzaifa Taha Rangwala (UC Berkeley) · Space Materials Lab, Khalifa University · To download or for more information, contact <a href="mailto:huzaifataha54@berkeley.edu" style="color:var(--accent);">huzaifataha54@berkeley.edu</a></p>
+    <p style="margin:14px 0 0;font-size:13.5px;">
+      <strong>New here?</strong>
+      <button class="btn" type="button" data-goto="guide" style="padding:4px 12px;font-size:12.5px;margin-left:6px;">Read the instructions</button>
+      <span style="color:var(--muted);margin-left:8px;">— what each of the 21 tabs does, and how to set the solver up.</span>
+    </p>
     <div class="statstrip">
       <div class="stat"><div class="num"><span class="cu" data-to="4" data-dec="0">4</span></div><div class="cap">Domains · waveguide · horn · RCS · materials</div></div>
       <div class="stat"><div class="num">0.5–<span class="cu" data-to="110" data-dec="0">110</span><span class="u"> GHz</span></div><div class="cap">Analysis range · X · Ku · K guide bands</div></div>
@@ -928,7 +933,7 @@
       </div>
     </div>
     <div class="moredrop">
-      <button class="tab moretab grouptab" id="more-btn" data-group="more" type="button"><svg class="tabic" viewBox="0 0 24 24"><circle cx="6" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="18" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="6" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="18" cy="12" r="1.5" fill="currentColor" stroke="none"/></svg>More ▾</button>
+      <button class="tab moretab grouptab" id="more-btn" data-group="more" type="button"><svg class="tabic" viewBox="0 0 24 24"><circle cx="6" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="18" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="6" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="18" cy="12" r="1.5" fill="currentColor" stroke="none"/></svg>Learn ▾</button>
       <div class="more-menu" id="more-menu">
         <button class="morelink" data-page="phys"><svg class="tabic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><ellipse cx="12" cy="12" rx="10" ry="4.2"/><ellipse cx="12" cy="12" rx="10" ry="4.2" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4.2" transform="rotate(120 12 12)"/></svg>The physics</button>
         <button class="morelink" data-page="guide"><svg class="tabic" viewBox="0 0 24 24"><path d="M12 6c-2-1.4-5-2-8-2v14c3 0 6 .6 8 2 2-1.4 5-2 8-2V4c-3 0-6 .6-8 2z"/><line x1="12" y1="6" x2="12" y2="20"/></svg>Instructions</button>
@@ -1097,7 +1102,7 @@
       </div>
 
       <p id="oe-mesh" style="font-family:var(--font-mono);font-size:11px;color:var(--muted);margin:12px 0 0;"></p>
-      <div id="oe-status" style="font-family:var(--font-mono);font-size:12px;color:var(--muted);margin:8px 0 0;">Idle. Start the bridge server and open via http://localhost:8731, then Run.</div>
+      <div id="oe-status" style="font-family:var(--font-mono);font-size:12px;color:var(--muted);margin:8px 0 0;">Checking whether the solver bridge is reachable…</div>
       <div id="oe-progress" style="margin-top:10px;"></div>
       <div id="oe-actions" style="display:none;gap:10px;margin-top:12px;">
         <button class="btn" id="oe-summary-btn">Summary</button>
@@ -1404,7 +1409,7 @@
         <button class="btn primary go" id="hrn-run">Run antenna sim</button>
       </div>
       <p id="hrn-mesh" style="font-family:var(--font-mono);font-size:11px;color:var(--muted);margin:12px 0 0;"></p>
-      <div id="hrn-status" style="font-family:var(--font-mono);font-size:12px;color:var(--muted);margin:8px 0 0;">Idle. Start the bridge server and open via http://localhost:8731, then Run.</div>
+      <div id="hrn-status" style="font-family:var(--font-mono);font-size:12px;color:var(--muted);margin:8px 0 0;">Checking whether the solver bridge is reachable…</div>
       <div id="hrn-progress" style="margin-top:10px;"></div>
       <div id="hrn-result" style="display:none;margin-top:16px;">
         <div id="hrn-gain" style="font-family:var(--font-mono);font-size:13px;background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;padding:12px 14px;margin-bottom:16px;"></div>
@@ -1798,7 +1803,7 @@
     <p class="lede">Every material you pin with <strong>📌 Pin material to library</strong> on the <strong>Reflection-loss (RL)</strong> tab lands here. This page overlays their <strong>reflection-loss curves</strong> so you can see, side by side, which material absorbs best and over what bandwidth — and the same library feeds the per-part coating dropdowns on the <strong>CAD-RCS</strong> tab. Everything is analytical and instant; the library is stored in your browser and survives between sessions.</p>
 
     <div id="mlb-empty" style="padding:22px;border:1px dashed var(--line);border-radius:10px;color:var(--muted);text-align:center;line-height:1.7;">
-      No materials saved yet.<br>Go to <strong>RCS + RL ▾ → Reflection loss (RL)</strong>, load or type a material, press <strong>Compute reflection loss</strong>, then press <strong>📌 Pin material to library</strong>. Repeat for each material you want to compare.
+      No materials saved yet.<br>Go to <button class="btn" type="button" data-goto="rlcalc" style="padding:3px 10px;font-size:12px;">Reflection loss (RL)</button>, load or type a material, press <strong>Compute reflection loss</strong>, then press <strong>📌 Pin material to library</strong>. Repeat for each material you want to compare.
     </div>
 
     <div id="mlb-body" style="display:none;">
@@ -1845,7 +1850,12 @@
     <button class="pageinfo" data-info="rcsbatch">ⓘ&nbsp;Info</button>
     <p class="eyebrow">RCS · batch parameter sweep</p>
     <h1 style="font-size:26px;margin:2px 0 6px;">Sweep one parameter, unattended</h1>
-    <p class="lede">Vary <strong>one</strong> parameter — coating thickness, conductivity, loss, target size or incidence — across a range, and the tool runs a full openEMS RCS solve at each value <strong>in sequence</strong>, plotting how the RCS (and coating reduction) responds. Ideal for "how thick does the absorber need to be?" studies. Leave it running; each solve is 20–60 s.</p>
+    <p class="lede">Vary <strong>one</strong> parameter — coating thickness, conductivity, loss, target size or incidence — across a range, and the tool runs a full openEMS RCS solve at each value <strong>in sequence</strong>, plotting how the RCS (and coating reduction) responds. Leave it running; each solve is 20–60 s.</p>
+    <p style="margin:0 0 16px;padding:11px 14px;border-radius:8px;background:var(--accent-soft);font-size:13px;line-height:1.55;">
+      <strong>Answering "how thick does the absorber need to be?"</strong> Start on
+      <button class="btn" type="button" data-goto="sweep" style="padding:3px 10px;font-size:12px;">Fast material search</button>
+      instead — it evaluates thousands of ε/μ and thickness combinations in closed form in a few seconds.
+      Come back <em>here</em> to confirm the winner with real full-wave solves, which is what this tab is for.</p>
 
     <div class="panel" style="padding:16px 18px;margin:14px 0 18px;border:2px solid var(--accent);">
       <div class="oe-head">Base target &amp; sweep</div>
@@ -1935,8 +1945,8 @@ for t_mm in [0.5, 1, 2, 3, 4]:
           <input id="rlc-name" type="text" value="Custom absorber (constant ε/μ)" style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-body);font-size:13px;"></div>
         <div><div class="oe-lab">How to specify ε / μ</div>
           <select id="rlc-mode" style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-body);font-size:13px;">
-            <option value="constant">Type constant ε / μ — no file</option>
-            <option value="measured" selected>Upload measured dispersion (CSV / text / Excel)</option>
+            <option value="constant" selected>Type constant ε / μ — no file</option>
+            <option value="measured">Upload measured dispersion (CSV / text / Excel)</option>
           </select></div>
       </div>
 
@@ -2188,6 +2198,7 @@ for t_mm in [0.5, 1, 2, 3, 4]:
           <span style="font-size:11.5px;color:var(--muted);">Apply to <strong>all</strong> parts:</span>
           <select id="cad-all-mode" style="padding:5px 7px;border:1px solid var(--line);border-radius:5px;background:var(--panel);font-family:var(--font-body);font-size:11.5px;"></select>
           <button class="btn go" id="cad-all-apply" type="button" style="font-size:11.5px;padding:4px 10px;">Apply to all</button>
+          <span id="cad-seg-status" style="font-family:var(--font-mono);font-size:11px;color:var(--accent);"></span>
         </div>
         <!-- SS5: the values that are about to be written to every part, editable first. Editing here
              does NOT touch the pinned library entry — it is a one-off override for this model. -->
@@ -2485,9 +2496,11 @@ for t_mm in [0.5, 1, 2, 3, 4]:
     </div>
 
     <div id="fit-best" class="panel" style="display:none;padding:16px 18px;margin-bottom:18px;border-left:3px solid var(--accent);"></div>
+    <div id="fit-chart-wrap" style="display:none;">
     <p class="charttitle">Measured vs fitted transmission<button class="chartinfo" data-info="fit-chart" title="What is this?">ⓘ</button></p>
     <p class="chartsub">Your measured S21 points and the model curve for the best-fit conductivity. A close overlay means the extracted σ genuinely explains your measurement.</p>
     <div class="panel" style="padding:16px 18px;margin-bottom:18px;"><div style="position:relative;height:300px;"><canvas id="fit-chart"></canvas></div></div>
+    </div>
     <div id="fit-interp" style="font-size:14px;line-height:1.6;"></div>
     <div id="fit-cal" style="margin-top:18px;"></div>
     <p id="fit-status" style="font-family:var(--font-mono);font-size:11px;color:var(--muted);margin:10px 0 0;">Upload a CSV (freq_ghz, s21_db) or a Touchstone .s2p file to begin.</p>
@@ -2936,9 +2949,9 @@ for t_mm in [0.5, 1, 2, 3, 4]:
       <li><strong>RCS + RL ▾ → Full-wave batch (openEMS)</strong> — sweeps one parameter unattended, one real full-wave solve per point. Slow and rigorous; the opposite of Fast material search.</li>
       <li><strong>RCS + RL ▾ → CAD-RCS (STEP/STL)</strong> — upload a 3-D model and get its radar signature part by part, which part dominates, what a coating buys you, and a search over real deformations of the geometry for a lower signature.</li>
       <li><strong>Materials</strong> (in both the Waveguide and Horn menus — it is one page, listed twice) — define any material and the whole tool recomputes around it.</li>
-      <li><strong>More ▾ → The physics</strong> — every equation behind every number, each with a literature citation. It opens with a contents index.</li>
-      <li><strong>More ▾ → Instructions</strong> — this tab.</li>
-      <li><strong>More ▾ → References</strong> — every value and formula, with its source.</li>
+      <li><strong>Learn ▾ → The physics</strong> — every equation behind every number, each with a literature citation. It opens with a contents index.</li>
+      <li><strong>Learn ▾ → Instructions</strong> — this tab.</li>
+      <li><strong>Learn ▾ → References</strong> — every value and formula, with its source.</li>
 
     </ul>
     <p>Every openEMS chart and animation, and every page, has a small <strong>ⓘ</strong> button that opens a plain-language explanation (with an English / Emirati-Arabic toggle).</p>
@@ -3741,6 +3754,31 @@ function build(){
   window.physIndex=build;
 })();
 
+/* One cheap probe of the solver bridge, so the two openEMS tabs stop telling a user who has already
+   done the setup to go and do it. /progress is a plain GET that never starts a solve. Opened as a
+   file:// page there is no bridge by definition, so we skip the probe and keep the instruction. */
+(function(){
+  function say(txt,col){
+    ['oe-status','hrn-status','rcs-status'].forEach(function(id){
+      var e=document.getElementById(id); if(!e) return;
+      if(!/Checking whether the solver bridge/.test(e.textContent)) return;   // never clobber a real message
+      e.textContent=txt; if(col) e.style.color=col;
+    });
+  }
+  if(location.protocol==='file:'){
+    say('No solver bridge: this page was opened from a file, not served by it. Everything analytical works; '+
+        'for the openEMS runs start openEMS/openems_server.py and open http://localhost:8731.');
+    return;
+  }
+  fetch('progress?kind=wg',{cache:'no-store'})
+    .then(function(r){ if(!r.ok) throw 0; return r.json().catch(function(){return {};}); })
+    .then(function(){ say('Solver bridge reachable — press Run.'); })
+    .catch(function(){
+      say('The solver bridge is not answering on this address. Start openEMS/openems_server.py on the '+
+          'machine that hosts this page, then reload. The analytical tabs work either way.', '#9a6a16');
+    });
+})();
+
 window.clampPicker=function(dd){
   if(!dd) return;
   // Always clear first, THEN bail on desktop — an early return would have left a clamp applied on
@@ -4080,6 +4118,12 @@ document.getElementById('reset-btn').addEventListener('click',resetMaterials);
   const condOpts=Object.keys(CONDUCTORS).map(k=>opt(k,CONDUCTORS[k].name)).join('')+opt('custom','(custom — keep values)');
   $('f-coatSel').innerHTML=condOpts; $('f-solidSel').innerHTML=condOpts;
   $('f-subSel').innerHTML=Object.keys(SUBSTRATES).map(k=>opt(k,SUBSTRATES[k].name)).join('')+opt('custom','(custom — keep values)');
+  // Point the selects at what the fields already contain. Without this they defaulted to option 0 —
+  // "Silver" and "— custom —" — flatly contradicting the MXene values sitting right next to them.
+  // .value only, no change event: the fields are already right and must not be overwritten.
+  $('f-preset').value='home';
+  if($('f-coatSel').querySelector('option[value="mxene"]')) $('f-coatSel').value='mxene';
+  if($('f-subSel').querySelector('option[value="wood"]')) $('f-subSel').value='wood';
   function fillCoat(k){const c=CONDUCTORS[k]; if(!c)return; setV('f-coatName',c.name);setV('f-coatSigma',c.sigma);setV('f-coatDensity',c.density);setV('f-coatPrice',c.price);setV('f-coatCo2',c.co2!=null?c.co2:0);
     setV('f-coatEps',c.epsR||1);setPP('f-coatEpsPP',c.epsPP||0,c.epsR||1,'f-coatLossMode');setV('f-coatMu',c.mur||1);setV('f-coatMuPP',c.muPP||0);}
   function fillSub(k){const s=SUBSTRATES[k]; if(!s)return; setV('f-subName',s.name);setV('f-subDensity',s.density);setV('f-subPrice',s.price);setV('f-subCo2',s.co2!=null?s.co2:0);setV('f-subEps',s.epsR);}
@@ -7162,8 +7206,11 @@ window.LabCal = (function(){
       plugins:{legend:{display:true,labels:{font:{size:11}}}},
       scales:{x:{type:'linear',title:{display:true,text:'Frequency (GHz)',font:{size:10}}},
               y:{title:{display:true,text:'S21 (dB)',font:{size:10}}}}};
-    if(chart){chart.data.datasets=ds;chart.options=opts;chart.update();}
-    else chart=new Chart($('fit-chart'),{type:'scatter',data:{datasets:ds},options:opts});
+    // reveal BEFORE constructing: a Chart created inside a display:none container inits at 0x0 and
+    // never repaints (documented trap)
+    var cw=$('fit-chart-wrap'); if(cw) cw.style.display='';
+    if(chart){chart.data.datasets=ds;chart.options=opts;chart.update();chart.resize();}
+    else { chart=new Chart($('fit-chart'),{type:'scatter',data:{datasets:ds},options:opts}); chart.resize(); }
     $('fit-status').textContent='Fitted '+measured.length+' points from '+fileName+' over '+(L*1000).toFixed(0)+' mm.';
   }
   $('fit-mode').addEventListener('change',()=>{const c=$('fit-mode').value==='coat';
@@ -7177,6 +7224,7 @@ window.LabCal = (function(){
     if(b){ b.style.display='none'; b.innerHTML=''; }
     if(it) it.innerHTML='';
     if(chart){ chart.destroy(); chart=null; }
+    var cw=$('fit-chart-wrap'); if(cw) cw.style.display='none';
     if(why && $('fit-status')) $('fit-status').textContent=why;
   }
   ['fit-band','fit-len','fit-mode','fit-sub','fit-coats'].forEach(function(id){
@@ -8839,7 +8887,11 @@ window.LabCal = (function(){
   };
   function sendInvToRcs(){
     var d=invBest; if(!d){ return; }
-    var m=d.front||{eps_re:12,eps_im:3,mu_re:1,mu_im:0};   // Salisbury has no bulk material → send a lossy dielectric proxy
+    // A Salisbury/Jaumann screen is a resistive SHEET over a spacer — there is no bulk ε/μ to send,
+    // and the RCS tab models a single homogeneous coating. We substitute a lossy-dielectric stand-in,
+    // and we must SAY SO rather than promise the reduction will reproduce.
+    var proxied = !d.front;
+    var m=d.front||{eps_re:12,eps_im:3,mu_re:1,mu_im:0};
     var set=function(id,v){ var e=$(id); if(e){ e.value=v; e.dispatchEvent(new Event('change')); e.dispatchEvent(new Event('input')); } };
     set('rcs-shape','plate'); set('rcs-size1',60); set('rcs-size2',60);
     set('rcs-band',$('invrcs-band').value);
@@ -8848,7 +8900,15 @@ window.LabCal = (function(){
     set('rcs-cm-mur',m.mu_re); set('rcs-cm-mupp',m.mu_im);
     set('rcs-thick',(d.thick*1000).toFixed(2));
     activateTab('rcs');
-    var st=$('rcs-status'); if(st){ st.style.color=''; st.textContent='Loaded the inverse-design winner ('+d.label+') as a coated flat plate — press "Run RCS on openEMS" to validate the '+d.RL.toFixed(1)+' dB reduction full-wave.'+(d.layers&&d.layers.length>1?' (Multilayer sent as its front layer — the RCS tab models one coating.)':''); }
+    var st=$('rcs-status'); if(st){ st.style.color=''; st.textContent = proxied
+        ? ('Loaded '+d.label+' as a coated flat plate — but ⚠ this design is a resistive SHEET over a spacer, '
+           +'which has no bulk ε/μ, and the RCS tab models one homogeneous coating. A lossy-dielectric '
+           +'stand-in (ε=12−j3, μ=1) was sent in its place, so the full-wave result will NOT reproduce the '
+           +d.RL.toFixed(1)+' dB — treat it as a different target. For a like-for-like check pick a '
+           +'Dallenbach or multilayer winner, which do have bulk ε/μ.')
+        : ('Loaded the inverse-design winner ('+d.label+') as a coated flat plate — press "Run RCS on openEMS" to validate the '+d.RL.toFixed(1)+' dB reduction full-wave.'
+           +(d.layers&&d.layers.length>1?' (Multilayer sent as its front layer — the RCS tab models one coating.)':''));
+      if(proxied) st.style.color='#9a6a16'; }
     var run=$('rcs-run'); if(run) run.scrollIntoView({behavior:'smooth',block:'center'});
   }
 
@@ -9826,10 +9886,12 @@ window.LabCal = (function(){
     if(!RL_LAST || !RL_LAST.best){ alert('Compute the reflection loss first.'); return; }
     var b=RL_LAST.best, row=interpRow(b.f);
     if(!row){ alert('Could not read ε/μ at the optimum — recompute and try again.'); return; }
-    var dflt=($('rlc-name')&&$('rlc-name').value)||'material';
-    var nm=prompt('Name this material for the library:', dflt);
-    if(nm===null) return;
-    var m={ name:(nm||dflt).slice(0,60),
+    var nm=(($('rlc-name')&&$('rlc-name').value)||'material').trim()||'material';
+    // second pin of the same name replaces the first rather than making an indistinguishable twin
+    var dup=null;
+    try{ dup=(JSON.parse(localStorage.getItem('cadMatLib_v1')||'[]')||[]).filter(function(x){
+      return String(x.name).trim().toLowerCase()===nm.toLowerCase(); })[0]||null; }catch(e){}
+    var m={ name:nm.slice(0,60), id:(dup?dup.id:undefined),
             ep:+(+row.ep).toFixed(4),  epp:+Math.abs(+row.epp).toFixed(4),
             mup:+(+row.mup).toFixed(4), mupp:+Math.abs(+row.mupp).toFixed(4),
             thick:+(+b.t).toFixed(3),
@@ -9855,11 +9917,16 @@ window.LabCal = (function(){
     try{
       var KEY='cadMatLib_v1', a=JSON.parse(localStorage.getItem(KEY)||'[]');
       if(!Array.isArray(a)) a=[];
-      m.id='m'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
-      a.push(m); localStorage.setItem(KEY, JSON.stringify(a));
+      var replaced=false;
+      if(m.id){                                     // same name already pinned -> replace it in place
+        for(var q=0;q<a.length;q++) if(String(a[q].id)===String(m.id)){ a[q]=m; replaced=true; break; }
+      }
+      if(!replaced){ m.id='m'+Date.now().toString(36)+Math.random().toString(36).slice(2,5); a.push(m); }
+      localStorage.setItem(KEY, JSON.stringify(a));
       var st=$('rlc-pin-status')||$('rlc-parse');
       if(st){ st.style.color='var(--accent)';
-        st.textContent='📌 pinned “'+m.name+'” ('+m.note+', '+m.thick+' mm) — now selectable per part on the CAD-RCS tab and on RCS (openEMS).'; }
+        st.textContent='📌 '+(replaced?'updated':'pinned')+' “'+m.name+'” ('+m.note+', '+m.thick+' mm) — '+
+          'selectable per part on the CAD-RCS tab and on RCS (openEMS). Rename it any time in the Material library.'; }
     }catch(e){ alert('Could not save to the material library: '+(e&&e.message||e)); }
   }
 
@@ -11156,18 +11223,16 @@ window.CADRCS = {
     var num=function(c){ return parseFloat(row.querySelector(c).value); };
     var m={ep:num('.cad-ep'), epp:Math.abs(num('.cad-epp')), mup:num('.cad-mup'), mupp:Math.abs(num('.cad-mupp')), thick:num('.cad-thick')};
     if(!isFinite(m.ep)||!isFinite(m.mup)||m.ep<=0||m.mup<=0||!isFinite(m.thick)||m.thick<=0){ alert('Enter valid ε′, μ′ (>0) and thickness before saving.'); return; }
-    var nm=prompt('Name this material for the library:', 'material from '+partName);
-    if(nm===null) return;
-    m.name=(nm||'material').slice(0,60); m.src='CAD tab';
+    m.name=('material from '+partName).slice(0,60); m.src='CAD tab';
     var f=parseFloat(($('cad-freq')||{}).value)||10;
     if(window.RLcore){ try{ m.note='RL '+window.RLcore.rlAt({f:f,ep:m.ep,epp:m.epp,mup:m.mup,mupp:m.mupp}, m.thick/1000).toFixed(1)+' dB @ '+f+' GHz'; }catch(e){} }
     libAdd(m); renderLib(); renderSegList();
-    $('cad-runstatus').textContent='saved “'+m.name+'” to the material library — it is now in every part dropdown.';
+    segSay('saved “'+m.name+'” to the material library — it is now in every part dropdown.');
   }
   function importOptimal(row){
-    if(!window.RLcore){ alert('Open the Reflection-loss tab and compute a material first.'); return; }
+    if(!window.RLcore){ segSay('Open the Reflection-loss tab and compute a material first.', true); return; }
     var rows=window.RLcore.getRows&&window.RLcore.getRows();
-    if(!rows||!rows.length){ alert('Nothing to pull from — upload/compute a material on the Reflection-loss tab first.'); return; }
+    if(!rows||!rows.length){ segSay('Nothing to pull from — upload/compute a material on the Reflection-loss tab first.', true); return; }
     // deepest-RL point across the loaded material at this row's thickness
     var f0=rows[Math.floor(rows.length/2)].f, best={rl:1e9,f:f0,row:rows[0]};
     var t=parseFloat(row.querySelector('.cad-thick').value)||2;
@@ -11177,7 +11242,7 @@ window.CADRCS = {
     row.querySelector('.cad-epp').value=Math.abs(+best.row.epp).toFixed(3);     // ε″/μ″ are used as |·| (passive)
     row.querySelector('.cad-mup').value=(+best.row.mup).toFixed(3);
     row.querySelector('.cad-mupp').value=Math.abs(+best.row.mupp).toFixed(3);
-    $('cad-runstatus').textContent='imported '+window.RLcore.matName()+' (deepest RL '+best.rl.toFixed(1)+' dB near '+best.f.toFixed(2)+' GHz) into '+row.querySelector('span').textContent;
+    segSay('imported '+window.RLcore.matName()+' (deepest RL '+best.rl.toFixed(1)+' dB near '+best.f.toFixed(2)+' GHz) into '+row.querySelector('span').textContent);
   }
   function readSegMats(){
     var out={};
@@ -11228,6 +11293,12 @@ window.CADRCS = {
   // whatever the PREVIOUS action had said (often about a different model), and repeat taps queued more
   // 15 s blocks. Disable, say what is happening, yield one turn so that paints, then run.
   var COMPUTING=false;
+  // Section 3's own status line — its buttons are hundreds of pixels below #cad-runstatus.
+  function segSay(txt, warn){
+    var e=$('cad-seg-status');
+    if(e){ e.textContent=txt; e.style.color = warn ? '#9a6a16' : 'var(--accent)'; }
+    else { var r=$('cad-runstatus'); if(r) r.textContent=txt; }
+  }
   function computeUI(after){
     if(COMPUTING) return;
     if(!MESH){ $('cad-runstatus').textContent='Upload a model first.'; return; }
@@ -11243,6 +11314,11 @@ window.CADRCS = {
       catch(e){ if(st) st.textContent='the sweep failed: '+(e&&e.message||e); console.log('cad compute failed',e); }
       finally{
         COMPUTING=false; btns.forEach(function(b){ b.disabled=false; });
+        // bring the answer into view — the headline lands ~600px below the button that produced it
+        var hl=$('cad-headline');
+        if(hl && hl.style.display!=='none' && typeof after!=='function'){
+          try{ hl.scrollIntoView({block:'start'}); }catch(e){}
+        }
         if(typeof after==='function') try{ after(); }catch(e){}
       }
     },0);
@@ -11416,6 +11492,32 @@ window.CADRCS = {
     var ow=$('cad-opt-wrap'); if(ow) ow.style.display=MESH?'':'none';
     var fb=$('cad-fab'); if(fb){ fb.dataset.ready=MESH?'1':'0'; fb.classList.toggle('on', !!MESH); }
     var os=$('cad-opt-status'); if(os) os.textContent='';
+    // ...and the run status too: leaving "done — 180 look-angles @ 10 GHz" next to a re-enabled
+    // Compute button with nothing on screen reads as "the results vanished", not "press Compute".
+    var rs=$('cad-runstatus'); if(rs) rs.textContent = MESH ? 'Model loaded — press Compute RCS.' : '';
+  }
+  // ⚠ #4 STALE RESULTS, the class that keeps coming back. v4.0 wired this for Full-wave, RCS, Compare
+  // and Measurement-fit and missed CAD-RCS entirely: change the frequency or untick PTD and the
+  // headline, chart, per-part table, 3-D view and shrink panel all stayed, with Download-all, the CSV,
+  // the rotating GIF and the run manifest still live — so the export carried the old configuration.
+  function cadInvalidateOnChange(){
+    ['cad-freq','cad-plane','cad-pol','cad-step','cad-ptd','cad-showcoat'].forEach(function(id){
+      var e=$(id); if(!e) return;
+      e.addEventListener('change',function(){
+        if(!LAST) return;
+        LAST=null; resetOutputs();
+        var rs=$('cad-runstatus');
+        if(rs) rs.textContent='Settings changed — the previous result no longer describes this configuration. Press Compute RCS.';
+      });
+    });
+    // per-part material rows are built dynamically, so delegate
+    var host=$('cad-seg-list');
+    if(host) host.addEventListener('change',function(){
+      if(!LAST) return;
+      LAST=null; resetOutputs();
+      var rs=$('cad-runstatus');
+      if(rs) rs.textContent='Part materials changed — press Compute RCS to re-solve with them.';
+    });
   }
 
   // ---------- 3-D per-facet heatmap viewer (Three.js r128) ----------
@@ -11918,7 +12020,7 @@ window.CADRCS = {
   function applyToAll(){
     var v=(($('cad-all-mode')||{}).value)||'pec';
     var rows=document.querySelectorAll('#cad-seg-list .cad-seg');
-    if(!rows.length){ $('cad-runstatus').textContent='Upload a model first.'; return; }
+    if(!rows.length){ segSay('Upload a model first.'); return; }
     var num=function(id){ var e=$(id); return e?parseFloat(e.value):NaN; };
     var ov=null;
     if(v!=='pec'){
@@ -11926,7 +12028,7 @@ window.CADRCS = {
              mupp:num('cad-all-mupp'), thick:num('cad-all-thick')};
       var ok=isFinite(o.ep)&&isFinite(o.epp)&&isFinite(o.mup)&&isFinite(o.mupp)&&isFinite(o.thick)
              && o.ep>0 && o.mup>0 && o.thick>0;
-      if(!ok){ $('cad-runstatus').textContent='Fill in ε′, ε″, μ′, μ″ and a positive thickness before applying to all parts.'; return; }
+      if(!ok){ segSay('Fill in ε′, ε″, μ′, μ″ and a positive thickness before applying to all parts.'); return; }
       ov=o;
     }
     [].slice.call(rows).forEach(function(d){
@@ -11947,8 +12049,8 @@ window.CADRCS = {
       return Math.abs(ov.thick-(+m.thick||0))>1e-9 || Math.abs(ov.ep-(+m.ep||0))>1e-9
           || Math.abs(ov.epp-Math.abs(+m.epp||0))>1e-9 || Math.abs(ov.mup-(+m.mup||0))>1e-9
           || Math.abs(ov.mupp-Math.abs(+m.mupp||0))>1e-9; })();
-    $('cad-runstatus').textContent='applied “'+lbl+'”'+(edited?' (edited values, library entry unchanged)':'')+
-      ' to all '+rows.length+' part'+(rows.length>1?'s':'')+' — press Compute RCS.';
+    segSay('applied “'+lbl+'”'+(edited?' (edited values, library entry unchanged)':'')+
+      ' to all '+rows.length+' part'+(rows.length>1?'s':'')+' — press Compute RCS.');
   }
   function wire(){
     var aa=$('cad-all-apply'); if(aa) aa.addEventListener('click',applyToAll);
@@ -11957,6 +12059,7 @@ window.CADRCS = {
     var fi=$('cad-file'); if(fi) fi.addEventListener('change',function(e){ onFile(e.target.files[0]); e.target.value=''; });
     buildExamples();
     var run=$('cad-run'); if(run) run.addEventListener('click',computeUI);
+    cadInvalidateOnChange();
     // both viewer toggles explain themselves RIGHT HERE (a message up by the Compute
     // button is invisible when you are looking at the 3-D view)
     var vnote=function(msg){ var n=$('cad-view-note'); if(!n) return; n.textContent=msg||''; n.style.display=msg?'':'none'; };
