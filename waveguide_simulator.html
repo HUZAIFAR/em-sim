@@ -1945,8 +1945,8 @@ for t_mm in [0.5, 1, 2, 3, 4]:
           <input id="rlc-name" type="text" value="Custom absorber (constant ε/μ)" style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-body);font-size:13px;"></div>
         <div><div class="oe-lab">How to specify ε / μ</div>
           <select id="rlc-mode" style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-body);font-size:13px;">
-            <option value="constant" selected>Type constant ε / μ — no file</option>
-            <option value="measured">Upload measured dispersion (CSV / text / Excel)</option>
+            <option value="constant">Type constant ε / μ — no file</option>
+            <option value="measured" selected>Upload measured dispersion (CSV / text / Excel)</option>
           </select></div>
       </div>
 
@@ -9818,6 +9818,12 @@ window.LabCal = (function(){
     var m=($('rlc-mode')||{}).value||'constant';
     if($('rlc-constant-wrap')) $('rlc-constant-wrap').style.display=(m==='constant')?'':'none';
     if($('rlc-measured-wrap')) $('rlc-measured-wrap').style.display=(m==='measured')?'':'none';
+    // Upload mode is the default, so the tab legitimately has nothing to plot until a file arrives.
+    // Say so next to the Compute button instead of leaving a blank page and an inert green button.
+    var pe=$('rlc-parse');
+    if(pe && m==='measured' && (!RL_MEAS_ROWS || !RL_MEAS_ROWS.length)){
+      pe.style.color=''; pe.textContent='Waiting for a lab file — choose one above (CSV / text / Excel), or press “Load example material” to see the tab work.';
+    }
   }
   function preset(kind){
     var P={ cip:{n:'Carbonyl iron',epr:15,epp:1.5,mur:3,mupp:1.5},
