@@ -11770,11 +11770,18 @@ window.CADRCS = {
   // Rotation is set through the QUATERNION, not rotation.x/y, so the spin is unambiguously about the
   // MODEL's own axis (composed first) with the viewing tilt applied after it. Euler order would make
   // the result depend on how the user had dragged the view.
-  function captureTurn(n, coated, maxW){
+  function captureTurn(n, coated){
     var cv=document.querySelector('#cad-field3d canvas');
     if(!cv||!V.ren||!V.scene||!V.cam||!V.grp||!window.THREE) return null;
-    var sc=Math.min(1,(maxW||cv.width)/cv.width);
-    var w=Math.max(2,Math.round(cv.width*sc)), h=Math.max(2,Math.round(cv.height*sc));
+    // ⚠ RENDER AT A FIXED SIZE, not at whatever shape the on-screen panel happens to be. The export
+    // used to inherit the live canvas's aspect ratio, so the same model produced a different framing
+    // on every machine — a tall panel fitted, a wide short one cut the model off at the edges. That is
+    // why a local test passed while the owner's download was clipped. 4:3 at 480x360 is deterministic,
+    // looks the same everywhere, and is what the fit-distance calculation below is solved for.
+    var w=480, h=360;
+    var keepSz=new THREE.Vector2(); try{ V.ren.getSize(keepSz); }catch(e){ keepSz.set(0,0); }
+    var keepAsp=V.cam.aspect;
+    try{ V.ren.setSize(w,h,false); V.cam.aspect=w/h; V.cam.updateProjectionMatrix(); }catch(e){}
     var c2=document.createElement('canvas'); c2.width=w; c2.height=h;
     var g2=c2.getContext('2d',{willReadFrequently:true});
     // Lay the model's LONGEST dimension horizontally, then spin about the screen-vertical axis. This
@@ -11791,7 +11798,7 @@ window.CADRCS = {
     var longAx = ext[1]>ext[0] ? 1 : 0; if(ext[2]>ext[longAx]) longAx=2;
     var av=new THREE.Vector3(longAx===0?1:0, longAx===1?1:0, longAx===2?1:0);
     var align=new THREE.Quaternion().setFromUnitVectors(av, new THREE.Vector3(1,0,0));
-    var tilt =new THREE.Quaternion().setFromEuler(new THREE.Euler(0.28,0,0,'XYZ'));  // look slightly down
+    var tilt =new THREE.Quaternion().setFromEuler(new THREE.Euler(0.45,0,0,'XYZ'));  // 3/4 view, not edge-on
     var yAxis=new THREE.Vector3(0,1,0);
     // The facet colours are the contribution at ONE aspect — the peak look angle, the worst case and
     // the one worth studying. They belong to the facets, so they turn with the object. (Recolouring
@@ -11804,7 +11811,17 @@ window.CADRCS = {
     viewerDraw(Math.round(pk), coated, [0.27,0.30,0.34]);
     var keep = V.grp.quaternion.clone();                 // put the user's view back afterwards
     var keepD = V.dist;
-    V.dist = keepD*1.18;                                 // a little margin so nothing touches the edge
+    // ⚠ FIT THE FRAME EXACTLY — do not guess a multiplier. viewerDraw normalises the geometry to a
+    // unit bounding SPHERE, so the worst case over every rotation is a sphere of radius 1, and the
+    // distance that just contains it is 1/sin(θ/2) with θ the SMALLER of the two field-of-view angles.
+    // At the camera's 45° vertical FOV that is 2.613 — while V.base is 2.2, so the default view has
+    // always been slightly too close, and the 1.18× margin I first used (2.60) was still inside it.
+    // It clipped or not depending on the live canvas's aspect ratio, which is why a taller test panel
+    // passed and the owner's wider one cut the model off at the edges.
+    var fovV=((V.cam&&V.cam.fov)||45)*Math.PI/180, tanV=Math.tan(fovV/2);
+    var tanMin=Math.min(tanV, (w/h)*tanV);               // whichever axis is the tighter one
+    var need=1/Math.sin(Math.atan(tanMin));              // distance that just contains a unit sphere
+    V.dist = (need/(V.base||2.2))*1.06;                  // + a small breathing margin
     var out=[];
     try{
       for(var i=0;i<n;i++){
@@ -11815,18 +11832,24 @@ window.CADRCS = {
         V.cam.position.set(0,0,V.base*V.dist); V.cam.lookAt(0,0,0);
         V.ren.render(V.scene,V.cam);                     // synchronous — never wait for a frame
         g2.fillStyle='#0d1117'; g2.fillRect(0,0,w,h);
-        g2.drawImage(cv,0,0,w,h);
+        g2.drawImage(cv,0,0,cv.width,cv.height,0,0,w,h);
         out.push({rgba:g2.getImageData(0,0,w,h).data, jpeg:c2.toDataURL('image/jpeg',0.72)});
       }
-    }catch(e){ V.grp.quaternion.copy(keep); V.dist=keepD; return null; }
+    }catch(e){
+      V.grp.quaternion.copy(keep); V.dist=keepD;
+      try{ if(keepSz.x>0) V.ren.setSize(keepSz.x,keepSz.y,false); V.cam.aspect=keepAsp; V.cam.updateProjectionMatrix(); }catch(e2){}
+      return null;
+    }
     V.dist=keepD;
+    // hand the on-screen viewer back exactly the size it had
+    try{ if(keepSz.x>0) V.ren.setSize(keepSz.x,keepSz.y,false); V.cam.aspect=keepAsp; V.cam.updateProjectionMatrix(); }catch(e){}
     V.grp.quaternion.copy(keep);
     V.grp.rotation.x=V.rotX; V.grp.rotation.y=V.rotY;    // and re-sync the Euler the viewer drags
     return {w:w, h:h, frames:out};
   }
   function rotatingGif(){
     if(!LAST||!MESH){ $('cad-runstatus').textContent='Compute first.'; return null; }
-    var cap=captureTurn(24, LAST.coat!=null, 360);
+    var cap=captureTurn(24, LAST.coat!=null);
     if(!cap){ $('cad-runstatus').textContent='The 3-D view has to be on screen to record it.'; return null; }
     return gifEncode(cap.frames.map(function(f){return f.rgba;}), cap.w, cap.h, 7);
   }
@@ -11870,7 +11893,7 @@ window.CADRCS = {
       // Rotating outputs, both from ONE capture: a real animated .gif and a self-contained HTML
       // player. captureTurn() forces a synchronous render per frame — without that every frame is
       // the last painted image, which is why the first version of this file came out static.
-      var cap=captureTurn(24, LAST.coat!=null, 360);
+      var cap=captureTurn(24, LAST.coat!=null);
       if(!cap) return null;
       try{ zip.file('model_3D_rotating.gif', gifEncode(cap.frames.map(function(f){return f.rgba;}), cap.w, cap.h, 7)); }catch(e){}
       var jpegs=cap.frames.map(function(f){return f.jpeg;});
