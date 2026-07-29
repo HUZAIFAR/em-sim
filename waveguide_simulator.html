@@ -11614,7 +11614,7 @@ window.CADRCS = {
     if(sl){ sl.value=LAST.pkAng; var lab=$('cad-view-anglab'); if(lab) lab.textContent=LAST.pkAng+'°'; }
     viewerDraw(LAST.pkAng, !!($('cad-view-coat')||{}).checked);
   }
-  function viewerDraw(angDeg, coated){
+  function viewerDraw(angDeg, coated, awayRGB){
     if(!V.grp||!LAST||!MESH) return;
     while(V.grp.children.length){ var c=V.grp.children.pop(); if(c.geometry)c.geometry.dispose(); if(c.material)c.material.dispose(); V.grp.remove(c); }
     // scale against the BARE peak (fm.ref), so a coated view genuinely dims instead of
@@ -11627,7 +11627,7 @@ window.CADRCS = {
       // facetMags returns an AMPLITUDE-like quantity (σ ∝ |I|²), so echo in dB is 20·log10(m/mx).
       // Two decades of amplitude = the 40 dB echo window the legend and the ⓘ text describe.
       var t = m>0 ? Math.max(0,Math.min(1,(Math.log10(m+1e-30)-(lg-2))/2)) : 0;
-      var rgb = m>0 ? jet(t) : [0.09,0.10,0.13];
+      var rgb = m>0 ? jet(t) : (awayRGB||[0.09,0.10,0.13]);
       for(var q=0;q<3;q++){ pos.push(v[q][0],v[q][1],v[q][2]); col.push(rgb[0],rgb[1],rgb[2]); }
     }
     var geo=new THREE.BufferGeometry();
@@ -11758,32 +11758,77 @@ window.CADRCS = {
   // renderer.render() before reading the canvas — viewerDraw() alone only rebuilds the geometry and
   // leaves the actual paint to requestAnimationFrame, which is exactly why the first rotating export
   // came out static (all frames were the last painted image).
+  // A TURNTABLE of the actual object: the model turns bodily through 360 deg while the radar stays
+  // put, and the facet colours track the aspect as it comes round — so you watch each part light up
+  // as it swings to face the radar.
+  //
+  // ⚠ The first version of this only called viewerDraw(angle), which recolours facets for a radar at
+  // that aspect but does NOT move the model — and then pinned V.grp.rotation to the user's fixed view
+  // on every frame. The result was a static silhouette with shifting colours, i.e. the object never
+  // rotated at all. The rotation has to be applied to the group as well as the colours.
+  //
+  // Rotation is set through the QUATERNION, not rotation.x/y, so the spin is unambiguously about the
+  // MODEL's own axis (composed first) with the viewing tilt applied after it. Euler order would make
+  // the result depend on how the user had dragged the view.
   function captureTurn(n, coated, maxW){
     var cv=document.querySelector('#cad-field3d canvas');
-    if(!cv||!V.ren||!V.scene||!V.cam||!V.grp) return null;
+    if(!cv||!V.ren||!V.scene||!V.cam||!V.grp||!window.THREE) return null;
     var sc=Math.min(1,(maxW||cv.width)/cv.width);
     var w=Math.max(2,Math.round(cv.width*sc)), h=Math.max(2,Math.round(cv.height*sc));
     var c2=document.createElement('canvas'); c2.width=w; c2.height=h;
     var g2=c2.getContext('2d',{willReadFrequently:true});
-    var out=[];
-    for(var i=0;i<n;i++){
-      viewerDraw(Math.round(i*360/n), coated);
-      try{
-        V.grp.rotation.x=V.rotX; V.grp.rotation.y=V.rotY;
-        V.cam.position.set(0,0,V.base*V.dist); V.cam.lookAt(0,0,0);
-        V.ren.render(V.scene,V.cam);                     // synchronous — do not wait for a frame
-      }catch(e){ return null; }
-      g2.fillStyle='#0d1117'; g2.fillRect(0,0,w,h);
-      g2.drawImage(cv,0,0,w,h);
-      out.push({rgba:g2.getImageData(0,0,w,h).data, jpeg:c2.toDataURL('image/jpeg',0.72)});
+    // Lay the model's LONGEST dimension horizontally, then spin about the screen-vertical axis. This
+    // is the ordinary product-turntable view, and it is the only framing that keeps a long object
+    // (a rocket, a missile) fully inside a wide-but-short canvas — standing it on its tail clipped it
+    // top and bottom on every frame, which the silhouette measurement caught.
+    var lo=[1e30,1e30,1e30], hi=[-1e30,-1e30,-1e30];
+    for(var fi=0;fi<MESH.facets.length;fi++){
+      var fv=MESH.facets[fi], vv=[fv.v1,fv.v2,fv.v3];
+      for(var q3=0;q3<3;q3++) for(var d3=0;d3<3;d3++){
+        var val=vv[q3][d3]; if(val<lo[d3])lo[d3]=val; if(val>hi[d3])hi[d3]=val; }
     }
+    var ext=[hi[0]-lo[0], hi[1]-lo[1], hi[2]-lo[2]];
+    var longAx = ext[1]>ext[0] ? 1 : 0; if(ext[2]>ext[longAx]) longAx=2;
+    var av=new THREE.Vector3(longAx===0?1:0, longAx===1?1:0, longAx===2?1:0);
+    var align=new THREE.Quaternion().setFromUnitVectors(av, new THREE.Vector3(1,0,0));
+    var tilt =new THREE.Quaternion().setFromEuler(new THREE.Euler(0.28,0,0,'XYZ'));  // look slightly down
+    var yAxis=new THREE.Vector3(0,1,0);
+    // The facet colours are the contribution at ONE aspect — the peak look angle, the worst case and
+    // the one worth studying. They belong to the facets, so they turn with the object. (Recolouring
+    // per frame while the object also turns would imply a correspondence between screen orientation
+    // and aspect angle that does not hold for an arbitrary uploaded mesh and either sweep plane.)
+    var pk = (LAST && isFinite(LAST.pkAng)) ? LAST.pkAng : 0;
+    // AWAY-FACING SHADE: a visible slate rather than the viewer's near-background dark. Measured on
+    // the rocket demo before this: at 180 deg only a 30px sliver rose above the background, i.e. the
+    // object disappeared for much of the turn. It still reads clearly as "unlit / facing away".
+    viewerDraw(Math.round(pk), coated, [0.27,0.30,0.34]);
+    var keep = V.grp.quaternion.clone();                 // put the user's view back afterwards
+    var keepD = V.dist;
+    V.dist = keepD*1.18;                                 // a little margin so nothing touches the edge
+    var out=[];
+    try{
+      for(var i=0;i<n;i++){
+        var ang = i*360/n;
+        var spin = new THREE.Quaternion().setFromAxisAngle(yAxis, ang*Math.PI/180);
+        // align the long axis first, then spin about screen-vertical, then tilt the whole thing
+        V.grp.quaternion.copy(tilt).multiply(spin).multiply(align);
+        V.cam.position.set(0,0,V.base*V.dist); V.cam.lookAt(0,0,0);
+        V.ren.render(V.scene,V.cam);                     // synchronous — never wait for a frame
+        g2.fillStyle='#0d1117'; g2.fillRect(0,0,w,h);
+        g2.drawImage(cv,0,0,w,h);
+        out.push({rgba:g2.getImageData(0,0,w,h).data, jpeg:c2.toDataURL('image/jpeg',0.72)});
+      }
+    }catch(e){ V.grp.quaternion.copy(keep); V.dist=keepD; return null; }
+    V.dist=keepD;
+    V.grp.quaternion.copy(keep);
+    V.grp.rotation.x=V.rotX; V.grp.rotation.y=V.rotY;    // and re-sync the Euler the viewer drags
     return {w:w, h:h, frames:out};
   }
   function rotatingGif(){
     if(!LAST||!MESH){ $('cad-runstatus').textContent='Compute first.'; return null; }
-    var cap=captureTurn(12, LAST.coat!=null, 360);
+    var cap=captureTurn(24, LAST.coat!=null, 360);
     if(!cap){ $('cad-runstatus').textContent='The 3-D view has to be on screen to record it.'; return null; }
-    return gifEncode(cap.frames.map(function(f){return f.rgba;}), cap.w, cap.h, 12);
+    return gifEncode(cap.frames.map(function(f){return f.rgba;}), cap.w, cap.h, 7);
   }
   function dlAll(){
     if(!LAST){ $('cad-runstatus').textContent='Compute first.'; return; }
@@ -11825,9 +11870,9 @@ window.CADRCS = {
       // Rotating outputs, both from ONE capture: a real animated .gif and a self-contained HTML
       // player. captureTurn() forces a synchronous render per frame — without that every frame is
       // the last painted image, which is why the first version of this file came out static.
-      var cap=captureTurn(12, LAST.coat!=null, 360);
+      var cap=captureTurn(24, LAST.coat!=null, 360);
       if(!cap) return null;
-      try{ zip.file('model_3D_rotating.gif', gifEncode(cap.frames.map(function(f){return f.rgba;}), cap.w, cap.h, 12)); }catch(e){}
+      try{ zip.file('model_3D_rotating.gif', gifEncode(cap.frames.map(function(f){return f.rgba;}), cap.w, cap.h, 7)); }catch(e){}
       var jpegs=cap.frames.map(function(f){return f.jpeg;});
       zip.file('model_3D_rotating.html',
         '<!doctype html><meta charset="utf-8"><title>'+String(MESH.src).replace(/[<>]/g,'')+' \u2014 rotating view</title>'+
@@ -11838,9 +11883,11 @@ window.CADRCS = {
         'button{background:#1b2a24;color:#cdd6d1;border:1px solid #2c4038;border-radius:20px;padding:7px 15px;'+
         'font:12px system-ui,sans-serif;cursor:pointer;margin-top:4px}</style>'+
         '<img id="f" draggable="false"><button id="p">Pause</button>'+
-        '<p>'+String(MESH.src).replace(/[<>]/g,'')+' \u2014 facets shaded by their echo contribution at each '+
+        '<p>'+String(MESH.src).replace(/[<>]/g,'')+' \u2014 a full 360\u00b0 turntable, facets shaded by their echo contribution at the peak '+
         'look-angle ('+LAST.f+' GHz, '+LAST.plane+' sweep, '+LAST.pol+'-pol'+(LAST.coat!=null?', coated':'')+'). '+
-        'Red = strongest return, blue = weak, dark = facing away. It spins on its own; '+
+        'The model turns through a full 360\u00b0 so you can see it from every side; the colours are its '+
+        'echo contribution at the worst-case look angle ('+LAST.pkAng+'\u00b0) and belong to the surface, so '+
+        'they turn with it. Red = strongest return, blue = weak, dark = facing away. It spins on its own; '+
         '<strong>drag left/right to turn it by hand</strong>, or use the button. Frames are embedded, so this file works offline.</p>'+
         '<script>(function(){var F='+JSON.stringify(jpegs)+',i=0,e=document.getElementById("f"),b=document.getElementById("p");'+
         'e.src=F[0];var t=null,run=false;'+
@@ -12125,7 +12172,7 @@ window.CADRCS = {
       var u=URL.createObjectURL(gif), a=document.createElement('a');
       a.href=u; a.download='CAD_RCS_'+safe()+'_rotating.gif'; document.body.appendChild(a); a.click(); a.remove();
       setTimeout(function(){URL.revokeObjectURL(u);},4000);
-      $('cad-runstatus').textContent='downloaded the rotating GIF ('+(gif.size/1024).toFixed(0)+' kB, 12 frames).';
+      $('cad-runstatus').textContent='downloaded the rotating GIF ('+(gif.size/1024).toFixed(0)+' kB, 24 frames, one full 360° turn).';
     });
     if((b=$('cad-manifest'))) b.addEventListener('click',function(){ if(LAST) dl(JSON.stringify(manifest(),null,2),'CAD_RCS_manifest_'+safe()+'.json','application/json'); });
     if((b=$('cad-mathbtn'))) b.addEventListener('click',showMath);
