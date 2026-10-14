@@ -11,7 +11,7 @@ In the Full-wave tab, pick band / material / coats and hit "Run on openEMS":
 the page POSTs the config here -> we build + solve in openEMS -> render the 3-D
 field -> and hand the S-parameter CSV + field images back to the page.
 """
-import os, sys, subprocess, time, shutil, math, cmath, json
+import os, sys, subprocess, time, shutil, math, cmath, json, unicodedata
 from flask import Flask, request, jsonify, send_from_directory
 
 def oblique_rta(fGHz, thetaDeg, sigma, d, epsr=1.0, epspp=0.0, mur=1.0, mupp=0.0):
@@ -60,6 +60,34 @@ def _rows(path):
 
 def _nearest(rows, fghz):
     return min(rows, key=lambda r: abs(r[0]-fghz)) if rows else None
+
+# Symbols material labels really carry, spelled out for the generated .m files (see _oct_label).
+_OCT_ASCII = {"σ": "sigma", "ε": "eps", "μ": "mu", "µ": "mu", "ρ": "rho", "λ": "lambda", "δ": "delta",
+              "Δ": "Delta", "Ω": "Ohm", "ω": "omega", "π": "pi", "θ": "theta", "φ": "phi", "ϕ": "phi",
+              "τ": "tau", "α": "alpha", "β": "beta", "γ": "gamma", "η": "eta", "κ": "kappa", "χ": "chi",
+              "−": "-", "–": "-", "—": "-", "×": "x", "·": ".", "°": "deg", "′": "'", "″": "''",
+              "…": "...", "≈": "~", "≤": "<=", "≥": ">=", "±": "+/-"}
+
+def _oct_label(s, n=120):
+    """A free-text label made safe to embed in a generated Octave .m file: control characters
+    dropped, length capped, apostrophes doubled (Octave's escape -- an unescaped one breaks the
+    run, and a crafted label could inject Octave), and ASCII only. The .m files are written in
+    the platform's default encoding, which on Windows is cp1252: it has no Greek letters,
+    sub/superscript digits or true minus sign, so the Custom-material label
+    'custom material (σ=…, εr=…−j…)', any pinned '… (constant ε/μ)' material and the
+    'Magnetite Fe₃O₄' preset each crashed the whole solve there with UnicodeEncodeError (macOS
+    writes UTF-8 and never saw it). The label is only printed into the solver log, so an ASCII
+    rendering (sigma, eps, Fe3O4) loses nothing. Pure-ASCII labels come out exactly as before."""
+    s = "".join(_OCT_ASCII.get(ch, ch) for ch in str(s))
+    s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode("ascii")   # Fe₃O₄ -> Fe3O4
+    s = "".join(ch for ch in s if ch >= " ")[:n]
+    return s.replace("'", "''")       # escape AFTER the cut, so a doubled '' is never split in half
+
+def _oct_path(p):
+    """A server path for an Octave single-quoted string: apostrophes doubled (an install under
+    e.g. C:\\Users\\O'Neil would otherwise break every solve). Never transliterated -- it must
+    still name the real file."""
+    return str(p).replace("'", "''")
 
 # --- machine/OS-portable config (env vars override; macOS defaults preserved) --------
 # Project root = the folder that CONTAINS this openEMS/ dir — derived, never hardcoded, so
@@ -127,13 +155,19 @@ def stream_run(args, logfile, timeout_s, tag):
     except Exception:
         pass
     lines = []
-    p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+    # errors="replace" throughout: on Windows the child's output is decoded as cp1252, and one
+    # undecodable byte (e.g. 0x81) used to raise inside the loop, ending the pump -- the pipe then
+    # filled and the solve hung until its timeout. Likewise a console that cannot encode a
+    # character must not stop it. No effect on valid output (macOS: UTF-8).
+    p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+                         errors="replace", bufsize=1)
     def _pump():
         try:
-            with open(logfile, "a") as lf:
+            with open(logfile, "a", errors="replace") as lf:
                 for line in p.stdout:
                     lines.append(line); lf.write(line); lf.flush()
-                    print(line, end="", flush=True)
+                    try: print(line, end="", flush=True)
+                    except Exception: pass
         except Exception:
             pass
     t = threading.Thread(target=_pump, daemon=True); t.start()
@@ -277,9 +311,10 @@ def _run_locked():
         sigma, thick, label = 1.0e6, max(coats*1e-6, 1e-6), f"MXene-coated wood ({coats} coats)"
 
     # Escape the label for the Octave single-quoted string it is written into: double any
-    # apostrophe (Octave's escape), drop newlines/control chars, and cap length. Without this a
+    # apostrophe (Octave's escape), drop newlines/control chars, cap length, and keep it ASCII
+    # (Windows writes the .m in cp1252 -- "Magnetite Fe₃O₄" crashed the run there). Without this a
     # material named e.g. "Adam's alloy" breaks the run, and a crafted label could inject Octave.
-    label_oct = "".join(ch for ch in str(label) if ch >= " ").replace("'", "''")[:120]
+    label_oct = _oct_label(label)
 
     def write_params(shape):
         p = (f"p_a = {a};\np_b = {b};\np_len = {length};\n"
@@ -292,13 +327,13 @@ def _run_locked():
              f"p_cells = {cells};\n"
              f"p_field_mode = '{field_mode}';\n"
              f"p_label = '{label_oct} {band}-band {shape}';\n"
-             f"p_outdir = '{RESULTS}';\n")
+             f"p_outdir = '{_oct_path(RESULTS)}';\n")
         with open(os.path.join(OEMS, "wg_params.m"), "w") as f:
             f.write(p)
 
     OCT = [OCTAVE, "--no-gui"]
     LOGFILE = os.path.join(OEMS, "last_run.log")
-    try: open(LOGFILE, "w").write(f"openEMS run log — {time.strftime('%Y-%m-%d %H:%M:%S')}\nconfig: {cfg}\n")
+    try: open(LOGFILE, "w", errors="replace").write(f"openEMS run log — {time.strftime('%Y-%m-%d %H:%M:%S')}\nconfig: {cfg}\n")
     except Exception: pass
     def _log(tag, r):
         # append this step's full stdout/stderr to last_run.log AND print to the server console
@@ -477,7 +512,7 @@ def _run_locked():
                 open(hist, "w").write("timestamp,material,band,length_mm,coats,sims,"
                     "oe_S21_dB,oe_power_pct,oe_ins_dB_per_m,oe_R_pct,"
                     "model_loss_dB_per_m,model_S21_dB,S21_err_dB,converged,note\n")
-            open(hist, "a").write(",".join([
+            open(hist, "a", errors="replace").write(",".join([   # cp1252 on Windows: Fe₃O₄ -> Fe?O?, not a lost row
                 time.strftime("%Y-%m-%d %H:%M:%S"), '"'+str(label)+'"', band, str(length), str(coats),
                 "|".join(sims), _f(oe_s21), _f(oe_pwr), _f(oe_ins), _f(oe_R),
                 _f(mloss), _f(mS21), _f(err), conv, '"'+note+'"']) + "\n")
@@ -869,12 +904,16 @@ def _run_rcs_locked():
     except (TypeError, ValueError):
         metal_mm = 0.0
     metal_mm = min(max(metal_mm, 1.0), 20.0) if metal_mm > 0 else 0.0
-    label = "".join(ch for ch in str(cfg.get("label", "target")) if ch >= " ").replace("'", "''")[:120]
+    label = _oct_label(cfg.get("label", "target"))   # ASCII + escaped: written into rcs_params.m
 
     # imported CAD mesh (shape='import'): PEC-only, size1 carries the half-extent (mm) from /upload_rcs
     stl_path = ""; stl_scale = 1.0
     if shape == "import":
-        stl_path = str(cfg.get("stl", ""))
+        # ALWAYS the server's own normalized upload -- the only path /upload_rcs ever hands out.
+        # The client used to send the path back and it was written unescaped into rcs_params.m
+        # (p_stl = '...'), so one POST with a crafted "stl" ran arbitrary Octave -- system()
+        # included -- on this PC for anyone holding the public Funnel link. cfg["stl"] is ignored.
+        stl_path = os.path.join(OEMS, "uploads", "rcs_target.stl")
         stl_scale = float(cfg.get("stl_scale", 1.0))
         construct = "pec"; coated = 0          # arbitrary meshes are solved as PEC (no coated/solid)
         if (not stl_path) or (not os.path.isfile(stl_path)):
@@ -916,8 +955,12 @@ def _run_rcs_locked():
              f"p_epsr = {epsr};\np_epspp = {epspp};\np_mur = {mur};\np_mupp = {mupp};\n"
              f"p_cells = {cells if this_cells is None else this_cells};\n"
              f"p_nfreq = {nfreq if this_nfreq is None else this_nfreq};\np_endcrit = {endcrit};\n"
-             f"p_stl = '{stl_path}';\np_stl_scale = {stl_scale};\n"
-             f"p_tag = '{tag}';\np_outdir = '{RESULTS}';\n"
+             # forward slashes: CSXCAD's struct_2_xml writes the XML via fprintf(fid, xml), so a
+             # Windows path's backslashes were read as escapes (\U, \h, and \r in "\rcs_target.stl"
+             # became a carriage return) -- the mesh never loaded and the solver quietly computed an
+             # EMPTY box (~-67 dBsm for a 15 mm sphere, ok:true). Windows accepts '/'; macOS has none.
+             f"p_stl = '{_oct_path(stl_path.replace(chr(92), '/'))}';\np_stl_scale = {stl_scale};\n"
+             f"p_tag = '{tag}';\np_outdir = '{_oct_path(RESULTS)}';\n"
              f"p_do_field = {do_field if field is None else field};\n"
              f"p_do_eplane = {do_eplane if eplane is None else eplane};\n"
              f"p_do_lobe = {do_lobe if lobe is None else lobe};\n"
@@ -927,7 +970,7 @@ def _run_rcs_locked():
 
     OCT = [OCTAVE, "--no-gui"]
     LOGFILE = os.path.join(OEMS, "last_rcs_run.log")
-    try: open(LOGFILE, "w").write(f"RCS run log — {time.strftime('%Y-%m-%d %H:%M:%S')}\nconfig: {cfg}\n")
+    try: open(LOGFILE, "w", errors="replace").write(f"RCS run log — {time.strftime('%Y-%m-%d %H:%M:%S')}\nconfig: {cfg}\n")
     except Exception: pass
     def solve(tag, this_construct, timeout_s=1800, **kw):
         write_params(tag, this_construct, **kw)

@@ -3986,6 +3986,12 @@ function activateTab(page){
   if(page==='sweep' && window.sweepInit) window.sweepInit();
   if(page==='cadrcs' && window.cadrcsInit) window.cadrcsInit();
   if(['horn','horninv','horncmp','hornfw'].indexOf(page)>=0 && window.hornAnaInit) window.hornAnaInit();
+  // Re-fit and synchronously repaint every chart on the page just shown. A chart updated while its
+  // page was hidden — a batch sweep or solve finishing after the user moved to another tab — was laid
+  // out at 0×0, and only Chart.js's own ResizeObserver, which waits for an animation frame, would
+  // ever re-size it; in a background or throttled window that frame never came and the chart stayed
+  // blank with its table filled. refitCharts() measures and draws without waiting for a frame.
+  if(window.refitCharts) window.refitCharts();
   document.querySelectorAll('.more-menu').forEach(m=>m.classList.remove('open'));
   { const fb=document.getElementById('cad-fab');
     if(fb) fb.classList.toggle('on', page==='cadrcs' && fb.dataset.ready==='1');
