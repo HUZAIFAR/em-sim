@@ -42,3 +42,6 @@ env/
 
 # Claude Code per-machine local settings (differ per machine)
 .claude/settings.local.json
+
+# machine-local preview launcher (holds an absolute interpreter path)
+.claude/launch.json

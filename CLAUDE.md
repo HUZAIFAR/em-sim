@@ -29,7 +29,7 @@ Author: **Huzaifa Taha Rangwala** — UC Berkeley (Math + CS); Visiting Research
 ## 1b. Cross-machine workflow (Mac = dev, Windows = server) — READ
 
 Development happens on the **Mac** (Homebrew openEMS); a Windows PC runs the always-on bridge for a
-remote tester. **Sync is via git** (a private repo), not file-copy tools — file sync can't merge and
+remote tester. **Sync is via git** (the `HUZAIFAR/em-sim` repo — **public** since Sept 2026, so never commit the live Funnel URL, tokens or passwords), not file-copy tools — file sync can't merge and
 silently loses one side's edits. Commit on the Mac → push → `git pull` on Windows. **Full workflow,
 rules, and env-var reference: `GIT_WORKFLOW.md` (repo root).** Runtime output and
 machine-local installs are git-ignored (see `.gitignore`); the Windows runtime (`C:\opt\openEMS` incl.
@@ -359,6 +359,24 @@ The owner is posting `Simulator_Overview.docx` publicly, so it was rebuilt from 
 ⚠ **The physics page's contents index numbered its entries 1–20 while the sections' own badges are mnemonics** (`1`…`7` interleaved with `ε/μ`, `P`, `A`, `FF`, `ID`, `FIT`, `UQ`, `RCS`, `SHAPE`, `RAM`, `RP`, `POL`, `DET`), so index entry 3 pointed at a section labelled `2`. Caught by *reading the screenshot the owner supplied* before publishing it. The index is now a `<ul>` printing **each section's own badge**, so the two cannot disagree; the ≤820px `columns:1!important` rule had to gain `ul` beside `ol`. Verified live: 20 entries against 20 sections, zero label mismatches, every jump target resolves, badge and title on one line, two columns at 620px and one below 820px, all 21 tabs still activate with no console errors. NB the supplied `physics_page.png` still shows the pre-fix numbered index — retake it if the figure must match exactly.
 
 **This file had §13 duplicated verbatim** (two byte-identical 74-line blocks with two `End of CLAUDE.md` markers, and §12 stranded between them). Removed; order is now §11 → §12 (v3.9) → §13 (v4.0) → §14. If you find yourself editing the same string twice, check for this first.
+
+---
+
+## 15. Oct 2026 fixes — charts that never painted, pins that never appeared, plate thickness
+
+Reported by the owner from the hosted (Windows/Funnel) instance: the RCS monostatic chart showed axes and legend but no curves after a solve; the openEMS batch-sweep chart was completely blank with its table filled; pinned materials never appeared in the RL tab's coating boxes.
+
+**⚠ Chart.js animations are OFF app-wide** (`Chart.defaults.animation=false`, and every per-chart `animation:{duration:N}` is now `animation:false`). An animated Chart.js update — including the very first render of `new Chart()` — paints only from `requestAnimationFrame`, which the browser pauses for a hidden, covered or throttled window. Reproduced by stubbing `Chart.animator._refresh` (Chart.js captures its rAF reference at load, so overriding `window.requestAnimationFrame` later does nothing) and replaying a saved real `/run_rcs` response through a mocked `fetch`: the batch chart painted **0 pixels**; with animation off it paints 72k. `update('none')` alone is NOT a fix — `render()` skips `draw()` while `animator.has(chart)` is true, i.e. while the creation animation is still pending. Verified afterwards with frames paused: all 19 visible charts across 21 pages, plus every post-action chart (sweep, inverse RAM, horn ×3, inverse design, matlib, RL ×2, CAD-RCS), paint. **Do not re-enable animations** — this is the fifth time this project has hit the rAF trap. The RCS monostatic chart itself already painted correctly with frames paused on current code (its `forceRepaint()` calls `draw()`); the owner's blank one was most likely the Windows box on an older revision.
+
+**RL coating-box pin dropdown.** A box built while the library was empty gets a *disabled* `<select>`, and a disabled select never fires the `mousedown`/`focus` that refilled it — so a material pinned on the same page stayed "(nothing pinned yet)" until a tab switch. `pinMaterial()` now calls `refreshPinLists()` (also used by `rlcInit` and a `storage` listener for other browser tabs), and `fill()` keeps the user's current pick. Verified the whole chain: pin → RL box, RCS tab, CAD part dropdowns, Material library, no reload.
+
+**Dihedral → other shape left incidence at 45°.** `syncShape` suggests 45° on entering Dihedral (deliberate) but never undid it, so a plate run after browsing shapes was silently at 45° (−29.8 vs −20.7 dBsm on a 15×40 mm plate). It now restores the previous angle on leaving Dihedral unless the user edited it.
+
+**Plate / dihedral-arm thickness control** (`#rcs-metal`, default 2 mm, 1–20; label "Plate thickness" / "Arm thickness"; plate and dihedral only). Client sends `metal_mm`; the server clamps it and writes `p_metal` (0 = absent); `rcs_run.m` uses it, else keeps `max(2, 0.06·half-extent)` **byte-for-byte**, so batch sweeps, the CAD cross-check and scripted callers are unchanged. The response stamps the thickness actually used (`metal_mm`) into the manifest and summary, and `rcs-metal` invalidates a stale result. Applies to the solid plate body too (line `tp` in the `solid` branch). Docs + INFO EN/AR updated.
+
+**⚠ openEMS RCS is not bit-repeatable here.** Two identical 15×40 mm plate solves differed by **0.034 dB**; explicit-2 mm vs automatic (also 2 mm) by 0.051 dB. Treat ~0.05 dB as the run-to-run floor and never use "bit-identical" as a pass criterion for an RCS change. 5 mm vs 2 mm moved broadside by only 0.13 dB (physics: thickness barely matters at broadside) but up to 0.83 dB across the band.
+
+**The repo is public.** The old Funnel URL was removed from `openEMS/WINDOWS_SETUP.md` (placeholder now); it remains in git history. Never commit the live one.
 
 ---
 

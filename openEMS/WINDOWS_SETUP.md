@@ -92,7 +92,9 @@ If you ever move/reinstall, keep `C:\opt\mesa\opengl32.dll` + `libgallium_wgl.dl
 - Renders (Fix 3), all non-black in a disconnected GL session: waveguide guided-wave still + 80-frame
   animated GIF; waveguide freq steady-|E| still; horn field (feed→flare→aperture) at 15.6 dBi @10 GHz
   (rated 15); RCS scattered-field still + 24-frame 3-D scattering-lobe GIF.
-- Reachable over Tailscale Funnel at `https://desktop-dbcfmfa.tail53b2e4.ts.net` (HTTP 200).
+- Reachable over Tailscale Funnel at `https://<your-machine>.<your-tailnet>.ts.net` (HTTP 200). The real
+  address is deliberately not recorded here: this repository is public, and the Funnel exposes the
+  solve and upload routes without a login, so share the link privately.
 
 ---
 

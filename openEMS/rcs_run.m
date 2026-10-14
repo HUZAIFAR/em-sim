@@ -68,7 +68,11 @@ elseif strcmp(p_shape,'import')
 else
     obj_half = max(p_size1, p_size2)/2;                   % plate: half of the larger in-plane dim
 end
-tp = max(2, 0.06*obj_half);                   % plate/arm metal thickness (mm), a few cells
+if exist('p_metal','var') && p_metal > 0
+    tp = p_metal;                              % plate/arm thickness (mm) set on the RCS tab
+else
+    tp = max(2, 0.06*obj_half);                % plate/arm metal thickness (mm), a few cells
+end
 
 % -------- domain: object + vacuum margin; plane-wave box inside; NF2FF at mesh edge; +PML --------
 max_res  = lam_min/unit/p_cells;              % cell size ~ lambda_min/p_cells (mm)

@@ -860,6 +860,15 @@ def _run_rcs_locked():
     sigma = max(0.0, float(cfg.get("sigma", 1.0e6))); thick = max(float(cfg.get("thick", 1e-3)), 1e-6)
     epsr  = max(1.0, float(cfg.get("epsr", 1.0))); epspp = max(0.0, float(cfg.get("epspp", 0.0)))
     mur   = max(0.1, float(cfg.get("mur", 1.0)));  mupp  = max(0.0, float(cfg.get("mupp", 0.0)))
+    # Explicit plate / dihedral-arm thickness (mm) from the RCS tab. Absent -> 0, and rcs_run.m keeps
+    # its own rule max(2, 0.06*half-extent), so batch sweeps, the CAD cross-check and any scripted
+    # caller behave exactly as before. Clamped like every other parameter: below ~1 mm the seeded
+    # mesh lines start to dictate the FDTD timestep.
+    try:
+        metal_mm = float(cfg.get("metal_mm", 0) or 0)
+    except (TypeError, ValueError):
+        metal_mm = 0.0
+    metal_mm = min(max(metal_mm, 1.0), 20.0) if metal_mm > 0 else 0.0
     label = "".join(ch for ch in str(cfg.get("label", "target")) if ch >= " ").replace("'", "''")[:120]
 
     # imported CAD mesh (shape='import'): PEC-only, size1 carries the half-extent (mm) from /upload_rcs
@@ -903,7 +912,7 @@ def _run_rcs_locked():
         p = (f"p_shape = '{shape}';\np_size1 = {size1};\np_size2 = {size2};\np_size3 = {size3};\n"
              f"p_fmin = {fmin};\np_fmax = {fmax};\np_inc_deg = {inc if inc_deg is None else inc_deg};\n"
              f"p_coated = 0;\np_construct = '{this_construct}';\np_pol = '{pol if pol_override is None else pol_override}';\n"
-             f"p_sigma = {sigma};\np_thick = {thick};\n"
+             f"p_sigma = {sigma};\np_thick = {thick};\np_metal = {metal_mm};\n"
              f"p_epsr = {epsr};\np_epspp = {epspp};\np_mur = {mur};\np_mupp = {mupp};\n"
              f"p_cells = {cells if this_cells is None else this_cells};\n"
              f"p_nfreq = {nfreq if this_nfreq is None else this_nfreq};\np_endcrit = {endcrit};\n"
@@ -1094,6 +1103,9 @@ def _run_rcs_locked():
         "label": f"{cfg.get('label','target')} · {band}-band",
         "seconds": round(time.time() - t0, 1),
         "shape": shape, "band": band, "size1": size1, "size2": size2, "size3": size3,
+        # the plate / arm thickness the solver ACTUALLY used (explicit, or rcs_run.m's own rule)
+        "metal_mm": (round(metal_mm if metal_mm > 0 else max(2.0, 0.06 * obj_half_mm), 3)
+                     if shape in ("plate", "dihedral") else None),
         "inc_deg": inc, "construct": construct, "pol": pol,
         "f0_ghz": round(f0, 3), "sims": sims,
         "bare": bare, "coated": coated_curves, "reduction_db": reduction,

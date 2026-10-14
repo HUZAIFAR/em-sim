@@ -1521,6 +1521,8 @@
           <input id="rcs-size2" type="number" value="40" step="1" min="1" max="200" style="width:80px;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-mono);font-size:13px;"></div>
         <div id="rcs-size3-wrap" style="display:none;"><div class="oe-lab" style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Height h (mm)</div>
           <input id="rcs-size3" type="number" value="60" step="5" min="2" max="300" style="width:80px;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-mono);font-size:13px;"></div>
+        <div id="rcs-metal-wrap" style="display:none;"><div class="oe-lab" id="rcs-metal-lab" style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Plate thickness (mm)</div>
+          <input id="rcs-metal" type="number" value="2" step="0.5" min="1" max="20" title="Thickness of the plate itself (dihedral: of each arm). A coating is added on top of this. 1–20 mm." style="width:80px;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);font-family:var(--font-mono);font-size:13px;"></div>
         <div><div class="oe-lab" style="font-family:var(--font-mono);font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">Band</div>
           <div class="segbar" data-for="rcs-band"></div>
           <select id="rcs-band" class="segselect" tabindex="-1" aria-hidden="true"><option value="X" data-short="X">X (8–12 GHz)</option><option value="Ku" data-short="Ku">Ku (12–18 GHz)</option><option value="K" data-short="K">K (18–27 GHz)</option><option value="Custom" data-short="Custom">Custom range</option></select></div>
@@ -3498,7 +3500,11 @@ if(window.Chart){
   Chart.defaults.font.size=11;
   Chart.defaults.color='#5d645f';
   Chart.defaults.borderColor='rgba(22,26,24,.06)';           /* default grid colour */
-  Chart.defaults.animation={duration:550,easing:'easeOutQuart'};
+  /* No animations, deliberately. An animated update paints only on requestAnimationFrame, which the
+     browser pauses for a hidden, covered or screen-shared window — so a solve that finished then
+     left its chart blank (batch sweep: zero pixels drawn, reproduced with frames paused) or showed
+     axes with no curves. With animation off, Chart.js draws synchronously on every update. */
+  Chart.defaults.animation=false;
   Chart.defaults.elements.point.hoverRadius=4;
   Chart.defaults.elements.point.hitRadius=8;
   Chart.defaults.elements.line.borderCapStyle='round';
@@ -6055,6 +6061,8 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
 <li><strong>Solid material</strong> — the whole body is made of the material, with no metal inside at all. The wave enters, and whatever isn't absorbed can leave out the far side.</li>
 </ul>
 <p>Because of that, the <strong>material list is filtered by construction</strong>. When you pin a material on the Reflection-loss tab you say whether it is a coating or a solid; "Metal + coating" then offers only the coatings and "Solid material" only the solids. If a list looks empty, nothing has been pinned for that construction yet — pin one there, or enter it under <strong>Custom material</strong>. This is deliberate: offering a thin film as a solid block would quietly ask the solver a different question than the one the material was characterised for.</p>
+<h4>Plate thickness</h4>
+<p>For a <strong>plate</strong> (or each arm of a <strong>dihedral</strong>) you set the thickness of the body itself: 2 mm by default, 1–20 mm. A coating is added on top of it, and the bare-metal reference uses the same plate. Near broadside a flat plate's echo barely depends on its thickness (physical optics ignores it entirely); it matters more toward grazing, where the edges are what the radar sees. Other shapes and the batch sweep keep the solver's own rule (at least 2 mm, growing with the target's size).</p>
 <h4>Why coatings matter</h4>
 <p>A bare metal target reflects strongly. Coat it with a lossy absorber (magnetite, carbonyl iron — the "(Mag)" materials) and the wave is absorbed instead of reflected, dropping the RCS. The <strong>reduction in dB</strong> is the point of radar-absorbing materials and stealth. A purely conductive coating (silver, copper, MXene-as-conductor) barely helps — it still reflects — which the tool will honestly show.</p>`},
     'rlcalc':{title:'Reflection loss (RL) & RCS from measured ε/μ', html:`
@@ -6699,6 +6707,8 @@ document.getElementById('radar-nums-btn').addEventListener('click',()=>{
 <li><strong>مادة صلبة</strong> — الجسم كله من المادة، وما فيه معدن داخله أبداً. الموجة تدخل، واللي ما ينمتصّ يقدر يطلع من الجهة الثانية.</li>
 </ul>
 <p>لهذا <strong>قائمة المواد مفلترة حسب البنية</strong>. لمّا تثبّت مادة في تبويب خسارة الانعكاس تقول إذا هي طلاء ولا مادة صلبة؛ فـ"معدن + طلاء" يعرض الطلاءات بس، و"مادة صلبة" يعرض الصلبة بس. إذا القائمة بانت فاضية، فما تم تثبيت شي لهالبنية بعد — ثبّت واحدة هناك، أو أدخلها تحت <strong>Custom material</strong>. هذا مقصود: عرض طبقة رقيقة ككتلة صلبة يسأل الحلّال بهدوء سؤال ثاني غير اللي وُصِفت المادة عشانه.</p>
+<h4>سماكة الصفيحة</h4>
+<p>للـ<strong>صفيحة</strong> (أو كل ذراع في الـ<strong>dihedral</strong>) تحدد سماكة الجسم نفسه: 2 mm افتراضياً، من 1 إلى 20 mm. الطلاء ينضاف فوقها، ومرجع المعدن العاري يستخدم نفس الصفيحة. قريب من الاتجاه العمودي (broadside) صدى الصفيحة المستوية ما يتأثر تقريباً بسماكتها (و physical optics يتجاهلها كلياً)؛ تأثيرها يزيد كل ما اقتربنا من الزوايا المماسية (grazing)، لأن الحواف هي اللي يشوفها الرادار. باقي الأشكال والـbatch sweep تبقى على قاعدة الـsolver الخاصة (2 mm على الأقل، وتكبر مع حجم الهدف).</p>
 <h4>ليش الطلاءات مهمة</h4>
 <p>الهدف المعدني العاري يعكس بقوة. لو تطليه بمادة ماصّة (magnetite، carbonyl iron — مواد "(Mag)")، تنمتصّ الموجة بدل ما تنعكس، وينخفض الـ RCS. الـ <strong>تخفيض بالـ dB</strong> هو هدف المواد الماصّة للرادار والتخفّي (stealth). الطلاء الموصِل الصرف (فضة، نحاس، MXene كموصِل) ما يساعد وايد — يظل يعكس — والأداة بتبيّن هذا بصراحة.</p>`},
     'rlcalc':{title:'خسارة الانعكاس (RL) و RCS من ε/μ المقاسة', html:`
@@ -7986,7 +7996,7 @@ window.LabCal = (function(){
   }
   function chartOpts(xlab,ylab,xmin,xmax){
     var isFreq=/GHz/.test(xlab);
-    return {responsive:true, maintainAspectRatio:true, animation:{duration:300},
+    return {responsive:true, maintainAspectRatio:true, animation:false,
       interaction:{mode:'nearest',intersect:false},
       scales:{x:{type:'linear',title:{display:true,text:xlab},min:xmin,max:xmax},
               y:{title:{display:true,text:ylab}}},
@@ -8141,7 +8151,7 @@ window.LabCal = (function(){
     pts.sort(function(a,b){return a.x-b.x;});
     var res=C0/(2*B)*1000;
     var ds=[{label:'down-range echo (normalized)',data:pts,borderColor:'#161a18',borderWidth:2,pointRadius:0,tension:.2,fill:true,backgroundColor:'rgba(11,110,84,.10)'}];
-    var opt={responsive:true,maintainAspectRatio:true,animation:{duration:300},interaction:{mode:'nearest',intersect:false},
+    var opt={responsive:true,maintainAspectRatio:true,animation:false,interaction:{mode:'nearest',intersect:false},
       scales:{x:{type:'linear',title:{display:true,text:'DOWN-RANGE (mm, relative to dominant scatterer)'},min:-clip,max:clip},
               y:{title:{display:true,text:'relative echo (dB)'},min:-40,max:2}},
       plugins:{legend:{display:false},tooltip:{callbacks:{title:function(i){return i.length?(i[0].parsed.x.toFixed(1)+' mm'):'';},label:function(c){return c.parsed.y.toFixed(1)+' dB';}}}}};
@@ -8302,7 +8312,7 @@ window.LabCal = (function(){
     return out;
   }
 
-  var prevShape=null;
+  var prevShape=null, incBeforeDihedral=null;
   function syncShape(){
     var sh=$('rcs-shape').value, imp=(sh==='import');
     $('rcs-size1-lab').textContent = (sh==='plate')?'Width (mm)':(sh==='dihedral')?'Arm length a (mm)':'Radius (mm)';
@@ -8310,12 +8320,22 @@ window.LabCal = (function(){
     if($('rcs-size1-wrap')) $('rcs-size1-wrap').style.display = imp?'none':'';
     $('rcs-size2-wrap').style.display = (sh==='plate')?'':'none';
     if($('rcs-size3-wrap')) $('rcs-size3-wrap').style.display = (sh==='cylinder'||sh==='dihedral')?'':'none';
+    // plate / dihedral-arm thickness: the only shapes whose solid thickness the solver takes from here
+    if($('rcs-metal-wrap')) $('rcs-metal-wrap').style.display = (sh==='plate'||sh==='dihedral')?'':'none';
+    if($('rcs-metal-lab')) $('rcs-metal-lab').textContent = (sh==='dihedral')?'Arm thickness (mm)':'Plate thickness (mm)';
     if($('rcs-import-wrap')) $('rcs-import-wrap').style.display = imp?'':'none';
     // imported meshes are PEC-only — force the construction to bare metal and lock its extra panels
     if(imp && $('rcs-construct') && $('rcs-construct').value!=='pec'){ $('rcs-construct').value='pec'; $('rcs-construct').dispatchEvent(new Event('change')); syncConstruct(); }
     // a dihedral is meant to be viewed near its 45° bisector — suggest it ONCE, on the actual
     // switch into the shape (never while the user is editing the incidence field itself)
-    if(sh==='dihedral' && prevShape!=='dihedral' && prevShape!==null) $('rcs-inc').value=45;
+    if(sh==='dihedral' && prevShape!=='dihedral' && prevShape!==null){ incBeforeDihedral=$('rcs-inc').value; $('rcs-inc').value=45; }
+    // ...and undo that suggestion on the way back out. Without this, clicking past Dihedral left a
+    // plate/sphere/cylinder silently at 45° — a 9 dB different answer for a 15×40 mm plate, with
+    // nothing on screen saying the angle had been changed for you. Left alone if the user edited it.
+    else if(prevShape==='dihedral' && sh!=='dihedral' && incBeforeDihedral!==null){
+      if(String($('rcs-inc').value)==='45') $('rcs-inc').value=incBeforeDihedral;
+      incBeforeDihedral=null;
+    }
     prevShape=sh;
     if($('rcs-custband-wrap')) $('rcs-custband-wrap').style.display = ($('rcs-band').value==='Custom')?'':'none';
   }
@@ -8393,7 +8413,8 @@ window.LabCal = (function(){
       generated_local: new Date().toString(),
       solver:{engine:'openEMS FDTD', method:'plane-wave TF/SF + NF2FF', reference_analytical:(S.shape==='sphere'?'exact Mie series [37]':'physical optics [38]')},
       target:{shape:S.shape, size1_mm:+(S.s1*1000).toFixed(3), size2_mm:+(S.s2*1000).toFixed(3), size3_mm:+(S.s3*1000).toFixed(3),
-              construction:(d&&d.construct)||($('rcs-construct')?$('rcs-construct').value:'pec'), material:(d&&d.label)||'', incidence_deg:S.inc, polarization:(S.pol==='h'?'H':'V')},
+              construction:(d&&d.construct)||($('rcs-construct')?$('rcs-construct').value:'pec'), material:(d&&d.label)||'', incidence_deg:S.inc, polarization:(S.pol==='h'?'H':'V'),
+              plate_or_arm_thickness_mm:(d&&d.metal_mm!=null)?d.metal_mm:null},
       band:{name:$('rcs-band').value, fmin_ghz:g.f0, fmax_ghz:g.f1, f0_ghz:(d&&d.f0_ghz)!=null?d.f0_ghz:+((g.f0+g.f1)/2).toFixed(3)},
       // from the run when we have it; the live controls are only the no-run fallback
       mesh:{cells_per_lambda:(d&&d.cells!=null)?d.cells:(parseInt($('rcs-cells').value)||24),
@@ -8422,6 +8443,7 @@ window.LabCal = (function(){
              : S.shape==='cylinder' ? ('radius '+(S.s1*1000).toFixed(0)+' mm, height '+(S.s3*1000).toFixed(0)+' mm')
              : S.shape==='dihedral' ? ('arms '+(S.s1*1000).toFixed(0)+' mm, height '+(S.s3*1000).toFixed(0)+' mm')
              : ((S.s1*1000).toFixed(0)+' × '+(S.s2*1000).toFixed(0)+' mm');
+    if(d.metal_mm!=null) dims+=', '+(S.shape==='dihedral'?'arm':'plate')+' thickness '+d.metal_mm+' mm';
     var L=['openEMS RADAR CROSS SECTION — RUN SUMMARY',
       '==========================================',
       'Target:        '+S.shape+' ('+dims+'), construction: '+(d.construct||'pec'),
@@ -8455,6 +8477,13 @@ window.LabCal = (function(){
       sims:sims}, cp);
     if(S.shape==='import' && window.__rcsSTL){ cfg.stl=window.__rcsSTL.stl; cfg.stl_scale=window.__rcsSTL.stl_scale||1; cfg.size1=window.__rcsSTL.half_extent_mm||cfg.size1; }
     if($('rcs-band').value==='Custom'){ cfg.fmin_ghz=g.f0; cfg.fmax_ghz=g.f1; }
+    // explicit plate / arm thickness; omitted for other shapes so the solver keeps its own rule
+    if((S.shape==='plate'||S.shape==='dihedral') && $('rcs-metal')){
+      var mt=parseFloat($('rcs-metal').value);
+      if(!(mt>=1 && mt<=20)){ $('rcs-status').style.color='#c0392b';
+        $('rcs-status').textContent=(S.shape==='dihedral'?'Arm':'Plate')+' thickness must be between 1 and 20 mm.'; return; }
+      cfg.metal_mm=mt;
+    }
     if(sims.indexOf('aspect')>=0){
       cfg.aspect_start=parseFloat($('rcs-asp-start').value)||0;
       cfg.aspect_stop=parseFloat($('rcs-asp-stop').value)||60;
@@ -8525,7 +8554,7 @@ window.LabCal = (function(){
     var sb=$('rcs-sum-btn'); if(sb) sb.textContent='Summary';
     var mb=$('rcs-math-btn'); if(mb) mb.textContent='Show math';
   }
-  ['rcs-shape','rcs-band','rcs-size1','rcs-size2','rcs-size3','rcs-inc','rcs-pol','rcs-fmin','rcs-fmax'].forEach(function(id){ var e=$(id); if(e) e.addEventListener('input',function(){ window.__rcsRun=null; dropStalePanels(); syncShape(); redraw(); }); });
+  ['rcs-shape','rcs-band','rcs-size1','rcs-size2','rcs-size3','rcs-metal','rcs-inc','rcs-pol','rcs-fmin','rcs-fmax'].forEach(function(id){ var e=$(id); if(e) e.addEventListener('input',function(){ window.__rcsRun=null; dropStalePanels(); syncShape(); redraw(); }); });
   // dropping the stale material result: null the coated overlay + reduction AND its download files
   // so nothing (curves, summary, CSV links) is mislabeled against a material that wasn't solved
   function dropStaleMaterial(){
@@ -8672,7 +8701,7 @@ window.LabCal = (function(){
     }
     var ds=[{label:'bare target',data:pts,borderColor:'#161a18',borderWidth:2.5,pointRadius:0,tension:.2}];
     if(ptsC.length) ds.push({label:'coated (−'+redDb.toFixed(1)+' dB)',data:ptsC,borderColor:'#b4471f',borderWidth:2.5,pointRadius:0,tension:.2});
-    var opt={responsive:true,maintainAspectRatio:true,animation:{duration:300},interaction:{mode:'nearest',intersect:false},
+    var opt={responsive:true,maintainAspectRatio:true,animation:false,interaction:{mode:'nearest',intersect:false},
       scales:{x:{type:'linear',title:{display:true,text:'RANGE (km)'},min:0,max:+Rmax.toFixed(1)},
               y:{title:{display:true,text:'probability of detection'},min:0,max:1}},
       plugins:{legend:{display:true},tooltip:{callbacks:{title:function(i){return i.length?i[0].parsed.x.toFixed(1)+' km':'';},label:function(c){return c.dataset.label+': Pd '+(100*c.parsed.y).toFixed(0)+'%';}}}}};
@@ -8835,7 +8864,7 @@ window.LabCal = (function(){
       {type:'scatter',label:'Salisbury ◆',data:arch('Salisbury'),backgroundColor:'#c9a227',pointStyle:'rectRot',pointRadius:6},
       {type:'scatter',label:'Jaumann ▲',data:arch('Jaumann'),backgroundColor:'#b4471f',pointStyle:'triangle',pointRadius:5}
     ];
-    var opt={responsive:true,maintainAspectRatio:true,animation:{duration:300},interaction:{mode:'nearest',intersect:true},
+    var opt={responsive:true,maintainAspectRatio:true,animation:false,interaction:{mode:'nearest',intersect:true},
       scales:{x:{type:'linear',title:{display:true,text:'AREAL MASS (kg/m²)'},min:0},y:{title:{display:true,text:'band-avg reduction (dB)'},min:0}},
       plugins:{legend:{display:true},tooltip:{callbacks:{label:function(c){return c.parsed.y.toFixed(1)+' dB @ '+c.parsed.x.toFixed(2)+' kg/m²';}}},
         annotation:undefined}};
@@ -8850,7 +8879,7 @@ window.LabCal = (function(){
     var pts=rlCurve(evalG,res.g), tgt=res.g&&[{x:res.g.f0,y:res.target},{x:res.g.f1,y:res.target}];
     var ds=[{label:'reflection loss',data:pts,borderColor:'#161a18',borderWidth:2.5,pointRadius:0,tension:.2},
             {label:'target',data:tgt,borderColor:'#b4471f',borderWidth:1.5,borderDash:[6,4],pointRadius:0}];
-    var opt={responsive:true,maintainAspectRatio:true,animation:{duration:300},interaction:{mode:'nearest',intersect:false},
+    var opt={responsive:true,maintainAspectRatio:true,animation:false,interaction:{mode:'nearest',intersect:false},
       scales:{x:{type:'linear',title:{display:true,text:'FREQUENCY (GHz)'},min:res.g.f0,max:res.g.f1},y:{title:{display:true,text:'reflection loss (dB)'},min:0}},
       plugins:{legend:{display:true},tooltip:{callbacks:{title:function(i){return i.length?i[0].parsed.x.toFixed(2)+' GHz':'';},label:function(c){return c.dataset.label+': '+c.parsed.y.toFixed(1)+' dB';}}}}};
     $('invrcs-refl-fig').style.display='';   // reveal BEFORE creating the chart
@@ -8960,13 +8989,13 @@ window.LabCal = (function(){
   function drawBatch(){
     var v=$('rcsb-var').value, ds=[{label:'RCS @ f₀ (dBsm)',data:batchRows.map(function(r){return {x:r.val,y:r.dbsm};}),borderColor:'#161a18',borderWidth:2.5,pointRadius:3,tension:.2,yAxisID:'y'}];
     if(batchRows.some(function(r){return r.reduction!=null;})) ds.push({label:'reduction (dB)',data:batchRows.filter(function(r){return r.reduction!=null;}).map(function(r){return {x:r.val,y:r.reduction};}),borderColor:'#b4471f',borderWidth:2.5,pointRadius:3,tension:.2,yAxisID:'y1'});
-    var opt={responsive:true,maintainAspectRatio:true,animation:{duration:200},interaction:{mode:'nearest',intersect:false},
+    var opt={responsive:true,maintainAspectRatio:true,animation:false,interaction:{mode:'nearest',intersect:false},
       scales:{x:{type:'linear',title:{display:true,text:v}},y:{position:'left',title:{display:true,text:'RCS (dBsm)'}},y1:{position:'right',title:{display:true,text:'reduction (dB)'},grid:{drawOnChartArea:false}}},
       plugins:{legend:{display:true},tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+c.parsed.y.toFixed(2);}}}}};
     $('rcsb-chart-fig').style.display='';   // reveal BEFORE creating the chart (Chart.js sizes to its container)
     if(batchChart){batchChart.data.datasets=ds;batchChart.options=opt;batchChart.update();}
     else if(window.Chart&&$('rcsb-chart')) batchChart=new Chart($('rcsb-chart'),{type:'line',data:{datasets:ds},options:opt});
-    if(batchChart){try{batchChart.resize();batchChart.update('none');}catch(e){}}
+    if(batchChart){try{batchChart.resize();batchChart.update('none');batchChart.draw();}catch(e){}}   // draw(): synchronous, never waits on a paused animation frame
     var th=$('rcsb-table').querySelector('thead'), tb=$('rcsb-table').querySelector('tbody');
     th.innerHTML='<tr style="text-align:left;border-bottom:2px solid var(--line);"><th style="padding:6px 8px;">'+v+'</th><th>RCS@f₀ (dBsm)</th><th>Reduction (dB)</th><th>s</th></tr>';
     tb.innerHTML=batchRows.map(function(r){return '<tr style="border-top:1px solid var(--line);"><td style="padding:6px 8px;">'+r.val+'</td><td>'+r.dbsm.toFixed(2)+'</td><td>'+(r.reduction!=null?r.reduction.toFixed(2):'—')+'</td><td>'+r.seconds+'</td></tr>';}).join('');
@@ -9324,7 +9353,7 @@ window.LabCal = (function(){
 
   function baseOpts(xlab,ylab,xmin,xmax){
     // index-mode hover: hovering anywhere shows the x value + every curve's y at that x (guide/reference lines filtered out)
-    return {responsive:true,maintainAspectRatio:true,animation:{duration:250},interaction:{mode:'index',intersect:false},hover:{mode:'index',intersect:false},
+    return {responsive:true,maintainAspectRatio:true,animation:false,interaction:{mode:'index',intersect:false},hover:{mode:'index',intersect:false},
       scales:{x:{type:'linear',title:{display:true,text:xlab},min:xmin,max:xmax},y:{title:{display:true,text:ylab}}},
       plugins:{legend:{display:true},tooltip:{mode:'index',intersect:false,filter:function(it){return !(it.dataset&&it.dataset._guide);},callbacks:{
         title:function(it){return it.length?it[0].parsed.x.toFixed(2):'';},
@@ -9475,12 +9504,14 @@ window.LabCal = (function(){
     (function(){
       var sel=box.querySelector('.rlc-m-lib');
       var fill=function(){
+        var keep=sel.value;                           // a refresh must not throw away the user's pick
         var lib=[]; try{ lib=JSON.parse(localStorage.getItem('cadMatLib_v1')||'[]')||[]; }catch(e){}
         sel.innerHTML='<option value="">— pinned material… —</option>'+lib.map(function(x){
           return '<option value="'+x.id+'">'+hesc(x.name)+' · '+(+x.thick).toFixed(2)+' mm'+((x.kind==='solid')?' (solid)':'')+'</option>';
         }).join('');
         sel.disabled=!lib.length;
         if(!lib.length) sel.innerHTML='<option value="">(nothing pinned yet)</option>';
+        else if(keep && lib.some(function(x){ return String(x.id)===String(keep); })) sel.value=keep;
       };
       fill();
       sel.__fill=fill;                                // so rlcInit can refresh every box
@@ -9844,10 +9875,16 @@ window.LabCal = (function(){
     $('rlc-name').value=P.n+' (constant ε/μ)'; compute();
   }
   var wired=false;
+  // Refill every coating box's pinned-material dropdown from the shared library. Called on tab
+  // activation, straight after a pin on this page, and when another browser tab edits the library.
+  function refreshPinLists(){
+    document.querySelectorAll('#rlc-mat-list .rlc-m-lib').forEach(function(sl){ if(sl.__fill) sl.__fill(); });
+  }
+  window.addEventListener('storage',function(e){ if(e.key==='cadMatLib_v1') refreshPinLists(); });
   window.rlcInit=function(){
     // refresh every coating box's pinned-material dropdown: a list built before something was
     // pinned would otherwise stay stale until the user happened to click it open
-    document.querySelectorAll('#rlc-mat-list .rlc-m-lib').forEach(function(sl){ if(sl.__fill) sl.__fill(); });
+    refreshPinLists();
     if(!wired){ wired=true;
       var run=$('rlc-run'); if(run) run.addEventListener('click',compute);
       var rr=$('rlc-rcs-run'); if(rr) rr.addEventListener('click',rcsCompute);
@@ -9938,6 +9975,11 @@ window.LabCal = (function(){
       }
       if(!replaced){ m.id='m'+Date.now().toString(36)+Math.random().toString(36).slice(2,5); a.push(m); }
       localStorage.setItem(KEY, JSON.stringify(a));
+      // The coating boxes below live on this same page, so a tab switch never refreshes them. A box
+      // built while the library was empty also has its dropdown DISABLED, and a disabled <select>
+      // never fires the mousedown/focus that would refill it — so a just-pinned material stayed
+      // invisible ("(nothing pinned yet)") until the user left the tab and came back.
+      refreshPinLists();
       var st=$('rlc-pin-status')||$('rlc-parse');
       if(st){ st.style.color='var(--accent)';
         st.textContent='📌 '+(replaced?'updated':'pinned')+' “'+m.name+'” ('+m.note+', '+m.thick+' mm) — '+
@@ -10093,7 +10135,7 @@ window.LabCal = (function(){
     var step=Math.max(1,Math.floor(pts.length/3000)), sub=pts.filter(function(_,i){return i%step===0;});
     var ds=[{type:'scatter',label:'all designs',data:sub,backgroundColor:'rgba(120,130,125,.35)',pointRadius:2},
             {type:'scatter',label:'best',data:[{x:+best.minRL.toFixed(2),y:+best.eab.toFixed(3)}],backgroundColor:'#b4471f',pointRadius:7,pointStyle:'rectRot'}];
-    var opt={responsive:true,maintainAspectRatio:true,animation:{duration:250},
+    var opt={responsive:true,maintainAspectRatio:true,animation:false,
       scales:{x:{type:'linear',title:{display:true,text:'deepest reflection loss (dB) — more negative = stronger'}},y:{title:{display:true,text:'−10 dB bandwidth (GHz)'},min:0}},
       plugins:{legend:{display:true},tooltip:{callbacks:{label:function(c){return 'RL '+c.parsed.x.toFixed(1)+' dB · EAB '+c.parsed.y.toFixed(2)+' GHz';}}}}};
     if(sweepChart){sweepChart.data.datasets=ds;sweepChart.options=opt;sweepChart.update('none');}
@@ -10253,7 +10295,7 @@ window.LabCal = (function(){
     // a pure density ratio and therefore geometry-independent — still looked right and hid it.
     trade();
   }
-  function baseOpt(xl,yl,xmin,xmax){ return {responsive:true,maintainAspectRatio:true,animation:{duration:250},interaction:{mode:'nearest',intersect:false},
+  function baseOpt(xl,yl,xmin,xmax){ return {responsive:true,maintainAspectRatio:true,animation:false,interaction:{mode:'nearest',intersect:false},
     scales:{x:{type:'linear',title:{display:true,text:xl},min:xmin,max:xmax},y:{title:{display:true,text:yl}}},
     plugins:{legend:{display:true},tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+c.parsed.y.toFixed(2);}}}}}; }
   function drawGain(pts,f0,g0){ var ds=[{label:'gain (dBi)',data:pts,borderColor:'#0b6e54',borderWidth:2,pointRadius:0,tension:.2},

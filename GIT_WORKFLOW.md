@@ -74,7 +74,7 @@ runtime on macOS.
    logs, per-run `*_params.m`, `horn_results/`, `.vtr`/`.h5` dumps, `__pycache__/`, `.DS_Store` are all
    git-ignored. If `git status` shows them, the `.gitignore` needs fixing — don't `git add -f` them.
 4. **The single-file app rule still holds** (`waveguide_simulator.html`, no build step) and
-   `node verify_math.js` must still print `19 passed, 0 failed` after any change that touches the analytic
+   `node verify_math.js` must still print `28 passed, 0 failed` after any change that touches the analytic
    engine. (See `CLAUDE.md` for the full standing rules.)
 5. **Branch for non-trivial work**; don't force-push shared history. Commit messages: concise; if a Claude
    session made the change it appends `Co-Authored-By: Claude <...>` (harness convention).
@@ -116,7 +116,7 @@ These are set by `run_bridge.bat` on Windows and are simply unset on the Mac (�
 
 The Windows box held the **union** of the latest Mac source (via the final FreeFileSync) plus the
 Windows-portability fixes, so the repo was initialized there (`git init -b main`, `core.autocrlf false`
-to preserve exact bytes), committed, and pushed to a private remote. The Mac then `git clone`d it — the
+to preserve exact bytes), committed, and pushed to the remote (HUZAIFAR/em-sim, which is now **public** — never commit a live Funnel URL, token or password). The Mac then `git clone`d it — the
 old Mac folder was renamed to `Wave Guide Simulator.freefilesync-backup` as a safety copy (delete it once
 the clone is confirmed working). From that point on, git is the only sync path.
 
